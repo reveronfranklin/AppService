@@ -63,6 +63,7 @@ namespace AppService.Core.Services
         public async Task<MtrCliente> GetByIdAsync(string id)
         {
             return await _unitOfWork.MtrClienteRepository.GetByIdAsync(id);
+            
         }
 
         public MtrCliente GetById(string id)
@@ -423,13 +424,24 @@ namespace AppService.Core.Services
             {
                 foreach (var item in clientes)
                 {
+                    
                     var cliente = item.Codigo.Trim();
-                    if (cliente == "744741")
+                    if (cliente == "744761")
                     {
                         var detente = "";
                     }
                     try
                     {
+                        if (item.Segmento.Trim()== "" || item.Segmento == null)
+                        {
+                            item.Segmento = "0";
+                                
+                        }
+                        if (item.SubSegmentoa.Trim()== "" || item.SubSegmentoa == null)
+                        {
+                            item.SubSegmentoa = "0";
+                                
+                        } 
                     MtrSectorDto sectorObj = new MtrSectorDto();
                     var sectores = await ListSectores();
                     if (sectores.Count > 0)

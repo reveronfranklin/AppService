@@ -8,5 +8,6 @@
         PrecioPorMontaje = 4,
         PrecioPorRollo = 5,
         PrecioPorDesarrolloPrime = 6,
+        PrecioPorEtiquetaSinTroquel = 7,
     }
 }

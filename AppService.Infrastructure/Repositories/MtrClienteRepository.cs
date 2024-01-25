@@ -39,7 +39,9 @@ namespace AppService.Infrastructure.Repositories
         {
             
             DateTime localDate = DateTime.Now.AddDays(-days);
-            var result =  await _context.MtrCliente.Where(x => x.FModificacion >= localDate).ToListAsync();
+            string fechaString = localDate.ToString("dd-MM-yyyy");
+            DateTime dateTime = DateTime.Parse(fechaString);
+            var result =  await _context.MtrCliente.Where(x => x.FModificacion >= dateTime).ToListAsync();
             return result;
 
         }
@@ -213,7 +215,17 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task AddMtrClienteEnvioOdooLog(MtrClienteEnvioOdooLog entity)
         {
-            await _context.MtrClienteEnvioOdooLog.AddAsync(entity);
+
+            try
+            {
+                await _context.MtrClienteEnvioOdooLog.AddAsync(entity);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+    
 
 
         }

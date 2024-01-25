@@ -51,8 +51,17 @@ namespace AppService.Infrastructure.Repositories
         }
         public async Task<OfdAdjunto> GetByFileName(string fileName)
         {
-            return await _context.OfdAdjunto.Where(x=> x.NombreArchivo==fileName).FirstOrDefaultAsync();
-
+            OfdAdjunto result = new OfdAdjunto();
+            try
+            {
+                result= await _context.OfdAdjunto.Where(x=> x.NombreArchivo==fileName && x.IdTipoDocumento>0).FirstOrDefaultAsync();
+                return result;
+            }
+            catch (Exception e)
+            {
+                return result;
+            }
+            
         }
 
 

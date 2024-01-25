@@ -94,7 +94,7 @@ namespace AppService.Core.Services
             return appConfigDto;
         }
 
-        public async Task<ParametrosMaquina> getParametrosMaquina()
+        public async Task<ParametrosMaquina> getParametrosMaquinaRespaldo()
         {
             ParametrosMaquina parametrosMaquina = new ParametrosMaquina();
             var adicional = await GetByKey("ADICIONALPRODUCCION");

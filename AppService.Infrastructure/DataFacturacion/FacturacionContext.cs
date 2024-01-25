@@ -8817,6 +8817,11 @@ namespace AppService.Infrastructure.DataFacturacion
 
             modelBuilder.Entity<Ciny216>(entity =>
             {
+                entity.Property(e => e.Recnum)
+                    .HasColumnName("RECNUM")
+                    .HasColumnType("decimal(28, 0)")
+                    .ValueGeneratedOnAdd();
+                
                 entity.HasKey(e => new { e.Rif, e.Recnum })
                     .HasName("CINY216_INDEX01");
 
@@ -8826,16 +8831,15 @@ namespace AppService.Infrastructure.DataFacturacion
                     .HasName("CINY216_INDEX00")
                     .IsUnique();
 
+             
+                
                 entity.Property(e => e.Rif)
                     .HasColumnName("RIF")
                     .HasMaxLength(20)
                     .IsUnicode(false)
                     .HasDefaultValueSql("(' ')");
 
-                entity.Property(e => e.Recnum)
-                    .HasColumnName("RECNUM")
-                    .HasColumnType("decimal(28, 0)")
-                    .ValueGeneratedOnAdd();
+              
 
                 entity.Property(e => e.Actividadecono)
                     .IsRequired()
@@ -11383,6 +11387,11 @@ namespace AppService.Infrastructure.DataFacturacion
                     .HasColumnName("RECNUM")
                     .HasColumnType("decimal(28, 0)")
                     .ValueGeneratedOnAdd();
+
+                entity.Property(e => e.IdEstado)
+                    .HasColumnName("IdEstado")
+                    .HasColumnType("decimal(28, 0)");
+                    
 
                 entity.Property(e => e.ZonaDespacho)
                     .HasColumnName("ZONA_DESPACHO")

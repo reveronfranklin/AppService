@@ -1487,7 +1487,7 @@ namespace AppService.Core.Services
                         result.Color = "danger";
                         result.StatusString = "ENVIAR APROBACION";
                     }
-                    Decimal cantidad = appDetailQuotes.Cantidad;
+                   /* Decimal cantidad = appDetailQuotes.Cantidad;
                     Decimal? cantidadMinima = appDetailQuotes.IdProductoNavigation.CantidadMinima;
                     Decimal valueOrDefault4 = cantidadMinima.GetValueOrDefault();
                     if (cantidad < valueOrDefault4 & cantidadMinima.HasValue)
@@ -1498,7 +1498,7 @@ namespace AppService.Core.Services
                         cantidadMinima = appDetailQuotes.IdProductoNavigation.CantidadMinima;
                         string str = "ENVIAR APROBACION POR CANTIDAD MINIMA: " + cantidadMinima.ToString();
                         statusAprobacionDto.StatusString = str;
-                    }
+                    }*/
 
 
                 }
@@ -1531,7 +1531,7 @@ namespace AppService.Core.Services
                     result.Color = "danger";
                     result.StatusString = "ENVIAR APROBACION";
                 }
-                Decimal cantidad = appDetailQuotes.Cantidad;
+                /*Decimal cantidad = appDetailQuotes.Cantidad;
                 nullable = appDetailQuotes.IdProductoNavigation.CantidadMinima;
                 Decimal valueOrDefault6 = nullable.GetValueOrDefault();
                 if (cantidad < valueOrDefault6 & nullable.HasValue)
@@ -1542,7 +1542,7 @@ namespace AppService.Core.Services
                     nullable = appDetailQuotes.IdProductoNavigation.CantidadMinima;
                     string str = "ENVIAR APROBACION POR CANTIDAD MINIMA: " + nullable.ToString();
                     statusAprobacionDto.StatusString = str;
-                }
+                }*/
             }
             StatusAprobacionDto statusAprobacionDto1 = result;
             result = (StatusAprobacionDto)null;

@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http.Authentication;
 
 namespace AppService.Core.Services
 {
@@ -196,10 +197,7 @@ namespace AppService.Core.Services
                 {
                     foreach (var item in quotes)
                     {
-                        if(item.Cotizacion== "LN01202308041")
-                        {
-                            var DETENER = "";
-                        }
+                      
                         AppGeneralQuotesGetDto itemAppGeneralQuotesGetDto = _mapper.Map<AppGeneralQuotesGetDto>(item);
 
                         if (item.IdVendedorNavigation != null)
@@ -901,9 +899,18 @@ namespace AppService.Core.Services
                         entity.IdEstatus = 1;
                         this._unitOfWork.AppDetailQuotesRepository.Update(entity);
                         await this._unitOfWork.SaveChangesAsync();
+                        var aprobaciones =await _unitOfWork.AprobacionesRepository.GetByCotizacionRenglonPropuesta(entity.Cotizacion,1,1);
+
+                        if (aprobaciones != null)
+                        {
+                            await _unitOfWork.AprobacionesRepository.Delete(aprobaciones.Id);
+                            await _unitOfWork.SaveChangesAsync();
+                        }
                     }
                 }
 
+               
+                
                 await this._cotizacionService.IntegrarCotizacion(appGeneralQuotes.Id, true);
                 AppStatusQuote byId = await this._unitOfWork.AppStatusQuoteRepository.GetById(appGeneralQuotes.IdEstatus);
                 AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotes.Id, byId, appGeneralQuotes.Cotizacion);
@@ -1069,40 +1076,35 @@ namespace AppService.Core.Services
                     response.Data = resultDto;
                     return response;
                 }
+              
+                
                 MtrDirecciones direccionEntregarValidate = await this._unitOfWork.MtrDireccionesRepository.GetById(appGeneralQuotesUpdateDto.IdDireccionEntregar);
-                if (direccionEntregarValidate == null)
+                if (direccionEntregarValidate == null && appGeneralQuotesUpdateDto.IdCliente != "000000")
                 {
                     metadata.IsValid = false;
-                    metadata.Message = "Direccion Entregar No Existe!!! " + appGeneralQuotesUpdateDto.IdDireccionEntregar.ToString();
+                    metadata.Message = "Direccion Entregar No Existe!!! " + appGeneralQuotesUpdateDto.IdCliente;
                     response.Meta = metadata;
                     response.Data = resultDto;
                     return response;
                 }
                 else
                 {
-                    if(direccionEntregarValidate.Codigo != appGeneralQuotesUpdateDto.IdCliente)
+                    if (appGeneralQuotesUpdateDto.IdCliente != "000000")
                     {
-                        metadata.IsValid = false;
-                        metadata.Message = "Direccion Entregar No pertenece al cliente !!! " + appGeneralQuotesUpdateDto.IdCliente.ToString();
-                        response.Meta = metadata;
-                        response.Data = resultDto;
-                        return response;
+                        if (direccionEntregarValidate != null && direccionEntregarValidate.Codigo != appGeneralQuotesUpdateDto.IdCliente)
+                        {
+                            metadata.IsValid = false;
+                            metadata.Message = "Direccion Entregar No pertenece al cliente !!! " + appGeneralQuotesUpdateDto.IdCliente.ToString();
+                            response.Meta = metadata;
+                            response.Data = resultDto;
+                            return response;
+                        }
                     }
+                  
                 }
 
 
-                //else
-                //{
-                //    if (direccionEntregarValidate.Codigo != appGeneralQuotesUpdateDto.IdCliente)
-                //    {
-                //        metadata.IsValid = false;
-                //        metadata.Message = "Direccion Entregar No Corresponde al Cliente!!! " + appGeneralQuotesUpdateDto.IdDireccionEntregar.ToString();
-                //        response.Meta = metadata;
-                //        response.Data = resultDto;
-                //        return response;
-                //    }
-                //}
-
+          
                 var contacto = await this._unitOfWork.MtrContactosRepository.GetById(appGeneralQuotesUpdateDto.IdContacto);
                 if (contacto== null)
                 {

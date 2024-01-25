@@ -303,6 +303,7 @@ namespace AppService.Core.Services
 
                                 if (renglon != null)
                                 {
+                                    
                                     var solicitudAprobacion = await this._aprobacionesServices.GetByCotizacionRenglonPrpopuesta(renglon.Cotizacion, renglon.Renglon, 1);
                                     if (solicitudAprobacion == null)
                                     {
@@ -1541,12 +1542,24 @@ namespace AppService.Core.Services
 
             result.IdUnidadPrecio = prod.ProductionUnitId;
             var unidaProduccion = await _unitOfWork.AppUnitsRepository.GetById((int)prod.ProductionUnitId);
-
             result.CodeUnidaPrecio = unidaProduccion.Code;
+            var productoConversion =
+                await _unitOfWork.AppProductConversionRepository.GetAllByProduct(appDetailQuotes.IdProducto);
+            if (productoConversion.Count > 0)
+            {
+                var firstConversion = productoConversion.Where(x => x.AppUnitsIdAlternativa == appDetailQuotes.IdUnidad)
+                    .FirstOrDefault();
+                if (firstConversion != null)
+                {
+                    unidaProduccion = await _unitOfWork.AppUnitsRepository.GetById((int)firstConversion.AppUnitsIdBase);
+                    result.CodeUnidaPrecio = unidaProduccion.Code;
+                }
+            }
+           
 
 
 
-            if (prod.ProductionUnitId == appDetailQuotes.IdUnidad)
+            /*if (prod.ProductionUnitId == appDetailQuotes.IdUnidad)
             {
                 if (appDetailQuotes.ValorConvertido>0)
                 {
@@ -1563,15 +1576,8 @@ namespace AppService.Core.Services
             else
             {
                 result.Cantidad = appDetailQuotes.CantidadSolicitada;
-            }
-
-            if (result.Cantidad == 0)
-            {
-                result.Cantidad = appDetailQuotes.CantidadSolicitada;
-            }
-
-
-
+            }*/
+            result.Cantidad = appDetailQuotes.CantidadSolicitada;
             result.CantFormas = result.Cantidad;
             result.CantMill = (float)((decimal)result.Cantidad / (decimal)unidadCosteo);
 
@@ -2469,13 +2475,13 @@ namespace AppService.Core.Services
                 //diasAcualizaPresupuesto = 50;
                 var clientes = await _unitOfWork.MtrClienteRepository.GetAllDAyUpdate(diasAcualizaPresupuesto);
 
-                //var lista = clientes.Where(x => x.Codigo.Trim() == "744743").ToList();    
-               
+               //clientes = clientes.Where(x => x.Codigo.Trim() == "744780").ToList();    
+               Console.WriteLine($"Se actualizaran {clientes.Count()} Clientes");
                 await _mtrContactosService.UpdateClientesToOdoo(clientes);
             }
             catch (Exception ex)
             {
-                var msg=ex.InnerException.Message;
+                var msg=ex.Message;
             }
           
 

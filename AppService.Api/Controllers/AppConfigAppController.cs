@@ -69,7 +69,7 @@ namespace AppService.Api.Controllers
         {
 
 
-            var response = await _appConfigAppService.getParametrosMaquina();
+            var response = await _appConfigAppService.getParametrosMaquinaRespaldo();
             return Ok(response);
 
 

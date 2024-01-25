@@ -93,12 +93,12 @@ namespace AppService.Api.Controllers
                
                 var productoCantidad = await _appRecipesByAppDetailQuotesService.GetPrice(filters);
 
-                return (IActionResult)quotesController.Ok((object)productoCantidad);
+                    return (IActionResult)quotesController.Ok((object)productoCantidad);
             }
             catch (Exception ex)
             {
                 metadata.IsValid = false;
-                metadata.Message = ex.InnerException.Message;
+                metadata.Message = ex.Message;
                 ApiResponse<AppCaluloPrecioDto> apiResponse = new ApiResponse<AppCaluloPrecioDto>((AppCaluloPrecioDto)null)
                 {
                     Meta = metadata

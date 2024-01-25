@@ -1464,12 +1464,13 @@ namespace AppService.Core.Services
             {
                 result.IdComerciante = oficina.IdComercianteOdoo;
             }
-            if (mtrCliente.Codigo.Trim() == "723757")
+
+            if (mtrCliente.FlagAtendido == null)
             {
-                var detener = "";
+                mtrCliente.FlagAtendido = "";
             }
 
-            if (mtrCliente.FlagAtendido.Trim() == "")
+            if ( mtrCliente.FlagAtendido.Trim() == "" )
             {
                 result.ClienteInactivo = true;
             }
@@ -1631,26 +1632,25 @@ namespace AppService.Core.Services
 
         public async Task UpdateClientesToOdoo(List<MtrCliente> mtrClientes)
         {
-
-                //foreach (var item in _unitOfWork.MtrClienteRepository.GetAll("RR105841").Where(x=>x.Codigo.Trim()== "110020"))
+            mtrClientes = mtrClientes.OrderByDescending(x => x.FModificacion).ToList();
+            var contClientes = 1;
                 foreach (var item in mtrClientes)
                 {
 
-                string json1 = "";
-               var odooProduct = await GetOdooCliente(item);
+                    string json1 = "";
                 try
                 {
                    
+                    
+                    Console.WriteLine($"Actualizando cliente: {contClientes.ToString() } - {item.Codigo.Trim() } - {item.Nombre.Trim()}-{item.FModificacion.ToString()}");
+                    contClientes = contClientes + 1;
+                    var odooProduct = await GetOdooCliente(item);
 
                     json1 = JsonConvert.SerializeObject(odooProduct);
                     StringContent data = new StringContent(json1, Encoding.UTF8, "application/json");
 
                     var result = await _odooClient.Post(data);
 
-
-
-
-                    //var myclass = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(result.Message);
                     Respuesta respuesta = new Respuesta();
                     respuesta = Newtonsoft.Json.JsonConvert.DeserializeObject<Respuesta>(result.Message);
 
@@ -1666,15 +1666,7 @@ namespace AppService.Core.Services
                         await _unitOfWork.MtrClienteRepository.AddMtrClienteEnvioOdooLog(mtrClienteEnvioOdooLog);
                         await _unitOfWork.SaveChangesAsync();
                     }
-                    //else
-                    //{
-                    //    //Enviamos los contactos de cada cliente
-                    //    var mtrContactos = await _unitOfWork.MtrContactosRepository.GetByIdCliente(item.Codigo);
-                    //    if (mtrContactos.Count > 0)
-                    //    {
-                    //        await UpdateContactosToOdooByListMtrContacto(mtrContactos);
-                    //    }
-                    //}
+                  
 
                 }
                 catch (Exception ex)

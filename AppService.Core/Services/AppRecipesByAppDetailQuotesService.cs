@@ -359,7 +359,7 @@ namespace AppService.Core.Services
                         }
                     }
 
-                    var resultConversion = await CalculaConversion(filter.Cantidad, (decimal)filter.Largo, (decimal)filter.Ancho);
+                    // var resultConversion = await CalculaConversion(filter.Cantidad, (decimal)filter.Largo, (decimal)filter.Ancho);
                     var price = await this.GetPrecioEtiquetasPrime(filter.AppProuctId, filter.Cantidad, (decimal)filter.Largo, (decimal)filter.Ancho, ordenAnterior);
                     AppPriceGetDto resultPrice = new AppPriceGetDto();
                     resultPrice.AppproductsId = filter.AppProuctId;
@@ -431,50 +431,66 @@ namespace AppService.Core.Services
         public async Task<ResultConversionUnidadesMetrosCuadrados> CalculaConversion(decimal cantidadSolicitada, decimal medidaBasica, decimal medidaOpuesta)
         {
 
-            var parametrosDto = await appConfigAppService.getParametrosMaquina();
-
-
-            ParametrosMaquina parametrosMaquinas = new ParametrosMaquina(
-                parametrosDto.AdicionalProduccion,
-                parametrosDto.AdicionalProduccionOpuesta,
-                parametrosDto.MedidaOpuestaRollo, parametrosDto.MedidaBasicaRollo);
-
-            if (cantidadSolicitada <= 0)
+            try
             {
-                return null;
+              //  var parametrosDto = await appConfigAppService.getParametrosMaquina();
+
+
+               /*ParametrosMaquina parametrosMaquinas = new ParametrosMaquina(
+                    parametrosDto.AdicionalProduccion,
+                    parametrosDto.AdicionalProduccionOpuesta,
+                    parametrosDto.MedidaOpuestaRollo, parametrosDto.MedidaBasicaRollo);*/
+               ParametrosMaquina parametrosMaquinas = new ParametrosMaquina(
+                   0,
+                   0,
+                   0, 0);
+
+                if (cantidadSolicitada <= 0)
+                {
+                    return null;
+                }
+
+                if (cantidadSolicitada <= 0)
+                {
+                    return null;
+                }
+                if (medidaBasica <= 0)
+                {
+                    return null;
+                }
+                if (medidaOpuesta <= 0)
+                {
+                    return null;
+                }
+
+
+
+                var conversion = new ConversionUnidadesMetrosCuadrados(
+                    parametrosMaquinas.AdicionalProduccion,
+                    parametrosMaquinas.AdicionalProduccionOpuesta,
+                    parametrosMaquinas.MedidaBasicaRollo,
+                    parametrosMaquinas.MedidaOpuestaRollo);
+
+
+                conversion.cantidadBase = cantidadSolicitada;
+                conversion.medidaBasica = medidaBasica;
+                conversion.medidaOpuesta = medidaOpuesta;
+                var result = conversion.getCantidadPorUnidad();
+                ResultConversionUnidadesMetrosCuadrados resultObject = new ResultConversionUnidadesMetrosCuadrados();
+                resultObject.cantidadPorUnidad = result;
+                resultObject.area = conversion.area;
+                if (result == 0) result = 1;
+                resultObject.resulCantidad = cantidadSolicitada / result;
+                return resultObject;
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
             }
 
-            if (cantidadSolicitada <= 0)
-            {
-                return null;
-            }
-            if (medidaBasica <= 0)
-            {
-                return null;
-            }
-            if (medidaOpuesta <= 0)
-            {
-                return null;
-            }
-
-
-
-            var conversion = new ConversionUnidadesMetrosCuadrados(
-                        parametrosMaquinas.AdicionalProduccion,
-                        parametrosMaquinas.AdicionalProduccionOpuesta,
-                        parametrosMaquinas.MedidaBasicaRollo,
-                        parametrosMaquinas.MedidaOpuestaRollo);
-
-
-            conversion.cantidadBase = cantidadSolicitada;
-            conversion.medidaBasica = medidaBasica;
-            conversion.medidaOpuesta = medidaOpuesta;
-            var result = conversion.getCantidadPorUnidad();
-            ResultConversionUnidadesMetrosCuadrados resultObject = new ResultConversionUnidadesMetrosCuadrados();
-            resultObject.cantidadPorUnidad = result;
-            resultObject.area = conversion.area;
-            resultObject.resulCantidad = cantidadSolicitada / result;
-            return resultObject;
+      
 
 
         }
@@ -780,8 +796,8 @@ namespace AppService.Core.Services
         {
             AppPriceGetDto result = new AppPriceGetDto();
             int calculoId = await this.GenerarCalculoPorProductoCantidadMedidasCm(productId, cantidad, medidaBasicaCm, medidaOpuestaCm,ordenAnterior);
-            //await this.CalulateRecipeByCalculoId(calculoId);
-            await CalulateRecipeByCalculoIdInMemory(calculoId);
+            await this.CalulateRecipeByCalculoId(calculoId);
+            //await CalulateRecipeByCalculoIdInMemory(calculoId);
             // Decimal precio = this._unitOfWork.AppRecipesByAppDetailQuotesRepository.TotalCost(calculoId);
             result.AppproductsId = productId;
             result.CalculoId = new int?(calculoId);
@@ -1216,17 +1232,27 @@ namespace AppService.Core.Services
 
         public async Task CalulateRecipeByCalculoId(int calculoId)
         {
-            List<AppRecipesByAppDetailQuotes> allByCalculoId = await this._unitOfWork.AppRecipesByAppDetailQuotesRepository.GetAllByCalculoId(calculoId);
-            if (allByCalculoId == null)
-                return;
-            var firstCalculo = allByCalculoId.FirstOrDefault();
-            var product = await _unitOfWork.AppProductsRepository.GetById((int)firstCalculo.AppproductsId);
 
-            foreach (AppRecipesByAppDetailQuotes recipe in allByCalculoId.Where<AppRecipesByAppDetailQuotes>((Func<AppRecipesByAppDetailQuotes, bool>)(x => x.Formula.Length > 0)).OrderBy<AppRecipesByAppDetailQuotes, Decimal?>((Func<AppRecipesByAppDetailQuotes, Decimal?>)(x => x.OrderCalculate)).ToList<AppRecipesByAppDetailQuotes>())
+            try
             {
-                Decimal formula = await this.CalculateFormula(recipe,product);
-            }
+                List<AppRecipesByAppDetailQuotes> allByCalculoId = await this._unitOfWork.AppRecipesByAppDetailQuotesRepository.GetAllByCalculoId(calculoId);
+                if (allByCalculoId == null)
+                    return;
+                var firstCalculo = allByCalculoId.FirstOrDefault();
+                var product = await _unitOfWork.AppProductsRepository.GetById((int)firstCalculo.AppproductsId);
 
+                foreach (AppRecipesByAppDetailQuotes recipe in allByCalculoId.Where<AppRecipesByAppDetailQuotes>((Func<AppRecipesByAppDetailQuotes, bool>)(x => x.Formula.Length > 0)).OrderBy<AppRecipesByAppDetailQuotes, Decimal?>((Func<AppRecipesByAppDetailQuotes, Decimal?>)(x => x.OrderCalculate)).ToList<AppRecipesByAppDetailQuotes>())
+                {
+                    Decimal formula = await this.CalculateFormula(recipe,product);
+                }
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+           
 
 
         }
@@ -1337,14 +1363,7 @@ namespace AppService.Core.Services
                 var recipesEvaluar = recipes.Where(x => x.Formula.Length > 0).OrderBy(x => x.OrderCalculate).ToList();
                 foreach (var recipe in recipesEvaluar)
                 {
-                    if(recipe.Code == "COSTOPRODUCCION(2x6.5)")
-                    {
-                        var detener = "";
-                    }
-                    if (recipe.Code == "GIFAccurioLabel(2x6.5)")
-                    {
-                        var detener = "";
-                    }
+                  
 
                     string valueFormula = await this.GetValueFormulaInMemory(recipe.CalculoId, recipe.Formula, producto.Code, recipe.Code, originalRecipes);
                     try
@@ -1352,12 +1371,7 @@ namespace AppService.Core.Services
                         object obj = new DataTable().Compute(valueFormula, "");
                         obj.ToString();
                         result = Convert.ToDecimal(obj.ToString());
-                    }
-                    catch (Exception ex)
-                    {
-                        var m = ex.Message;
-                        result = 0;
-                    }
+                  
                   
                     if (recipe.AfectaCosto.Value)
                     {
@@ -1376,7 +1390,12 @@ namespace AppService.Core.Services
                     originalRecipes.Add(mewRecipe);
                     var vrified = originalRecipes.Where(x => x.Code == recipe.Code).ToList();
                     originalRecipes.Remove(recipe);
-                    //AppRecipesByAppDetailQuotes byAppDetailQuotes = await this.Update(recipe);
+                    }
+                    catch (Exception ex)
+                    {
+                        var m = ex.Message;
+                        result = 0;
+                    }
                 }
 
                 return originalRecipes;

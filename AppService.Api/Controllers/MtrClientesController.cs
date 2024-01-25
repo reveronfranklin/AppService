@@ -215,7 +215,7 @@ namespace AppService.Api.Controllers
 
         [HttpPost]
         [Route("[action]")]
-        public async Task<IActionResult> ListDireccionesCliente(MtrClienteQueryFilter filters)
+        public async Task<IActionResult> ListDireccionesClienteRif(MtrClienteQueryFilter filters)
         {
 
 
@@ -226,7 +226,12 @@ namespace AppService.Api.Controllers
                 mtrDireccionesDtos = mtrDireccionesDtos.Where(x => x.Rif.ToLower().Contains(filters.SearchText.Trim().ToLower()) || x.Direccion.ToLower().Contains(filters.SearchText.Trim().ToLower()) || x.Direccion1.ToLower().Contains(filters.SearchText.Trim().ToLower()) || x.Estado.ToLower().Contains(filters.SearchText.Trim().ToLower())).ToList();
             }
 
-
+            var cliente = _mtrClienteService.GetById(filters.Codigo);
+            if (cliente != null)
+            {
+                mtrDireccionesDtos = mtrDireccionesDtos.Where(x => x.Rif == cliente.NoRegTribut.Trim()).ToList();
+                
+            }
 
             ApiResponse<List<MtrDireccionesDto>> response = new ApiResponse<List<MtrDireccionesDto>>(mtrDireccionesDtos);
 

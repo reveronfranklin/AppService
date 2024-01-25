@@ -14,6 +14,7 @@ using AppService.Core.DTOs.DocumentosFiscales;
 using AppService.Core.DTOs;
 using AppService.Core.EntitiesFacturacion;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace AppService.Core.Services
 {
@@ -21,9 +22,9 @@ namespace AppService.Core.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         //DESARROLLO
-        //private readonly string _env = "development";
+        private readonly string _env = "development";
         //production
-        private readonly string _env = "producction";
+        //private readonly string _env = "producction";
 
         public AppDocumentosFiscalesService(IUnitOfWork unitOfWork)
         {
@@ -57,17 +58,18 @@ namespace AppService.Core.Services
 
         }
 
-        public string[] GetFicheros()
+        public string[] GetFicheros( string ruta )
         {
 
             AppRutasDocumentosFiscalesDto rutas = new AppRutasDocumentosFiscalesDto(_env);
 
             //string ruta = _paginationOptions.FolderFiscales ;
-            string ruta = rutas.FolderFiscales;
+           // string ruta = rutas.FolderFiscales;
             string directorio = ruta;
             //string directorio = @"/Users/freveron/Documents/Moore/Facturacion/enProceso/";
             string[] ficheros = Directory.GetFiles(directorio);
-            return ficheros;
+            string[] sorted = ficheros.OrderByDescending(o => o).ToArray();
+            return sorted;
         }
 
         public void Convert(string srcFile, string outFileName, string control, string anulado = "")
@@ -147,11 +149,34 @@ namespace AppService.Core.Services
                 var destino = rutas.FolderFiscalesHistorico;
 
                 var respaldo = rutas.FolderFiscalesRespaldo;
+                var originalSap = rutas.FolderFiscales;
+                var ficheros = GetFicheros(originalSap);
+                foreach (string file in ficheros)
+                {
+                    var srcFileArr = file.Split("/");
+                    if (_env == "producction")
+                    {
+                        srcFileArr = file.Split("\\");
+                    }
+                    var fileName = srcFileArr[srcFileArr.Length - 1];
+                    var controlArray = fileName.Split("_");
+                    var controlFinalArray = controlArray[controlArray.Length - 1].Split(".");
+                    var control = controlFinalArray[0];
+                    outFileName = $"{destino}{fileName}";
+                    if (!File.Exists($"{rutas.FolderFiscalesProceso}{fileName}"))
+                    {
 
-                var ficheros = GetFicheros();
+                        File.Copy(file, $"{rutas.FolderFiscalesProceso}{fileName}");
+                     
+                    }
+                    if (File.Exists(file))
+                    {
+                        File.Delete(file);
+                    }
+                }
 
                 text1 = $"{ficheros.Length} Archivos procesados";
-
+                ficheros = GetFicheros(rutas.FolderFiscalesProceso);
                 foreach (string file in ficheros)
                 {
 
@@ -164,7 +189,7 @@ namespace AppService.Core.Services
                     var controlArray = fileName.Split("_");
                     var controlFinalArray = controlArray[controlArray.Length - 1].Split(".");
                     var control = controlFinalArray[0];
-                    outFileName = $"{destino}{fileName}";
+                        outFileName = $"{destino}{fileName}";
                     var isValid = IsValidPdf(file);
                     if (isValid)
                     {
@@ -173,6 +198,8 @@ namespace AppService.Core.Services
 
                             File.Copy(file, $"{respaldo}{fileName}");
                         }
+                        
+                        Console.WriteLine("Actualizando archivo: " + fileName);
                         var tipoDocumento = GetTipoDocumento(fileName);
                         var documento = GetDocumento(fileName);
                         var ordenCotizacion = await GetOrdenCotizacion(tipoDocumento, documento);
@@ -181,9 +208,12 @@ namespace AppService.Core.Services
                         {
                             await UpdateFile(fileName, outFileName);
                             var adjunto = await _unitOfWork.OfdAdjuntoRepository.GetByFileName(fileName);
-                            if (adjunto is not null)
+                            if (adjunto is not null && adjunto.IdTipoDocumento>0)
                             {
-                                File.Delete(file);
+                                if (File.Exists(file))
+                                {
+                                    File.Delete(file);
+                                }
                             }
 
 
@@ -271,7 +301,27 @@ namespace AppService.Core.Services
                         if (ordenCotizacion.Cotizacion == null) ordenCotizacion.Cotizacion = "";
                         if (ordenCotizacion.Cliente == null) ordenCotizacion.Cliente = "";
                         if (ordenCotizacion.Rif == null) ordenCotizacion.Rif = "";
-
+                        
+                        if (tipoDocumento == "Factura" && created.IdAdjunto > 0)
+                        {
+                            valor = documento.ToString();
+                            await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaFactura, valor);
+                        }
+                        if (tipoDocumento == "Nota_Crédito" && created.IdAdjunto > 0)
+                        {
+                            valor = documento.ToString();
+                            await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaNotaCredito, valor);
+                        }
+                        if (tipoDocumento == "Nota_Débito" && created.IdAdjunto > 0)
+                        {
+                            valor = documento.ToString();
+                            await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaNotaDebito, valor);
+                        }
+                        if (tipoDocumento == "Entrega" && created.IdAdjunto > 0)
+                        {
+                            valor = documento.ToString();
+                            await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaNotaEntrega, valor);
+                        }
 
                         if (ordenCotizacion.Orden > 0)
                         {
@@ -296,26 +346,7 @@ namespace AppService.Core.Services
                             valor = ordenCotizacion.Rif.ToString();
                             await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaRif, valor);
                         }
-                        if (tipoDocumento == "Factura" && created.IdAdjunto > 0)
-                        {
-                            valor = documento.ToString();
-                            await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaFactura, valor);
-                        }
-                        if (tipoDocumento == "Nota_Crédito" && created.IdAdjunto > 0)
-                        {
-                            valor = documento.ToString();
-                            await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaNotaCredito, valor);
-                        }
-                        if (tipoDocumento == "Nota_Débito" && created.IdAdjunto > 0)
-                        {
-                            valor = documento.ToString();
-                            await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaNotaDebito, valor);
-                        }
-                        if (tipoDocumento == "Entrega" && created.IdAdjunto > 0)
-                        {
-                            valor = documento.ToString();
-                            await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaNotaEntrega, valor);
-                        }
+
                     }
 
 
@@ -327,7 +358,7 @@ namespace AppService.Core.Services
             }
             catch (Exception ex)
             {
-                var msg = ex.Message;
+                    var msg = ex.Message;
             }
 
 
@@ -350,11 +381,13 @@ namespace AppService.Core.Services
                 await _unitOfWork.SaveChangesAsync();
                 return created;
             }
-            catch
+            catch (Exception e)
             {
+                Console.WriteLine(e);
                 throw;
             }
 
+        
         }
 
         public List<CriterioBusqueda> GetCriterioBusqueda()

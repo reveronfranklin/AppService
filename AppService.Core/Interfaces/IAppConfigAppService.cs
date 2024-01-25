@@ -10,7 +10,7 @@ namespace AppService.Core.Interfaces
     public interface IAppConfigAppService
     {
 
-        Task<ParametrosMaquina> getParametrosMaquina();
+        Task<ParametrosMaquina> getParametrosMaquinaRespaldo();
 
         Task<List<AppConfigApp>> GetAll();
         Task<ApiResponse<List<AppConfigAppGetDto>>> GetAllFilter(AppConfigAppQueryFilter filter);
