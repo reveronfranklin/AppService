@@ -22,7 +22,7 @@ namespace Automata.Workers
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-               int millisecondsDelay = 30 * 60000; //Convertimos 30 minutos a Milisegundos
+              /* int millisecondsDelay = 30 * 60000; //Convertimos 30 minutos a Milisegundos
                 Console.WriteLine("Ejecutando worker cada 30 minuto");
                 var mensaje = "Iniciando Generacion de costos de embarque: " + DateTime.Now;
 
@@ -31,31 +31,31 @@ namespace Automata.Workers
 
                 await _appCostosEmbaqueService.CrearCostosDelMes(2023,9);
                 Console.WriteLine("Culminado Generacion de costos de embarque: " + DateTime.Now);
-                await Task.Delay(millisecondsDelay);
+                await Task.Delay(millisecondsDelay);*/
 
 
-              /*Console.WriteLine("Ejecutando worker cada 1 minuto");
+               /* Console.WriteLine("Ejecutando worker cada 7 minuto");
                 var mensaje = "Iniciando envio de Documentos Fiscales a oficina Digital: " + DateTime.Now;
 
                 Console.WriteLine(mensaje);
                 var src = "";
 
                 var response = await _service.ReadLineByLineTextPdf(src);
-              Console.WriteLine("Culminado envio de documentos fiscales a oficina digital: " + DateTime.Now);
-                await Task.Delay(60000);*/
+                Console.WriteLine("Culminado envio de documentos fiscales a oficina digital: " + DateTime.Now);
+                await Task.Delay(420000);*/
 
 
 
-               /* Console.WriteLine("Ejecutando worker cada 10 minuto");
+               Console.WriteLine("Ejecutando worker cada 10 minuto");
                 var mensaje = "Iniciando envio de Clientes a Odoo: " + DateTime.Now;
 
                 Console.WriteLine(mensaje);
                 await _cotizacionService.ActualizarClientes();
                 Console.WriteLine("Culminado envio de Clientes a Odoo: " + DateTime.Now) ;
-                await Task.Delay(600000);*/
+                await Task.Delay(600000);
 
 
-                /* Console.WriteLine("Ejecutando worker cada 10 minuto");
+                 /*Console.WriteLine("Ejecutando worker cada 10 minuto");
 
                  var mensaje = "Iniciando envio de cotizaciones a Odoo: " + DateTime.Now;
 

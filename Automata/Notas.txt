@@ -35,6 +35,10 @@ Scaffold-DbContext "Server=172.28.107.19\\FSVEMCYN03D;Database=Nomina;User Id=us
 Scaffold-DbContext "Server=172.28.107.19\\FSVEMCYN03D;Database=Estadisticas;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true" Microsoft.EntityFrameworkCore.SqlServer -OutputDir DataEstadisticas
 dotnet ef dbcontext scaffold "Server=172.28.107.19\\FSVEMCYN03D;Database=Estadisticas;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true" Microsoft.EntityFrameworkCore.SqlServer -OutputDir DataEstadisticas
 dotnet ef dbcontext scaffold "Server=172.28.107.19;Database=RRD;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true" Microsoft.EntityFrameworkCore.SqlServer --output-dir DataTmp
+dotnet ef dbcontext scaffold "Server=172.28.107.19\\FSVEMCYN03D;Database=Nomina;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true" Microsoft.EntityFrameworkCore.UseOracle --output-dir DataTmp
+
+
+
 
 Part 4 - Fluent API in EF Core : https://youtu.be/swLZW434wVE
 Part 5 - HTTP Basics & REST : https://youtu.be/28nideHfyKY
