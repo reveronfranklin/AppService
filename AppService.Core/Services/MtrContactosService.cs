@@ -1640,8 +1640,8 @@ namespace AppService.Core.Services
                     string json1 = "";
                 try
                 {
-                   
-                    
+
+                  
                     Console.WriteLine($"Actualizando cliente: {contClientes.ToString() } - {item.Codigo.Trim() } - {item.Nombre.Trim()}-{item.FModificacion.ToString()}");
                     contClientes = contClientes + 1;
                     var odooProduct = await GetOdooCliente(item);
