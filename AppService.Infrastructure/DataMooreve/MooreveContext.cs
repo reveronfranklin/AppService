@@ -889,6 +889,8 @@ namespace AppService.Infrastructure.DataMooreve
         public virtual DbSet<Wtmy093> Wtmy093 { get; set; }
         public virtual DbSet<XlsCuotas> XlsCuotas { get; set; }
         public virtual DbSet<XmlSeniat> XmlSeniat { get; set; }
+        public virtual DbSet<V_CotizacionesPorAprobar> V_CotizacionesPorAprobar { get; set; }
+        
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -36005,7 +36007,17 @@ namespace AppService.Infrastructure.DataMooreve
                     .HasColumnName("RBsMCBase")
                     .HasColumnType("decimal(16, 2)");
             });
-
+            
+            modelBuilder.Entity<V_CotizacionesPorAprobar>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView(nameof(V_CotizacionesPorAprobar));
+           
+                
+            });
+            
+         
+            
             modelBuilder.Entity<Wsmy501>(entity =>
             {
                 entity.HasKey(e => e.Cotizacion);

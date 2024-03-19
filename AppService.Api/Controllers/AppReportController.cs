@@ -31,6 +31,7 @@ namespace AppService.Api.Controllers
         //[Route("[action]")]
         public async Task<IActionResult> GetCotizacion(string cotizacion, bool flagTotal, bool flagFormasCaja, bool flagIva, bool observaciones, bool imprimirUsd, int? subcategoria = null)
         {
+           
             await _appDetailQuotesService.UpdateDataReport(cotizacion);
 
             ReporteCotizacionDto dto = new ReporteCotizacionDto();

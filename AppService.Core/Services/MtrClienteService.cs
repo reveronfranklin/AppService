@@ -426,10 +426,7 @@ namespace AppService.Core.Services
                 {
                     
                     var cliente = item.Codigo.Trim();
-                    if (cliente == "744761")
-                    {
-                        var detente = "";
-                    }
+                    
                     try
                     {
                         if (item.Segmento.Trim()== "" || item.Segmento == null)

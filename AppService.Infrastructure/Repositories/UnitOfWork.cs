@@ -238,6 +238,9 @@ namespace AppService.Infrastructure.Repositories
         public readonly IWiny244Repository _winy244Repository;
 
         public readonly IWsmy264Repository _wsmy264Repository;
+        public readonly IVCotizacionesPorAprobarRepository _vCotizacionesPorAprobarRepository;
+        
+        
 
         public UnitOfWork(RRDContext context, MooreveContext mooreveContext, MCContext mcContext, IMaestrosContext maestrosContext, SapContext sapContext, ClientesContext clientesContext, FacturacionContext facturacionContext, ContratosStockContext contratosStockContext, DWContext dWContext, NominaContext nominaContext, SpiContext spiContext, PlantaContext plantaContext, MaterialesContext materialesContext,EstadisticasContext estadisticasContext,IConnectionMultiplexer connectionMultiplexer)
         {
@@ -415,7 +418,10 @@ namespace AppService.Infrastructure.Repositories
 
         public IAppVariablesEspecificacionesPartesRepository AppVariablesEspecificacionesPartesRepository => _appVariablesEspecificacionesPartesRepository ?? new AppVariablesEspecificacionesPartesRepository(_mooreveContext);
         public IAppValoresVariablesEspecificacionesPartesRepository AppValoresVariablesEspecificacionesPartesRepository => _appValoresVariablesEspecificacionesPartesRepository ?? new AppValoresVariablesEspecificacionesPartesRepository(_mooreveContext);
+        public IVCotizacionesPorAprobarRepository VCotizacionesPorAprobarRepository => _vCotizacionesPorAprobarRepository ?? new VCotizacionesPorAprobarRepository(_mooreveContext);
 
+        
+      
 
         public ICobEstadoDeCuentaMultimonedaRepository CobEstadoDeCuentaMultimonedaRepository => _cobEstadoDeCuentaMultimonedaRepository ?? new CobEstadoDeCuentaMultimonedaRepository(_mooreveContext);
 

@@ -231,7 +231,7 @@ namespace AppService.Infrastructure.Repositories
         {
 
 
-
+            entity.FechaActualiza = DateTime.Now;
             _context.Wsmy501.Update(entity).Property(x => x.Id).IsModified = false;
 
         }

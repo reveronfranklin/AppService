@@ -30,7 +30,6 @@ namespace AppService.Core.Services
         {
             _unitOfWork = unitOfWork;
 
-
         }
 
         public string ReadTextPdf(string src)
@@ -267,10 +266,13 @@ namespace AppService.Core.Services
                 ofdAdjunto.FechaCreacion = DateTime.Now;
                 short idTipoDocumento = 0;
                 if (tipoDocumento == "Factura") idTipoDocumento = 15;
-                if (tipoDocumento == "Nota_Crédito") idTipoDocumento = 22;
-                if (tipoDocumento == "Nota_Débito") idTipoDocumento = 23;
+                if (tipoDocumento == "Nota_Credito") idTipoDocumento = 22;
+                if (tipoDocumento == "Nota_Debito") idTipoDocumento = 23;
                 if (tipoDocumento == "Entrega") idTipoDocumento = 16;
-
+                if (idTipoDocumento <= 0)
+                {
+                    idTipoDocumento = 15;
+                }
                 ofdAdjunto.IdTipoDocumento = idTipoDocumento;
                
                 var adjunto = await _unitOfWork.OfdAdjuntoRepository.GetByFileName(fileName);
@@ -281,7 +283,6 @@ namespace AppService.Core.Services
                     await _unitOfWork.SaveChangesAsync();
                 }
                     var created = await _unitOfWork.OfdAdjuntoRepository.Add(ofdAdjunto);
-                    //if(ordenCotizacion.Orden > 0)
                     await _unitOfWork.SaveChangesAsync();
 
                     if (created.IdAdjunto > 0)
@@ -307,12 +308,12 @@ namespace AppService.Core.Services
                             valor = documento.ToString();
                             await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaFactura, valor);
                         }
-                        if (tipoDocumento == "Nota_Crédito" && created.IdAdjunto > 0)
+                        if (tipoDocumento == "Nota_Credito" && created.IdAdjunto > 0)
                         {
                             valor = documento.ToString();
                             await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaNotaCredito, valor);
                         }
-                        if (tipoDocumento == "Nota_Débito" && created.IdAdjunto > 0)
+                        if (tipoDocumento == "Nota_Debito" && created.IdAdjunto > 0)
                         {
                             valor = documento.ToString();
                             await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaNotaDebito, valor);
@@ -415,12 +416,12 @@ namespace AppService.Core.Services
             string result = string.Empty;
 
             var esFactura = fileName.Contains("Factura");
-            var esNotaCredito = fileName.Contains("Nota_Crédito");
-            var esNotaDebito = fileName.Contains("Nota_Débito");
+            var esNotaCredito = fileName.Contains("Nota_Cr");
+            var esNotaDebito = fileName.Contains("Nota_D");
             var esEntrega = fileName.Contains("Entrega");
             if (esFactura) result = "Factura";
-            if (esNotaCredito) result = "Nota_Crédito";
-            if (esNotaDebito) result = "Nota_Débito";
+            if (esNotaCredito) result = "Nota_Credito";
+            if (esNotaDebito) result = "Nota_Debito";
             if (esEntrega) result = "Entrega";
             return result;
         }
@@ -602,13 +603,13 @@ namespace AppService.Core.Services
                     result = Int32.Parse(facturaString);
                     // code block
                     break;
-                case "Nota_Crédito":
+                case "Nota_Credito":
                     var arrayNotaCredito = numeroDocumento.Split("_");
                     var notaCreditoString = arrayNotaCredito[2].Substring(4);
                     result = Int32.Parse(notaCreditoString);
                     // code block
                     break;
-                case "Nota_Débito":
+                case "Nota_Debito":
                     var arrayNotaDebito = numeroDocumento.Split("_");
                     var notaDebitoString = arrayNotaDebito[2].Substring(4);
                     result = Int32.Parse(notaDebitoString);

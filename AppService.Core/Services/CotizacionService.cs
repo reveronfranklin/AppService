@@ -1789,7 +1789,8 @@ namespace AppService.Core.Services
                 Wsmy501 Wsmy501 = await this.GetByCotizacion(cotizacion);
                 if (Wsmy501 == null)
                     return;
-                if (await this._unitOfWork.DatosClienteRepository.GetByCotizacion(cotizacion) == null)
+                var datosCliente = await this._unitOfWork.DatosClienteRepository.GetByCotizacion(cotizacion);
+                if ( datosCliente== null)
                 {
                     AppService.Core.DataContratosStock.DatosCliente entity = new AppService.Core.DataContratosStock.DatosCliente();
                     entity.NumCot = this._unitOfWork.DatosClienteRepository.NextNumCot(Wsmy501.CodVendedor);
@@ -1814,7 +1815,9 @@ namespace AppService.Core.Services
                     entity.CodigoClient = Wsmy501.CodCliente;
                     entity.NomCliente = Wsmy501.RazonSocial.Trim();
                     entity.RifFact = Wsmy501.Rif;
-                    entity.RifEnt = Wsmy501.Rif;
+                    entity.RifEnt = Wsmy501.RifEntregar;
+                    entity.IdDireccion = Wsmy501.IdDireccion;
+                    entity.IdDireccionEntregar = Wsmy501.IdDireccionEntregar;
                     entity.Contacto = Wsmy501.NombreContacto;
                     entity.NombFact = Wsmy501.RazonSocial.Trim();
                     entity.NomEnt = Wsmy501.RazonSocial.Trim();
@@ -1847,6 +1850,34 @@ namespace AppService.Core.Services
                     await this._unitOfWork.DatosClienteRepository.Add(entity);
                     await this._unitOfWork.SaveChangesAsync();
                 }
+                else
+                {
+                    datosCliente.CodVend = Wsmy501.CodVendedor;
+                    datosCliente.CodigoClient = Wsmy501.CodCliente;
+                    datosCliente.NomCliente = Wsmy501.RazonSocial.Trim();
+                    datosCliente.RifFact = Wsmy501.Rif;
+                    datosCliente.RifEnt = Wsmy501.RifEntregar;
+                    datosCliente.IdDireccion = Wsmy501.IdDireccion;
+                    datosCliente.IdDireccionEntregar = Wsmy501.IdDireccionEntregar;
+                    datosCliente.Contacto = Wsmy501.NombreContacto;
+                    datosCliente.NombFact = Wsmy501.RazonSocial.Trim();
+                    datosCliente.NomEnt = Wsmy501.RazonSocial.Trim();
+                    if (Wsmy501.CodCliente == "000000")
+                    {
+                        datosCliente.ClienteNuevo = "X";
+                        MtrVendedor byId = this._unitOfWork.MtrVendedorRepository.GetById(Wsmy501.CodVendedor);
+                        datosCliente.Oficina = byId.Oficina.ToString().Trim();
+                    }
+                    else
+                    {
+                        datosCliente.ClienteNuevo = "";
+                        MtrCliente byId = this._unitOfWork.MtrClienteRepository.GetById(Wsmy501.CodCliente);
+                        datosCliente.Oficina = byId.OficinaVenta.Trim();
+                    }
+                    this._unitOfWork.DatosClienteRepository.Update(datosCliente);
+                    await this._unitOfWork.SaveChangesAsync();
+                }
+                
                 AppService.Core.DataContratosStock.DatosCliente datosClienteFind = await this._unitOfWork.DatosClienteRepository.GetByCotizacion(cotizacion);
                 if (datosClienteFind != null)
                 {
@@ -2548,7 +2579,7 @@ namespace AppService.Core.Services
 
             var cotizaciones = await _unitOfWork.CotizacionRepository.GetListCotizaciones(diasAcualizaPresupuesto);
 
-            cotizaciones = cotizaciones.Where(x => x == "CD33202309009").ToList();
+            cotizaciones = cotizaciones.Where(x => x == "SE20202403014").ToList();
             //#####ACTUALIZACION DE CLIENTE PROSPECTO
             MtrClienteQueryFilter filter = new MtrClienteQueryFilter();
             //filter.Codigo = "000000";

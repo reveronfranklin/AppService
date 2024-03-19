@@ -165,11 +165,21 @@ namespace AppService.Infrastructure.Repositories
                 }
                 else
                 {
-
+                    long number1 = 0;
+                    bool canConvert = long.TryParse(filter.SearchText.Trim(), out number1);
+                    if (canConvert == true)
+                    {
+                        var clie = await _context.MtrCliente.Where(x => x.FlagInactivo != "X" && ((x.Codigo.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower()))  )).OrderBy(x => x.Nombre).Skip((filter.PageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+                        result.AddRange(clie);
+                    }
+                    else
+                    {
+                        var clie = await _context.MtrCliente.Where(x => x.FlagInactivo != "X" && ((x.Codigo.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower())) || (x.NoRegTribut.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower())) || (x.Nombre.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower())))).OrderBy(x => x.Nombre).Skip((filter.PageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+                        result.AddRange(clie);
+                    }
                     //var clie = await _context.MtrCliente.Where(x => x.FlagInactivo != "X").OrderBy(x => x.Nombre).ToListAsync();
-                    var clie = await _context.MtrCliente.Where(x => x.FlagInactivo != "X" && ((x.Codigo.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower())) || (x.NoRegTribut.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower())) || (x.Nombre.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower())))).OrderBy(x => x.Nombre).Skip((filter.PageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-
-                      result.AddRange(clie);
+                    
+                   
 
 
 

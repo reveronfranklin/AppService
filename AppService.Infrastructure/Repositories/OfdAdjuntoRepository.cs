@@ -34,7 +34,6 @@ namespace AppService.Infrastructure.Repositories
         }
         public async Task<bool> Delete(long idAdjunto)
         {
-
             var entity = await GetById(idAdjunto);
             if(entity!= null)
             {
@@ -46,8 +45,6 @@ namespace AppService.Infrastructure.Repositories
                 return false;
 
             }
-            
-
         }
         public async Task<OfdAdjunto> GetByFileName(string fileName)
         {

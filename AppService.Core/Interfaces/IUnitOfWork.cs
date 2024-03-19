@@ -152,6 +152,7 @@ namespace AppService.Core.Interfaces
         IWpry243Repository Wpry243Repository { get; }
         IWpry249Repository Wpry249Repository { get; }
         IWpry251Repository Wpry251Repository { get; }
+        IVCotizacionesPorAprobarRepository VCotizacionesPorAprobarRepository { get; }
         ICobEstadoDeCuentaMultimonedaRepository CobEstadoDeCuentaMultimonedaRepository { get; }
 
         IAppValoresVariablesEspecificacionesPartesRepository AppValoresVariablesEspecificacionesPartesRepository { get; }

@@ -13,7 +13,9 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace AppService.Core.Services
@@ -585,11 +587,8 @@ namespace AppService.Core.Services
                 }
                 if (appDetailQuotesUpdateDto.PrecioLista <= 0M)
                 {
-                    metadata.IsValid = false;
-                    metadata.Message = "Debe indicar precio lista";
-                    response.Meta = metadata;
-                    response.Data = resultDto;
-                    return response;
+                    appDetailQuotesUpdateDto.PrecioLista = appDetailQuotesUpdateDto.Precio;
+
                 }
 
 
@@ -885,6 +884,7 @@ namespace AppService.Core.Services
         }
         public async Task UpdateDataReport(string cotizacion)
         {
+           
             var appDetailQuotes = await _unitOfWork.AppDetailQuotesRepository.GetByQuotesCotizacion(cotizacion);
             if (appDetailQuotes.Count > 0)
             {
@@ -907,8 +907,10 @@ namespace AppService.Core.Services
                     }
                     _unitOfWork.AppDetailQuotesRepository.Update(appDetailUpdate);
                     await _unitOfWork.SaveChangesAsync();
-
+                    await this._cotizacionService.IntegrarCotizacion(item.AppGeneralQuotesId, true);
                 }
+       
+          
             }
 
         }
@@ -1279,6 +1281,191 @@ namespace AppService.Core.Services
                 throw;
             }
         }
+        
+        public static void SaveStreamAsFile(string filePath, Stream inputStream, string fileName) {
+            DirectoryInfo info = new DirectoryInfo(filePath);
+            if (!info.Exists) {
+                info.Create();
+            }
+
+            string path = Path.Combine(filePath, fileName);
+            using(FileStream outputFileStream = new FileStream(path, FileMode.Create)) {
+                inputStream.CopyTo(outputFileStream);
+            }
+        }
+        public static byte[] ReadFully(Stream input)
+        {
+            byte[] buffer = new byte[16*1024];
+            using (MemoryStream ms = new MemoryStream())
+            {
+                int read;
+                while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    ms.Write(buffer, 0, read);
+                }
+                return ms.ToArray();
+            }
+        }
+        private async Task<OfdAdjuntoCriterio> AddAdjuntoCriterio(long IdAdjunto, Int16 IdCriterioBusqueda, string Valor)
+        {
+            OfdAdjuntoCriterio AdjCri = new OfdAdjuntoCriterio();
+            try
+            {
+                AdjCri.IdAdjunto = IdAdjunto;
+                AdjCri.IdCriterioBusqueda = IdCriterioBusqueda;
+                AdjCri.Valor = Valor;
+                AdjCri.IdUsuarioCreacion = "SISTEMA";
+                AdjCri.FechaCreacion = DateTime.Now;
+                var created = await _unitOfWork.OfdAdjuntoCriterioRepository.Add(AdjCri);
+                await _unitOfWork.SaveChangesAsync();
+                return created;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+        }
+      public async Task AddReportCotizacionOficinaDigital(string cotizacion, bool flagTotal, bool flagFormasCaja, bool flagIva, bool observaciones, bool imprimirUsd, int? subcategoria = null)
+        {
+            await UpdateDataReport(cotizacion);
+            var cotizacionObj =await  _unitOfWork.CotizacionRepository.GetByCotizacion(cotizacion);
+            ReporteCotizacionDto dto = new ReporteCotizacionDto();
+
+            dto.ParametroCotizacion = "Cotizacion";
+            dto.Cotizacion = cotizacion;
+
+
+            dto.ParametroFlagTotal = "FlagTotal";
+            dto.FlagTotal = flagTotal;
+
+
+            dto.ParametroFlagFormasCaja = "FlagFormasCaja";
+            dto.FlagFormasCaja = flagFormasCaja;
+
+
+            dto.ParametroFlagIva = "FlagIva";
+            dto.FlagIva = flagIva;
+
+            dto.ParametroObservaciones = "Observaciones";
+            dto.Observaciones = observaciones;
+
+            dto.ParametroImprimirUsd = "ImprimirUsd";
+            dto.ImprimirUsd = imprimirUsd;
+
+
+            //Todo agregar urls,credenciales al settings  y hacer metodo async
+
+            //URL Base de mi servidor de reporte con la peticion de parametro en la url
+            //string urlBase = "https://myrshost/ReportServer?/myreport&PARAMETRO=";
+            string myreport = "";
+            if (subcategoria > 2)
+            {
+                myreport = "Ventas/Cotizador Plus/CotizacionPlusFormas";
+            }
+
+            if (subcategoria == 1 || subcategoria == 10)
+            {
+                myreport = "Ventas/Cotizador Plus/AppCotizacionPlusFormas";
+
+            }
+            if (subcategoria == 2)
+            {
+                myreport = "Ventas/Cotizador Plus/CotizacionPlusStock";
+            }
+            if (subcategoria == 9)
+            {
+                myreport = "Ventas/Cotizador Plus/AppReporteCotizacionEtiquetasPrime ";
+            }
+
+
+            // string myreport = "Ventas/Cotizador Plus/CotizacionFormasVentas";
+
+            string urlBase = "http://vmooreapp2/ReportServer_FSVEMCYN03D?/" + myreport;
+            // aqui es donde indicas en que formato quieres obtener el reporte
+            string formatoReporte = "&rs:Format=pdf";
+
+            // la url final
+            string url = urlBase
+                + "&" + dto.ParametroCotizacion + "=" + dto.Cotizacion
+                + "&" + dto.ParametroFlagTotal + "=" + dto.FlagTotal
+                + "&" + dto.ParametroFlagFormasCaja + "=" + dto.FlagFormasCaja
+                + "&" + dto.ParametroFlagIva + "=" + dto.FlagIva
+                + "&" + dto.ParametroObservaciones + "=" + dto.Observaciones
+                + "&" + dto.ParametroImprimirUsd + "=" + dto.ImprimirUsd
+                + formatoReporte;
+
+
+
+
+            try
+            {
+                urlBase = url.Replace("\n", "");
+                System.Net.WebRequest request = WebRequest.Create(urlBase);
+                // pasas las credenciales para conectarte al servidor de reporte de reporting services
+                NetworkCredential credentials = new NetworkCredential(@"RR105841", "Polar2023*", "Moore");
+                request.Credentials = credentials;
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                Stream stream = response.GetResponseStream();
+                string nameFile = dto.Cotizacion + "_" + "_No_firmada.pdf";
+                byte[] bytes = ReadFully(stream);
+               
+                /*var adjunto = await _unitOfWork.OfdAdjuntoRepository.GetByFileName(nameFile);
+                if (adjunto != null)
+                {
+                    await _unitOfWork.OfdAdjuntoCriterioRepository.DeleteGyIdAdjunto(adjunto.IdAdjunto);
+                    await _unitOfWork.OfdAdjuntoRepository.Delete(adjunto.IdAdjunto);
+                    await _unitOfWork.SaveChangesAsync();
+                }*/
+                OfdAdjunto ofdAdjunto = new OfdAdjunto();
+                ofdAdjunto.NombreArchivo = nameFile;
+                ofdAdjunto.Archivo = bytes;
+                ofdAdjunto.IdUsuarioCreacion = "SISTEMA";
+                ofdAdjunto.FechaCreacion = DateTime.Now;
+                ofdAdjunto.IdTipoDocumento = 6;
+                var created = await _unitOfWork.OfdAdjuntoRepository.Add(ofdAdjunto);
+                await _unitOfWork.SaveChangesAsync();
+                if (created.IdAdjunto > 0)
+                {
+                    
+                    short idCriterioBusquedaOrden = 5;
+                    short idCriterioBusquedaCotizacion = 6;
+                    short idCriterioBusquedaCliente = 7;
+                    short idCriterioBusquedaRif = 8;
+                    short idCriterioBusquedaFactura = 9;
+                    short idCriterioBusquedaNotaEntrega = 11;
+                    short idCriterioBusquedaNotaCredito = 13;
+                    short idCriterioBusquedaNotaDebito = 14;
+                    string valor = string.Empty;
+                    if ( cotizacionObj.Cotizacion.Length > 0)
+                    {
+
+                        valor =  cotizacionObj.Cotizacion.ToString();
+                        await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaCotizacion, valor);
+                    }
+                    if (cotizacionObj.CodCliente.Length > 0)
+                    {
+                        valor = cotizacionObj.CodCliente.ToString();
+                        await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaCliente, valor);
+                    }
+                    if (cotizacionObj.Rif.Length > 0)
+                    {
+                        valor = cotizacionObj.Rif.ToString();
+                        await AddAdjuntoCriterio(created.IdAdjunto, idCriterioBusquedaRif, valor);
+                    }
+                }
+               
+
+               
+
+            }
+            catch (Exception ex)
+            {
+                //return ex.Message;
+            }
+
+        }
 
         public async Task<ApiResponse<bool>> GanarPerder(
           AppGanarPerderDto appGanarPerderDto)
@@ -1341,6 +1528,14 @@ namespace AppService.Core.Services
             }
 
             await this._cotizacionService.IntegrarCotizacion(appDetailQuotes.AppGeneralQuotesId, true);
+
+            var product = await _unitOfWork.AppProductsRepository.GetById(appDetailQuotes.IdProducto);
+            if (product != null)
+            {
+                var subcategoria = product.AppSubCategoryId;
+                await AddReportCotizacionOficinaDigital(appDetailQuotes.Cotizacion, true, true, false, true, true,subcategoria);
+            }
+           
             metadata.IsValid = true;
             metadata.Message = "Cotizacion Actualizada!!! ";
             response.Meta = metadata;
@@ -1356,10 +1551,11 @@ namespace AppService.Core.Services
             Wsmy502 cotizacionProducto = await this._unitOfWork.RenglonRepository.GetByCotizacionProducto(appDetailQuotes.Cotizacion, appDetailQuotes.IdProductoNavigation.ExternalCode);
             if (cotizacionProducto != null)
             {
+                var appProduct = await _unitOfWork.AppProductsRepository.GetById(appDetailQuotes.IdProducto);
                 Wsmy639 wsmy639Response = await this._aprobacionesServices.GetByCotizacionRenglonPrpopuesta(cotizacionProducto.Cotizacion, cotizacionProducto.Renglon, 1);
                 if (wsmy639Response != null)
                 {
-                    if (wsmy639Response.FlagAprobado.Value && !wsmy639Response.FlagCerrado.Value)
+                    if (wsmy639Response.ValorVentaAprobarUsd<=0)
                     {
                         wsmy639Response.FlagAprobado = new bool?(false);
                         this._unitOfWork.AprobacionesRepository.Update(wsmy639Response);
@@ -1370,31 +1566,8 @@ namespace AppService.Core.Services
                     result.ValorVentaAprobar = wsmy639Response.ValorVentaAprobar;
                     result.ValorVentaAprobarUsd = wsmy639Response.ValorVentaAprobarUsd;
                   
-                    if (result.FlagAprobado.Value && result.FlagCerrado.Value)
-                    {
-                        result.Aprobado = true;
-                        result.Color = "prymary";
-                        result.StatusString = "APROBADO";
-                        var appProduct = await _unitOfWork.AppProductsRepository.GetById(appDetailQuotes.IdProducto);
-                        if (appProduct != null)
-                        {
-                            result.precioEstimacion = 0;
-                            if (appProduct.RequiereEstimacion == null) appProduct.RequiereEstimacion = false;
-                            if ((bool)appProduct.RequiereEstimacion)
-                            {
-                                result.precioEstimacion = wsmy639Response.ValorVentaAprobarUsd;
-                            }
-                        }
-                    }
-                    if (!result.FlagAprobado.Value && result.FlagCerrado.Value)
-                    {
-                        result.Aprobado = false;
-                        result.Color = "danger";
-                        result.StatusString = "Rechazado";
-                        result.precioEstimacion = 0;
-                        result.ValorVentaAprobar = 0;
-                        result.ValorVentaAprobarUsd = 0;
-                    }
+                  
+                
 
                     if (!result.FlagAprobado.Value && !result.FlagCerrado.Value)
                     {
@@ -1406,7 +1579,7 @@ namespace AppService.Core.Services
                         result.ValorVentaAprobarUsd = 0;
                     }
 
-                    if (wsmy639Response.IdEstatus=="RECHA")
+                    if (wsmy639Response.IdEstatus=="RECH")
                     {
                         result.Aprobado = false;
                         result.Color = "danger";
@@ -1420,7 +1593,7 @@ namespace AppService.Core.Services
                         result.Aprobado = true;
                         result.Color = "prymary";
                         result.StatusString = "APROBADO";
-                        var appProduct = await _unitOfWork.AppProductsRepository.GetById(appDetailQuotes.IdProducto);
+                      
                         if (appProduct != null)
                         {
                             result.precioEstimacion = 0;
@@ -1487,7 +1660,7 @@ namespace AppService.Core.Services
                         result.Color = "danger";
                         result.StatusString = "ENVIAR APROBACION";
                     }
-                   /* Decimal cantidad = appDetailQuotes.Cantidad;
+                   Decimal cantidad = appDetailQuotes.Cantidad;
                     Decimal? cantidadMinima = appDetailQuotes.IdProductoNavigation.CantidadMinima;
                     Decimal valueOrDefault4 = cantidadMinima.GetValueOrDefault();
                     if (cantidad < valueOrDefault4 & cantidadMinima.HasValue)
@@ -1498,7 +1671,7 @@ namespace AppService.Core.Services
                         cantidadMinima = appDetailQuotes.IdProductoNavigation.CantidadMinima;
                         string str = "ENVIAR APROBACION POR CANTIDAD MINIMA: " + cantidadMinima.ToString();
                         statusAprobacionDto.StatusString = str;
-                    }*/
+                    }
 
 
                 }
@@ -1531,7 +1704,7 @@ namespace AppService.Core.Services
                     result.Color = "danger";
                     result.StatusString = "ENVIAR APROBACION";
                 }
-                /*Decimal cantidad = appDetailQuotes.Cantidad;
+                Decimal cantidad = appDetailQuotes.Cantidad;
                 nullable = appDetailQuotes.IdProductoNavigation.CantidadMinima;
                 Decimal valueOrDefault6 = nullable.GetValueOrDefault();
                 if (cantidad < valueOrDefault6 & nullable.HasValue)
@@ -1542,7 +1715,7 @@ namespace AppService.Core.Services
                     nullable = appDetailQuotes.IdProductoNavigation.CantidadMinima;
                     string str = "ENVIAR APROBACION POR CANTIDAD MINIMA: " + nullable.ToString();
                     statusAprobacionDto.StatusString = str;
-                }*/
+                }
             }
             StatusAprobacionDto statusAprobacionDto1 = result;
             result = (StatusAprobacionDto)null;
@@ -1555,14 +1728,23 @@ namespace AppService.Core.Services
             bool resultDto = false;
             try
             {
-                foreach (AppDetailQuotes appDetailQuotes in await this._unitOfWork.AppDetailQuotesRepository.GetByAppGeneralQuotesId(appGeneralQuotesId))
+                var appDetailQuotes =
+                    await this._unitOfWork.AppDetailQuotesRepository.GetByAppGeneralQuotesId(appGeneralQuotesId);
+                if (appDetailQuotes.Count <= 0)
                 {
-                    if (!(await this.StatusAprobacion(await this.GetById(appDetailQuotes.Id))).Aprobado)
+                    resultDto = true;
+                    return resultDto;
+                }
+                foreach (var item in appDetailQuotes)
+                {
+                    if (!(await this.StatusAprobacion(await this.GetById(item.Id))).Aprobado)
                     {
                         resultDto = true;
                         return resultDto;
                     }
                 }
+                
+              
                 return resultDto;
             }
             catch (Exception ex)

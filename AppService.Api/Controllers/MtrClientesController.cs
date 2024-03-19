@@ -150,11 +150,12 @@ namespace AppService.Api.Controllers
         [Route("[action]")]
         public async Task<IActionResult> ListDireccionesClientesPorUsuario(MtrClienteQueryFilter filters)
         {
-
+          
                 
               var clientes = await _mtrClienteService.ListDireccionesPorUsuario(filters);
 
-            clientes = clientes.Where(x=>x.Codigo!="000000").OrderBy(x => x.Codigo).ThenBy(x => x.ClaseCss).ToList();
+            clientes = clientes.Where(x=>x.Codigo!="000000").OrderBy(x => x.Codigo).
+                                                                    ThenBy(x => x.ClaseCss).ToList();
 
 
             var pagedclientes = PagedList<MtrClienteDireccionDto>.Create(clientes, filters.PageNumber, filters.PageSize);

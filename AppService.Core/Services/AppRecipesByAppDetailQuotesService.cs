@@ -1361,13 +1361,18 @@ namespace AppService.Core.Services
                     return originalRecipes;
                 }
                 var recipesEvaluar = recipes.Where(x => x.Formula.Length > 0).OrderBy(x => x.OrderCalculate).ToList();
+                if (recipesEvaluar != null && recipesEvaluar.Count <= 0)
+                {
+                    return originalRecipes;
+                }
+                   
                 foreach (var recipe in recipesEvaluar)
                 {
                   
-
-                    string valueFormula = await this.GetValueFormulaInMemory(recipe.CalculoId, recipe.Formula, producto.Code, recipe.Code, originalRecipes);
                     try
                     {
+                    string valueFormula = await this.GetValueFormulaInMemory(recipe.CalculoId, recipe.Formula, producto.Code, recipe.Code, originalRecipes);
+                 
                         object obj = new DataTable().Compute(valueFormula, "");
                         obj.ToString();
                         result = Convert.ToDecimal(obj.ToString());

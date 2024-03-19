@@ -258,7 +258,8 @@ namespace AppService.Api
             services.AddTransient<IAppDocumentosFiscalesService, AppDocumentosFiscalesService>();
             services.AddTransient<IMotivoGanarPerderService, MotivoGanarPerderService>();
 
-
+            services.AddTransient<IVCotizacionesPorAprobarService, VCotizacionesPorAprobarService>();
+            
             
 
             services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));
