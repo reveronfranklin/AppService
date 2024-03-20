@@ -353,7 +353,9 @@ namespace AppService.Core.Services
 
         public async Task UpdateGeneralCotizacion(AppGeneralQuotes generalQuotes)
         {
-            Wsmy501 cotizacion = await this._unitOfWork.CotizacionRepository.GetByCotizacion(generalQuotes.Cotizacion);
+            try
+            {
+     Wsmy501 cotizacion = await this._unitOfWork.CotizacionRepository.GetByCotizacion(generalQuotes.Cotizacion);
             MtrCliente cliente;
             if (cotizacion != null)
             {
@@ -383,9 +385,22 @@ namespace AppService.Core.Services
                 cotizacion.EmailContacto = byId1.Email;
                 cotizacion.IdDireccion = new Decimal?(generalQuotes.IdDireccionFacturar);
                 cotizacion.IdTipoTransaccion = "TRA";
-                MtrDirecciones byId2 = await this._unitOfWork.MtrDireccionesRepository.GetById(generalQuotes.IdDireccionFacturar);
-                cotizacion.DireccionFacturar = byId2.Direccion + byId2.Direccion1 + byId2.Direccion2;
-                MtrDirecciones byId3 = await this._unitOfWork.MtrDireccionesRepository.GetById(generalQuotes.IdDireccionEntregar);
+                MtrDirecciones direccionFacturar = await this._unitOfWork.MtrDireccionesRepository.GetById(generalQuotes.IdDireccionFacturar);
+                if (direccionFacturar != null)
+                {
+                    cotizacion.DireccionFacturar = direccionFacturar.Direccion.Trim() + direccionFacturar.Direccion1.Trim() + direccionFacturar.Direccion2.Trim();
+                    cotizacion.EstadoFacturar = direccionFacturar.Estado.Trim();
+                    cotizacion.MunicipioFacturar = direccionFacturar.Municipio.Trim();
+                }
+             
+                MtrDirecciones direccionEntregar = await this._unitOfWork.MtrDireccionesRepository.GetById(generalQuotes.IdDireccionEntregar);
+                if (direccionEntregar != null)
+                {
+                    cotizacion.DireccionEntregar= direccionEntregar.Direccion.Trim() + direccionEntregar.Direccion1.Trim() + direccionEntregar.Direccion2.Trim();
+                    cotizacion.EstadoEntregar = direccionEntregar.Estado.Trim();
+                    cotizacion.MunicipioEntregar = direccionEntregar.Municipio.Trim();
+                }
+
                 if (cliente.Codigo.Trim() == "000000")
                 {
                     cotizacion.RazonSocial = generalQuotes.RazonSocial;
@@ -397,8 +412,8 @@ namespace AppService.Core.Services
                 {
                     cotizacion.RazonSocial = cliente.Nombre;
                     cotizacion.Rif = cliente.NoRegTribut;
-                    cotizacion.DireccionEntregar = byId3.Direccion + byId3.Direccion1 + byId3.Direccion2;
-                    cotizacion.RifEntregar = byId3.Rif;
+                    cotizacion.DireccionEntregar = direccionEntregar.Direccion + direccionEntregar.Direccion1 + direccionEntregar.Direccion2;
+                    cotizacion.RifEntregar = direccionEntregar.Rif;
                 }
                 cotizacion.OrdenCompra = generalQuotes.OrdenCompra;
                 cotizacion.FlagActualizado = "X";
@@ -445,9 +460,25 @@ namespace AppService.Core.Services
                 cotizacionNew.NombreContacto = byId4.Nombre;
                 cotizacionNew.TelefonoContacto = byId4.Telefono1;
                 cotizacionNew.IdDireccion = new Decimal?(generalQuotes.IdDireccionFacturar);
-                MtrDirecciones byId5 = await this._unitOfWork.MtrDireccionesRepository.GetById(generalQuotes.IdDireccionFacturar);
-                cotizacionNew.DireccionFacturar = byId5.Direccion.Trim() + byId5.Direccion1.Trim() + byId5.Direccion2.Trim();
-                MtrDirecciones byId6 = await this._unitOfWork.MtrDireccionesRepository.GetById(generalQuotes.IdDireccionEntregar);
+                MtrDirecciones direccionFacturar = await this._unitOfWork.MtrDireccionesRepository.GetById(generalQuotes.IdDireccionFacturar);
+                if (direccionFacturar != null)
+                {
+                    cotizacionNew.DireccionFacturar = direccionFacturar.Direccion.Trim() + direccionFacturar.Direccion1.Trim() + direccionFacturar.Direccion2.Trim();
+                    cotizacionNew.EstadoFacturar = direccionFacturar.Estado.Trim();
+                    cotizacionNew.MunicipioFacturar = direccionFacturar.Municipio.Trim();
+                }
+             
+                MtrDirecciones direccionEntregar = await this._unitOfWork.MtrDireccionesRepository.GetById(generalQuotes.IdDireccionEntregar);
+                if (direccionEntregar != null)
+                {
+                    cotizacionNew.DireccionEntregar= direccionEntregar.Direccion.Trim() + direccionEntregar.Direccion1.Trim() + direccionEntregar.Direccion2.Trim();
+                    cotizacionNew.EstadoEntregar = direccionEntregar.Estado.Trim();
+                    cotizacionNew.MunicipioEntregar = direccionEntregar.Municipio.Trim();
+                }
+             
+              
+             
+                
                 if (cotizacionNew.CodCliente == "000000")
                 {
                     cotizacionNew.RazonSocial = generalQuotes.RazonSocial;
@@ -459,8 +490,8 @@ namespace AppService.Core.Services
                 {
                     cotizacionNew.RazonSocial = cliente.Nombre.Trim();
                     cotizacionNew.Rif = cliente.NoRegTribut;
-                    cotizacionNew.DireccionEntregar = byId6.Direccion.Trim() + byId6.Direccion1.Trim() + byId6.Direccion2.Trim();
-                    cotizacionNew.RifEntregar = byId6.Rif;
+                    cotizacionNew.DireccionEntregar = direccionEntregar.Direccion.Trim() + direccionEntregar.Direccion1.Trim() + direccionEntregar.Direccion2.Trim();
+                    cotizacionNew.RifEntregar = direccionEntregar.Rif;
                 }
                 cotizacionNew.OrdenCompra = generalQuotes.OrdenCompra;
                 cotizacionNew.FlagActualizado = "X";
@@ -476,6 +507,14 @@ namespace AppService.Core.Services
                 cliente = (MtrCliente)null;
                 cotizacion = (Wsmy501)null;
             }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+            
+       
         }
 
         public async Task UpdateDetailCotizacion(AppDetailQuotes appDetailQuotes)
@@ -1798,11 +1837,11 @@ namespace AppService.Core.Services
                     AppService.Core.DataContratosStock.DatosCliente datosCliente1 = entity;
                     string[] strArray = new string[5]
                     {
-            DateTime.Now.Year.ToString(),
-            "/",
-            null,
-            null,
-            null
+                        DateTime.Now.Year.ToString(),
+                        "/",
+                        null,
+                        null,
+                        null
                     };
                     DateTime now = DateTime.Now;
                     strArray[2] = now.Month.ToString();
@@ -1818,6 +1857,10 @@ namespace AppService.Core.Services
                     entity.RifEnt = Wsmy501.RifEntregar;
                     entity.IdDireccion = Wsmy501.IdDireccion;
                     entity.IdDireccionEntregar = Wsmy501.IdDireccionEntregar;
+                    entity.EstadoFacturar = Wsmy501.EstadoFacturar;
+                    entity.EstadoEntregar = Wsmy501.EstadoEntregar;
+                    entity.MunicipioEntregar = Wsmy501.MunicipioEntregar;
+                    entity.MunicipioFacturar = Wsmy501.MunicipioFacturar;
                     entity.Contacto = Wsmy501.NombreContacto;
                     entity.NombFact = Wsmy501.RazonSocial.Trim();
                     entity.NomEnt = Wsmy501.RazonSocial.Trim();
@@ -1862,6 +1905,10 @@ namespace AppService.Core.Services
                     datosCliente.Contacto = Wsmy501.NombreContacto;
                     datosCliente.NombFact = Wsmy501.RazonSocial.Trim();
                     datosCliente.NomEnt = Wsmy501.RazonSocial.Trim();
+                    datosCliente.EstadoFacturar = Wsmy501.EstadoFacturar;
+                    datosCliente.EstadoEntregar = Wsmy501.EstadoEntregar;
+                    datosCliente.MunicipioEntregar = Wsmy501.MunicipioEntregar;
+                    datosCliente.MunicipioFacturar = Wsmy501.MunicipioFacturar;
                     if (Wsmy501.CodCliente == "000000")
                     {
                         datosCliente.ClienteNuevo = "X";

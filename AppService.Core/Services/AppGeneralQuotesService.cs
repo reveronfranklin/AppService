@@ -1150,8 +1150,8 @@ namespace AppService.Core.Services
                 if (appGeneralQuotesUpdateDto.IdCliente != "000000")
                 {
                     appGeneralQuotesUpdateDto.Rif = cliente.NoRegTribut;
-                    appGeneralQuotesUpdateDto.RazonSocial = cliente.Nombre;
-                    appGeneralQuotesUpdateDto.Direccion = cliente.Direccion + " " + cliente.Direccion1;
+                    appGeneralQuotesUpdateDto.RazonSocial = cliente.Nombre.Trim();
+                    appGeneralQuotesUpdateDto.Direccion = cliente.Direccion.Trim() + " " + cliente.Direccion1.Trim();
                 }
                 appGeneralQuotes.Rif = appGeneralQuotesUpdateDto.Rif;
                 appGeneralQuotes.RazonSocial = appGeneralQuotesUpdateDto.RazonSocial;

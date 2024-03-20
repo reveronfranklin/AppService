@@ -1421,7 +1421,7 @@ namespace AppService.Core.Services
                 OfdAdjunto ofdAdjunto = new OfdAdjunto();
                 ofdAdjunto.NombreArchivo = nameFile;
                 ofdAdjunto.Archivo = bytes;
-                ofdAdjunto.IdUsuarioCreacion = "SISTEMA";
+                ofdAdjunto.IdUsuarioCreacion = "helpdesk";
                 ofdAdjunto.FechaCreacion = DateTime.Now;
                 ofdAdjunto.IdTipoDocumento = 6;
                 var created = await _unitOfWork.OfdAdjuntoRepository.Add(ofdAdjunto);
