@@ -21,6 +21,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using StackExchange.Redis;
 using static AppService.Core.DTOs.Odoo.Cotizaciones.Enviar.OdooCotizacionEnviar;
 using static AppService.Core.DTOs.Odoo.Cotizaciones.Enviar.OdooDetailCotizacionDelete;
 using static AppService.Core.DTOs.Odoo.Cotizaciones.Enviar.OdooGeneralCotizacionDelete;
@@ -41,7 +42,8 @@ namespace AppService.Core.Services
         private readonly IAppProductsService _appProductsService;
         private readonly IMtrContactosService _mtrContactosService;
         private readonly IAppRecipesByAppDetailQuotesService _appRecipesByAppDetailQuotesService;
-     
+        private readonly IConnectionMultiplexer _connectionMultiplexer;
+
 
         public CotizacionService(
           IUnitOfWork unitOfWork,
@@ -53,7 +55,8 @@ namespace AppService.Core.Services
           IOdooClient odooClient,
           IAppProductsService appProductsService,
           IMtrContactosService mtrContactosService,
-          IAppRecipesByAppDetailQuotesService appRecipesByAppDetailQuotesService
+          IAppRecipesByAppDetailQuotesService appRecipesByAppDetailQuotesService,
+          IConnectionMultiplexer connectionMultiplexer
        
         )
         {
@@ -67,10 +70,26 @@ namespace AppService.Core.Services
             _appProductsService = appProductsService;
             _mtrContactosService = mtrContactosService;
             _appRecipesByAppDetailQuotesService = appRecipesByAppDetailQuotesService;
-        
-
+            _connectionMultiplexer = connectionMultiplexer;
         }
 
+        public async Task AddRedis(string key, string value)
+        {
+            var db = _connectionMultiplexer.GetDatabase();
+            await db.StringSetAsync(key, value,TimeSpan.FromHours(2));
+        }
+        public void DeleteRedis(string key)
+        {
+            var db = _connectionMultiplexer.GetDatabase();
+            db.KeyDelete(key);
+        }
+        public async Task<string> GetRedis(string key)
+        {
+            var db = _connectionMultiplexer.GetDatabase();
+            //db.KeyDelete("ListProducts");
+            return await db.StringGetAsync(key);
+        }
+        
         public async Task<List<Wsmy501>> GetAll() => await this._unitOfWork.CotizacionRepository.GetAll();
 
         public async Task<Wsmy501> GetById(int id) => await this._unitOfWork.CotizacionRepository.GetById(id);
@@ -210,17 +229,26 @@ namespace AppService.Core.Services
         public async Task IntegrarCotizaciones()
         {
 
+            
             List<AppGeneralQuotes> pendientesIntegrar = await this._unitOfWork.AppGeneralQuotesRepository.GetByCotizacionesPendientesIntegrar();
             if (pendientesIntegrar == null || pendientesIntegrar.Count <= 0)
                 return;
-
-            return;
+            
             foreach (AppGeneralQuotes item in pendientesIntegrar)
             {
-                await this.IntegrarCotizacion(item.Id, true);
-                item.IntegrarCotizacion = new bool?(false);
-                this._unitOfWork.AppGeneralQuotesRepository.Update(item);
-                await this._unitOfWork.SaveChangesAsync();
+                try
+                {
+                    Console.WriteLine($"Integrando cotizacion: {item.Cotizacion}");
+                    await this.IntegrarCotizacion(item.Id, true);
+                    this._unitOfWork.AppGeneralQuotesRepository.MarcarIntegrado(false, item.Id);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                   
+                }
+             
+
             }
         }
 
@@ -973,14 +1001,14 @@ namespace AppService.Core.Services
             }
             else
             {
-                Wsmy406 aplicacionProducto = await this._unitOfWork.Wsmy406Repository.GetByProduct(prod.ExternalCode.Trim());
+                //Wsmy406 aplicacionProducto = await this._unitOfWork.Wsmy406Repository.GetByProduct(prod.ExternalCode.Trim());
 
                 Wpry229 renglonPropuesta = await this._unitOfWork.Wpry229Repository.GetByCotizacionRenglonPropuesta(propuesta.Cotizacion, propuesta.Renglon, propuesta.Propuesta);
                 if (renglonPropuesta != null)
                 {
                     renglonPropuesta.CantidadProducto = (Decimal)valoresCotizacion.CantMill.Value;
                     renglonPropuesta.DescripcionSolicitud = appDetailQuotes.NombreComercialProducto;
-                    renglonPropuesta.IdTipoProducto = aplicacionProducto.CodAplicacion;
+                    renglonPropuesta.IdTipoProducto = (short)prod.CodAplicacion;
                     Wpry229 wpry229_1 = renglonPropuesta;
                     Decimal? precioUnitario = valoresCotizacion.PrecioUnitario;
                     Decimal num1 = precioUnitario.Value;
@@ -991,11 +1019,6 @@ namespace AppService.Core.Services
                     wpry229_2.ValorLista = num2;
                     renglonPropuesta.ValorVentaUsd = valoresCotizacion.PrecioUnitarioUsd;
                     renglonPropuesta.Observaciones = appDetailQuotes.Observaciones;
-                    //long? ordenAnterior = valoresCotizacion.OrdenAnterior;
-                    // long num3 = 0;
-                    // renglonPropuesta.TipoOrden = !(ordenAnterior.GetValueOrDefault() > num3 & ordenAnterior.HasValue) ? new short?((short)3) : new short?((short)1);
-                    //renglonPropuesta.OrdenAnterior = valoresCotizacion.OrdenAnterior;
-
                     renglonPropuesta.IdTipoCantidad = (byte)1;
 
                     this._unitOfWork.Wpry229Repository.Update(renglonPropuesta);
@@ -1009,7 +1032,7 @@ namespace AppService.Core.Services
                     entity.Propuesta = propuesta.Propuesta;
                     entity.CantidadProducto = (Decimal)valoresCotizacion.CantMill.Value;
                     entity.DescripcionSolicitud = appDetailQuotes.NombreComercialProducto;
-                    entity.IdTipoProducto = aplicacionProducto.CodAplicacion;
+                    entity.IdTipoProducto = (short)prod.CodAplicacion;;
                     Wpry229 wpry229_3 = entity;
                     Decimal? precioUnitario = valoresCotizacion.PrecioUnitario;
                     Decimal num4 = precioUnitario.Value;
@@ -1027,7 +1050,7 @@ namespace AppService.Core.Services
                     await this._unitOfWork.Wpry229Repository.Add(entity);
                     await this._unitOfWork.SaveChangesAsync();
                 }
-                aplicacionProducto = (Wsmy406)null;
+              
                 valoresCotizacion = (ValoresCotizacionDto)null;
                 propuesta = (Wsmy515)null;
             }
@@ -1675,10 +1698,14 @@ namespace AppService.Core.Services
             List<Wpry229> byCotizacion = await this._unitOfWork.Wpry229Repository.GetByCotizacion(appDetailQuotes.Cotizacion);
             if (byCotizacion == null)
                 return;
+       
+            
+            
             foreach (Wpry229 wpry229 in byCotizacion)
             {
+              
                 await this._unitOfWork.Wpry229Repository.Delete(wpry229.IdSolicitud);
-                await this._unitOfWork.SaveChangesAsync();
+              //  await this._unitOfWork.SaveChangesAsync();
             }
         }
       
@@ -1770,23 +1797,23 @@ namespace AppService.Core.Services
 
         public async Task DeleteCotizacionRenglon(AppDetailQuotes appDetailQuotes)
         {
-            List<Wsmy502> renglonObj = await this._unitOfWork.RenglonRepository.GetByCotizacion(appDetailQuotes.Cotizacion);
+            
+            
+            await _unitOfWork.PropuestaRepository.DeleteCotizacion(appDetailQuotes.Cotizacion);
+            
+           /* List<Wsmy502> renglonObj = await this._unitOfWork.RenglonRepository.GetByCotizacion(appDetailQuotes.Cotizacion);
             if (renglonObj != null)
             {
                 foreach (var item in renglonObj)
                 {
-
                     await this.DeleteWpry229ByCotizacion(appDetailQuotes);
                     await this.DeleteWpry240ByCotizacion(appDetailQuotes);
                     await this.DeleteWpry241ByCotizacion(appDetailQuotes);
                     await this.DeleteWpry251ByCotizacion(appDetailQuotes);
                     await this.DeletePropuestaCotizacion(appDetailQuotes, item.Renglon);
                     await this.DeleteRenglonCotizacion(appDetailQuotes, item.Renglon);
-
                 }
-
-
-            }
+            }*/
         }
 
         public async Task updateMedidas()
@@ -2624,9 +2651,10 @@ namespace AppService.Core.Services
                 diasAcualizaPresupuesto = int.Parse(appConfig.Valor);
             }
 
+            diasAcualizaPresupuesto = 30;
             var cotizaciones = await _unitOfWork.CotizacionRepository.GetListCotizaciones(diasAcualizaPresupuesto);
 
-            cotizaciones = cotizaciones.Where(x => x == "SE20202403014").ToList();
+            cotizaciones = cotizaciones.Where(x => x == "FE01202403005").ToList();
             //#####ACTUALIZACION DE CLIENTE PROSPECTO
             MtrClienteQueryFilter filter = new MtrClienteQueryFilter();
             //filter.Codigo = "000000";

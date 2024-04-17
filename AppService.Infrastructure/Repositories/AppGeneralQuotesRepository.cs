@@ -322,6 +322,7 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task Add(AppGeneralQuotes entity)
         {
+            entity.IntegrarCotizacion = true;
             await _context.AppGeneralQuotes.AddAsync(entity);
 
 
@@ -331,6 +332,7 @@ namespace AppService.Infrastructure.Repositories
 
         public void Update(AppGeneralQuotes entity)
         {
+            entity.IntegrarCotizacion = true;
             _context.AppGeneralQuotes.Update(entity);
 
         }
@@ -342,6 +344,21 @@ namespace AppService.Infrastructure.Repositories
 
         }
 
+        public void MarcarIntegrado(bool marca,int id)
+        {
+            int integrar = 0;
+            if (marca == false)
+            {
+                integrar = 0;
+
+            }
+            else
+            {
+                integrar = 1;
+            }
+            FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = {integrar} WHERE ID={id}";
+
+            var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);}
 
         public string ProximaCotizacion(string Cod_Vendedor)
         {

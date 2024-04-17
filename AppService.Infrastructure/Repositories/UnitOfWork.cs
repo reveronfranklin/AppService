@@ -336,7 +336,7 @@ namespace AppService.Infrastructure.Repositories
 
         public IAppSubCategoryRepository AppSubCategoryRepository => _appSubCategoryRepository ?? new AppSubCategoryRepository(_context);
 
-        public IAppProductsRepository AppProductsRepository => _appProductsRepository ?? new AppProductsRepository(_context,_iconnectionMultiplexer);
+        public IAppProductsRepository AppProductsRepository => _appProductsRepository ?? new AppProductsRepository(_context);
 
 
         public IAppDetailQuotesRepository AppDetailQuotesRepository => _appDetailQuotesRepository ?? new AppDetailQuotesRepository(_context);

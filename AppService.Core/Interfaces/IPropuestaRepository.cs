@@ -7,7 +7,7 @@ namespace AppService.Core.Interfaces
     public interface IPropuestaRepository
     {
 
-
+        Task<bool> DeleteCotizacion(string cotizacion);
         Task<List<Wsmy515>> GetAll();
 
         Task<List<Wsmy515>> GetAllByCotizacion(string cotizacion);

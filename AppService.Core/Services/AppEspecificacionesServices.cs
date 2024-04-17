@@ -49,18 +49,9 @@ namespace AppService.Core.Services
 
             try
             {
-                //Actualizar codAplicacion en productos
-                var productos = await _unitOfWork.AppProductsRepository.GetById(filter.IdProducto);
-           
                
-                    var aplicacion = await this._unitOfWork.Wsmy406Repository.GetByProduct(productos.ExternalCode.Trim());
-                    if (aplicacion != null)
-                    {
-                         productos.CodAplicacion = aplicacion.CodAplicacion;
-                        this._unitOfWork.AppProductsRepository.Update(productos);
-                        this._unitOfWork.SaveChanges();
-                    }
-
+               
+                  
 
                
 

@@ -1,4 +1,5 @@
-﻿using AppService.Core.CustomEntities;
+﻿using System;
+using AppService.Core.CustomEntities;
 using AppService.Core.DTOs;
 using AppService.Core.DTOs.Odoo.Cotizaciones.Recibir;
 using AppService.Core.Entities;
@@ -51,6 +52,8 @@ namespace AppService.Core.Interfaces
 
         Task<ApiResponse<AppGeneralQuotesGetDto>> RegresarAGrabacionCotizacion(
           AppGeneralQuotesCopyDto dto);
+
+        Task<Decimal> GetFleteByIdMunicipo(Decimal id);
 
 
         //####################### O D O O ############################################

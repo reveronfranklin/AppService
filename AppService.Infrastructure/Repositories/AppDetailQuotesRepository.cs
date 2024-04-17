@@ -1,4 +1,5 @@
-﻿using AppService.Core.Entities;
+﻿using System;
+using AppService.Core.Entities;
 using AppService.Core.Interfaces;
 using AppService.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -120,6 +121,11 @@ namespace AppService.Infrastructure.Repositories
         public async Task Add(AppDetailQuotes entity)
         {
 
+            FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
+
+            var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+
+            
             var cotizacion = await GetByQuetesProduct(entity.Cotizacion, entity.IdProducto);
 
             if (cotizacion == null)
@@ -135,14 +141,24 @@ namespace AppService.Infrastructure.Repositories
 
         public void Update(AppDetailQuotes entity)
         {
+            FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
+
+            var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
             _context.AppDetailQuotes.Update(entity);
 
         }
 
         public async Task Delete(int id)
         {
+            
+          
+
             AppDetailQuotes entity = await GetById(id);
             _context.AppDetailQuotes.Remove(entity);
+            
+            FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
+
+            var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
 
         }
 

@@ -25,6 +25,7 @@ namespace AppService.Core.Services
         private readonly IAppDetailQuotesService _appDetailQuotesService;
         private readonly ICotizacionService _cotizacionService;
         private readonly IAppProductsService _appProductsService;
+        private readonly IAprobacionesServices _aprobacionesServices;
         private readonly PaginationOptions _paginationOptions;
 
         public AppGeneralQuotesService(IUnitOfWork unitOfWork,
@@ -34,7 +35,8 @@ namespace AppService.Core.Services
                                         IMtrClienteService mtrClienteService,
                                         IAppDetailQuotesService appDetailQuotesService,
                                         ICotizacionService cotizacionService,
-                                        IAppProductsService appProductsService
+                                        IAppProductsService appProductsService,
+                                       IAprobacionesServices aprobacionesServices
                                         )
         {
             _unitOfWork = unitOfWork;
@@ -44,6 +46,7 @@ namespace AppService.Core.Services
             _appDetailQuotesService = appDetailQuotesService;
             _cotizacionService = cotizacionService;
             _appProductsService = appProductsService;
+            _aprobacionesServices = aprobacionesServices;
             _paginationOptions = options.Value;
         }
 
@@ -60,7 +63,7 @@ namespace AppService.Core.Services
         public async Task<AppGeneralQuotesGetDto> GetAppGeneralQuotes(AppGeneralQuotesQueryFilter filters)
         {
 
-            //await _cotizacionService.IntegrarCotizacion(300,true);
+          
 
 
             filters.PageNumber = filters.PageNumber == 0 ? _paginationOptions.DefaultPageNumber : filters.PageNumber;
@@ -484,17 +487,6 @@ namespace AppService.Core.Services
                         item.MtrTipoMonedaDto = mtrTipoMonedaDto;
 
                     }
-                    //if (item.IntegrarCotizacion == false)
-                    //{
-                    //    var actualizar = await _unitOfWork.AppGeneralQuotesRepository.VerificarStatus(item.Id);
-                    //    if (actualizar != item.IdEstatus)
-                    //    {
-                    //        item.IdEstatus = actualizar;
-                    //        await _unitOfWork.SaveChangesAsync();
-                    //    }
-
-                    //}
-
 
 
                     AppStatusQuote appStatusQuote = await _unitOfWork.AppStatusQuoteRepository.GetById(item.IdEstatus);
@@ -583,12 +575,7 @@ namespace AppService.Core.Services
                 List<AppGeneralQuotesGetDto> appGeneralQuotesGetDto = _mapper.Map<List<AppGeneralQuotesGetDto>>(quotes);
                 foreach (AppGeneralQuotesGetDto item in appGeneralQuotesGetDto)
                 {
-
-
-
-
-
-
+                    
                     MtrCliente mtrCliente = _unitOfWork.MtrClienteRepository.GetById(item.IdCliente);
                     if (mtrCliente != null)
                     {
@@ -604,25 +591,6 @@ namespace AppService.Core.Services
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-                    /*  var actualizar = await _unitOfWork.AppGeneralQuotesRepository.VerificarStatus(item.Id);
-                     if (actualizar != item.IdEstatus)
-                     {
-                         item.IdEstatus = actualizar;
-                         await _unitOfWork.SaveChangesAsync();
-                     } */
-
-
                     AppStatusQuote appStatusQuote = await _unitOfWork.AppStatusQuoteRepository.GetById(item.IdEstatus);
                     if (appStatusQuote != null)
                     {
@@ -630,14 +598,7 @@ namespace AppService.Core.Services
                         item.AppStatusQuoteGetDto = appStatusQuoteDto;
 
                     }
-
-
-
-
-
-
-
-
+                    
 
                     item.FechaString = item.Fecha.ToString("dd/MM/yyyy");
                 }
@@ -809,7 +770,8 @@ namespace AppService.Core.Services
                 AppGeneralQuotes AppGeneralQuotesInserted = await this.Insert(appGeneralQuotes);
                 if (AppGeneralQuotesInserted != null)
                 {
-                    await this._cotizacionService.IntegrarCotizacion(AppGeneralQuotesInserted.Id, false);
+                    //TODO PRUEBA INTEGRAR COTIZACION POR LOTE
+                    //await this._cotizacionService.IntegrarCotizacion(AppGeneralQuotesInserted.Id, false);
                     AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(AppGeneralQuotesInserted.Id, appStatusQuote, AppGeneralQuotesInserted.Cotizacion);
                     resultDto = this._mapper.Map<AppGeneralQuotesGetDto>((object)AppGeneralQuotesInserted);
                     MtrVendedor byId2 = this._unitOfWork.MtrVendedorRepository.GetById(resultDto.IdVendedor);
@@ -910,8 +872,8 @@ namespace AppService.Core.Services
                 }
 
                
-                
-                await this._cotizacionService.IntegrarCotizacion(appGeneralQuotes.Id, true);
+                //TODO PRUEBA INTEGRAR COTIZACION POR LOTE 
+                //await this._cotizacionService.IntegrarCotizacion(appGeneralQuotes.Id, true);
                 AppStatusQuote byId = await this._unitOfWork.AppStatusQuoteRepository.GetById(appGeneralQuotes.IdEstatus);
                 AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotes.Id, byId, appGeneralQuotes.Cotizacion);
                 response.Meta = metadata;
@@ -1029,7 +991,8 @@ namespace AppService.Core.Services
                         newDetail = (AppDetailQuotes)null;
                     }
                 }
-                await this._cotizacionService.IntegrarCotizacion(appGeneralQuotesInserted.Id, true);
+                //TODO PRUEBA INTEGRAR COTIZACION POR LOTE
+                //await this._cotizacionService.IntegrarCotizacion(appGeneralQuotesInserted.Id, true);
                 AppStatusQuote byId = await this._unitOfWork.AppStatusQuoteRepository.GetById(appGeneralQuotesInserted.IdEstatus);
                 AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotesInserted.Id, byId, appGeneralQuotesInserted.Cotizacion);
                 response.Meta = metadata;
@@ -1204,7 +1167,8 @@ namespace AppService.Core.Services
                     appGeneralQuotes.IdDireccionFacturar = 1M;
                 }
                 AppGeneralQuotes AppGeneralQuotesUpdated = await this.Update(appGeneralQuotes);
-                await this._cotizacionService.IntegrarCotizacion(appGeneralQuotes.Id, true);
+                //TODO PRUEBA INTEGRAR COTIZACION POR LOTE
+                //await this._cotizacionService.IntegrarCotizacion(appGeneralQuotes.Id, true);
                 AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotes.Id, appStatusQuote, appGeneralQuotes.Cotizacion);
                 AppGeneralQuotesGetDto appGeneralQuotes1 = await this.GetOneAppGeneralQuotes(new AppGeneralQuotesQueryFilter()
                 {
@@ -1318,9 +1282,6 @@ namespace AppService.Core.Services
             }
 
 
-
-
-
         }
 
 
@@ -1329,8 +1290,6 @@ namespace AppService.Core.Services
             //appGeneralQuotes.IntegrarCotizacion = true;
             _unitOfWork.AppGeneralQuotesRepository.Update(appGeneralQuotes);
             await _unitOfWork.SaveChangesAsync();
-
-
             return await GetById(appGeneralQuotes.Id);
 
         }
@@ -1384,7 +1343,7 @@ namespace AppService.Core.Services
                 }
 
 
-                var flete = await GetFleteByIdMunicipo((decimal)appGeneralQuotes.IdMunicipio);
+                var porcflete = await GetFleteByIdMunicipo((decimal)appGeneralQuotes.IdMunicipio);
 
 
 
@@ -1401,7 +1360,44 @@ namespace AppService.Core.Services
                             {
                                 precioAprobado = (decimal)detailQuotesGetDto.StatusAprobacionDto.ValorVentaAprobarUsd;
                             }
-                            var precioAprobadoMasFlete = precioAprobado; //+ (precioAprobado * flete) / 100;
+
+                            var renglonObject = await _unitOfWork.RenglonRepository.GetByCotizacionProducto(
+                                detailQuotesGetDto.Cotizacion, detailQuotesGetDto.AppProductsGetDto.ExternalCode);
+                            if (renglonObject != null)
+                            {
+                                var aprobacion =
+                                    await _aprobacionesServices.GetByCotizacionRenglonPrpopuesta(
+                                        detailQuotesGetDto.Cotizacion, renglonObject.Renglon, 1);
+                                if (aprobacion != null)
+                                {
+                                    var preciousd = detailQuotesGetDto.PrecioUsd;
+                                    var aprobado = aprobacion.ValorVentaAprobarUsd;
+                                    if (aprobado<preciousd) 
+                                    {
+                                        metadata.IsValid = false;
+                                        metadata.Message = $"Precio no puede ser menor a el aprobado!!! {aprobacion.ValorVentaAprobarUsd}";
+                                        response.Meta = metadata;
+                                        response.Data = null;
+                                        return response;
+                                    } 
+                                } else
+                                {
+                                    var preciousd = detailQuotesGetDto.PrecioUsd;
+                                    var flete = (detailQuotesGetDto.UnitPriceBaseProduction * porcflete) / 100;
+                                    var aprobado = detailQuotesGetDto.UnitPriceBaseProduction+ flete;
+                                    if (preciousd<aprobado)
+                                    {
+                                      
+                                        metadata.IsValid = false;
+                                        metadata.Message = $"Precio no puede ser menor a  la lista!!! {aprobado}, cotizacion enviada a Grabacion";
+                                        response.Meta = metadata;
+                                        response.Data = null;
+                                        return response;
+                                    }
+                                }
+                            }
+                         
+                            /*var precioAprobadoMasFlete = precioAprobado; //+ (precioAprobado * flete) / 100;
                             if (detailQuotesGetDto.PrecioUsd < precioAprobadoMasFlete) 
                             {
                                 metadata.IsValid = false;
@@ -1409,7 +1405,7 @@ namespace AppService.Core.Services
                                 response.Meta = metadata;
                                 response.Data = resultDto;
                                 return response;
-                            }
+                            }*/
 
                             var entity = await this._appDetailQuotesService.GetById(detailQuotesGetDto.Id);
                             if (entity != null)
@@ -1442,8 +1438,8 @@ namespace AppService.Core.Services
 
                     appGeneralQuotes.IdEstatus = 2;
                     var res = await this.Update(appGeneralQuotes);
-
-                    await this._cotizacionService.IntegrarCotizacion(appGeneralQuotes.Id, true);
+                    //TODO PRUEBA INTEGRAR COTIZACION POR LOTE
+                    //await this._cotizacionService.IntegrarCotizacion(appGeneralQuotes.Id, true);
                     AppStatusQuote byId1 = await this._unitOfWork.AppStatusQuoteRepository.GetById(appGeneralQuotes.IdEstatus);
                     AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotes.Id, byId1, appGeneralQuotes.Cotizacion);
                     resultDto = await this.GetAppGeneralQuotes(new AppGeneralQuotesQueryFilter()
@@ -1509,50 +1505,55 @@ namespace AppService.Core.Services
                     {
                         resultDto.EnviarAlCliente = false;
                         resultDto.Imprimir = false;
+                        resultDto.GanarPerder = false;
                     }
                     else
                     {
                         resultDto.EnviarAlCliente = true;
                         resultDto.Imprimir = true;
+                        resultDto.GanarPerder = false;
                     }
 
                 }
                 else
                 {
-                    resultDto.EnviarAlCliente = false;
+                    var requiereAprobacion = await this._appDetailQuotesService.RequiereAprobacionAppGeneralQuotesId(AppGeneralQuotesId);
+                    if (requiereAprobacion)
+                    {
+                        resultDto.EnviarAlCliente = false;
+                        resultDto.Imprimir = false;
+                        resultDto.GanarPerder = false;
+                    }
+                    else
+                    {
+                    
+                        resultDto.EnviarAlCliente = false;
+                        resultDto.Imprimir = true;
+                        resultDto.GanarPerder = true;
+                    }
+             
                     resultDto.RetornarAGrabacion = true;
                 }
 
-                if (appStatusQuote.Id > 1)
-                {
-                    resultDto.Imprimir = true;
-                }
-                else
-                {
-                    resultDto.Imprimir = false;
-                }
-
-                resultDto.EnviarAprobacionPrecio = false;
-                resultDto.GanarPerder = false;
                 if (appStatusQuote.FlagEnEspera == "X")
-                    resultDto.GanarPerder = true;
+                {
+                    resultDto.EnviarAlCliente = false;
+                }
+                if (appStatusQuote.FlagGanada == "X")
+                {
+                    resultDto.EnviarAlCliente = false;
+                    resultDto.GanarPerder = false;
+                }
+                resultDto.EnviarAprobacionPrecio = false;
+           
+             
 
                 var cotizacionTieneOrden = await _unitOfWork.PropuestaRepository.CotizacionTieneOrden(generalQuotes.Cotizacion);
                 if (cotizacionTieneOrden)
                 {
                     resultDto.RetornarAGrabacion = false;
                 }
-                /*generalQuotes.Actualizar = resultDto.Actualizar;
-                 generalQuotes.EnviarAlCliente = resultDto.EnviarAlCliente;
-                 generalQuotes.EnviarAprobacionPrecio = resultDto.EnviarAprobacionPrecio;
-                 generalQuotes.GanarPerder = resultDto.GanarPerder;
-                 generalQuotes.Postergar = resultDto.Postergar;
-                 generalQuotes.Eliminar = resultDto.Eliminar;
-                 generalQuotes.Cancel = resultDto.Cancel;
-                 generalQuotes.ExistQuotes = resultDto.ExistQuotes;
-                 generalQuotes.Imprimir = resultDto.ExistQuotes;
-                 generalQuotes.RetornarAGrabacion = resultDto.ExistQuotes;*/
-                //AppGeneralQuotes appGeneralQuotes = await this.Update(generalQuotes);
+              
             }
             else
                 resultDto.ExistQuotes = false;

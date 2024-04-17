@@ -25,7 +25,7 @@ namespace AppService.Core.Interfaces
 
         Task<bool> PermiteAdicionarDetalle(int idGeneralQuote);
 
-
+        void MarcarIntegrado(bool marca, int id);
         Task<int> VerificarStatus(int idGeneralQuote);
         Task<List<AppGeneralQuotes>> GetByCotizacionesPendientesIntegrar();
 

@@ -48,6 +48,21 @@ namespace AppService.Infrastructure.Repositories
 
 
         }
+        
+       
+        
+        
+
+        public async Task<bool> DeleteCotizacion(string cotizacion)
+        {
+            bool flag = false;
+            FormattableString xqueryDiario = $"exec AppDeleteCotizacion {cotizacion}";
+
+            var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+
+            return flag;
+        }
+            
         public async Task<bool> CotizacionTieneOrden(string cotizacion)
         {
             bool flag = false;

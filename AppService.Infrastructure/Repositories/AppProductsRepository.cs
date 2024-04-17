@@ -2,16 +2,13 @@
 using AppService.Core.Interfaces;
 using AppService.Core.QueryFilters;
 using AppService.Infrastructure.Data;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
-//using System.Data.SqlClient;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using StackExchange.Redis;
+
 using AppProducts = AppService.Core.Entities.AppProducts;
 
 
@@ -21,66 +18,33 @@ namespace AppService.Infrastructure.Repositories
     {
 
         private readonly RRDContext _context;
-        private readonly IConnectionMultiplexer _connectionMultiplexer;
+       
      
 
-        public AppProductsRepository(RRDContext context,IConnectionMultiplexer connectionMultiplexer)
+        public AppProductsRepository(RRDContext context)
         {
-            _connectionMultiplexer = connectionMultiplexer;
+            
             _context = context;
         }
 
-        public async Task AddRedis(string key, string value)
-        {
-            var db = _connectionMultiplexer.GetDatabase();
-            await db.StringSetAsync(key, value,TimeSpan.FromMinutes(2));
-        }
-        public async Task<string> GetRedis(string key)
-        {
-            var db = _connectionMultiplexer.GetDatabase();
-            //db.KeyDelete("ListProducts");
-            return await db.StringGetAsync(key);
-        }
+      
+    
         
         
         public async Task<List<AppProducts>> GetAll()
         {
-           //var result = await _context.AppProducts.ToListAsync();
-           List<AppProducts> result = new List<AppProducts>();
-           
-          // result = _context.AppProducts.FromSqlInterpolated<AppProducts>($"SELECT * FROM AppProducts").ToList();
-           
-           //await AddRedis("ListProducts", System.Text.Json.JsonSerializer.Serialize(result));
-           //return result;
-           //result = _context.AppProducts.FromSqlInterpolated<AppProducts>($"SELECT * FROM AppProducts").ToList();
-        
-           
-           
-           var listProductsRedis=await GetRedis("ListProducts");
-          
-           if (listProductsRedis==null)
-           {
-               result = _context.AppProducts.FromSqlInterpolated<AppProducts>($"SELECT * FROM AppProducts").ToList();
-               await AddRedis("ListProducts", System.Text.Json.JsonSerializer.Serialize(result));
-           }
-           else
-           {
-               result = System.Text.Json.JsonSerializer.Deserialize<List<AppProducts>>(listProductsRedis);
-           }
+
+            try
+            {
+                var result = await _context.AppProducts.ToListAsync();
+                return result;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
          
-           return result;
-           /*List<AppProducts> result = new List<AppProducts>();
-           try
-           {
-               //result = _context.AppProducts.FromSqlInterpolated<AppProducts>($"SELECT * FROM AppProducts").ToList();
-               //result = await _context.AppProducts.ToListAsync();
-               return result;
-           }
-           catch (Exception e)
-           {
-               Console.WriteLine(e);
-               return result;
-           }*/
+            
 
 
         }

@@ -114,7 +114,7 @@ namespace AppService.Core.Services
 
 
                 var porcFlete = await _unitOfWork.Winy243Repository.GetFleteByIdMunicipo(filter.IdMunicipio);
-
+  
                 if (appProducts.TipoCalculo == (int)TipoCalculoEnum.PrecioPorProductoCantidad)
                 {
                     var precioProductoCantidad = await GetPrecioProductoCantidad(filter.AppProuctId, filter.Cantidad);

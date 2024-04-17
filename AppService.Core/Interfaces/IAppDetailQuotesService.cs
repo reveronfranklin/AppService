@@ -36,5 +36,8 @@ namespace AppService.Core.Interfaces
         Task<bool> RequiereAprobacionAppGeneralQuotesId(int appGeneralQuotesId);
         Task RecalcularCotizacionesOfficeProduct(int subCategory);
 
+        Task<StatusAprobacionDto> StatusAprobacion(
+            AppDetailQuotes appDetailQuotes, decimal flete);
+
     }
 }

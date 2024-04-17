@@ -54,7 +54,7 @@ namespace Automata.Workers
                 await Task.Delay(600000);*/
 
 
-                Console.WriteLine("Ejecutando worker cada 10 minuto");
+                /*Console.WriteLine("Ejecutando worker cada 10 minuto");
 
                 var mensaje = "Iniciando envio de cotizaciones a Odoo: " + DateTime.Now;
 
@@ -63,10 +63,20 @@ namespace Automata.Workers
                 await _cotizacionService.UpdateCotizacionesToOdoo();
                 mensaje = "Culminado envio de cotizaciones a Odoo: " + DateTime.Now;
                Console.WriteLine(mensaje);
-               await Task.Delay(600000);
+               await Task.Delay(600000);*/
 
 
 
+               Console.WriteLine("Ejecutando worker cada 7 Segundos");
+                var mensaje = "Iniciando integracion de cotizaciones: " + DateTime.Now;
+
+               Console.WriteLine(mensaje);
+               var src = "";
+
+               await _cotizacionService.IntegrarCotizaciones();
+               Console.WriteLine("Culminado integracion de cotizaciones: " + DateTime.Now); 
+               await Task.Delay(5000);
+               
 
 
 
