@@ -1058,6 +1058,8 @@ namespace AppService.Core.Services
                 {
                     appDetailQuotesUpdateDto.CalculoId = 0;
                 }
+
+          
                 appDetailQuotes.CalculoId = appDetailQuotesUpdateDto.CalculoId;
                 if (appProducts.TipoCalculo == (int)TipoCalculoEnum.PrecioPorProducto)
                 {
@@ -1099,6 +1101,10 @@ namespace AppService.Core.Services
                 }
 
                 AppDetailQuotes appDetailQuotesUpdated = await this.Update(appDetailQuotes);
+                if (appDetailQuotesUpdateDto.CalculoId == 0)
+                {
+                    await RecalcularPreciosLista(appDetailQuotes.AppGeneralQuotesId);
+                }
                 
                 _unitOfWork.AppDetailQuotesRepository.UpdateCondicionPago(appDetailQuotesUpdated.AppGeneralQuotesId,appDetailQuotesUpdated.IdCondPago);
 
@@ -1112,7 +1118,7 @@ namespace AppService.Core.Services
                     this._unitOfWork.AppGeneralQuotesRepository.Update(general);
                     await this._unitOfWork.SaveChangesAsync();
                 }
-
+            
 
                 if (recalcularPrecio)
                 {
@@ -1328,6 +1334,8 @@ namespace AppService.Core.Services
             var appDetailQuotes = await _unitOfWork.AppDetailQuotesRepository.GetByQuotesCotizacion(cotizacion);
             if (appDetailQuotes.Count > 0)
             {
+                var firstRecord = appDetailQuotes.First();
+                await RecalcularPreciosLista(firstRecord.AppGeneralQuotesId);
                 foreach (var item in appDetailQuotes)
                 {
                     var listCalculo = await this._unitOfWork.AppRecipesByAppDetailQuotesRepository.GetListRecipesByIdCalculoCodeHistorico((int)item.CalculoId);
@@ -1544,6 +1552,11 @@ namespace AppService.Core.Services
         {
             decimal result;
             var calculo = listCalculo.Where(x => x.Code == "CANT_TINTAS").FirstOrDefault();
+            if (calculo == null)
+            {
+                result = 0;
+                return result;
+            }
             result = (decimal)calculo.Quantity;
 
 
@@ -1554,6 +1567,11 @@ namespace AppService.Core.Services
         {
             decimal result;
             var calculo = listCalculo.Where(x => x.Code == "PRECIOGOMASTIL").FirstOrDefault();
+            if (calculo == null)
+            {
+                result = 0;
+                return result;
+            }
             result = (decimal)calculo.Quantity;
 
 
@@ -1563,6 +1581,12 @@ namespace AppService.Core.Services
         {
             decimal result;
             var calculo = listCalculo.Where(x => x.Code == "TROQUEL").FirstOrDefault();
+            if (calculo == null)
+            {
+                result = 0;
+                return result;
+            }
+            
             result = (decimal)calculo.TotalCost;
 
 
@@ -1574,6 +1598,12 @@ namespace AppService.Core.Services
         {
             string result;
             var calculo= listCalculo.Where(x=> x.Code== "PAPELPRIMERAPARTE").FirstOrDefault();
+
+            if (calculo == null)
+            {
+                result = "";
+                return result;
+            }
             var ingrediente = await _unitOfWork.AppIngredientsRepository.GetById((int)calculo.AppIngredientsId);
             if (ingrediente != null)
             {
@@ -1590,6 +1620,12 @@ namespace AppService.Core.Services
         {
             string result;
             var calculo = listCalculo.Where(x => x.Code == "LAMINADO").FirstOrDefault();
+            if (calculo == null)
+            {
+                result = "";
+                return result;
+            }
+            
             var ingrediente = await _unitOfWork.AppIngredientsRepository.GetById((int)calculo.AppIngredientsId);
             if (ingrediente != null)
             {

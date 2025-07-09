@@ -477,6 +477,59 @@ namespace AppService.Api.Controllers
 
         }
         
+       
+        
+        [HttpGet]
+        [Route("[action]")]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(ApiResponse<bool>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> RecalcularPrecioLista()
+        {
+
+
+
+            Metadata metadata = new Metadata
+            {
+                IsValid = false,
+                Message = "",
+                TotalCount = 0
+            };
+
+
+            try
+            {
+
+                
+              
+
+                await _appDetailQuotesService.RecalcularPreciosLista(29003);
+                await _appDetailQuotesService.RecalcularPreciosLista(  29006);
+                await _appDetailQuotesService.RecalcularPreciosLista( 29012);
+                return Ok();
+
+
+
+            }
+            catch (Exception e)
+            {
+
+                metadata.IsValid = false;
+                metadata.Message = e.InnerException.Message;
+                ApiResponse<AppGeneralQuotesGetDto> responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
+                {
+                    Meta = metadata
+                };
+
+
+                return Ok(responseError);
+            }
+
+
+        }
+
+        
+        
+        
         [HttpGet]
         [Route("[action]")]
         [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(ApiResponse<bool>))]
