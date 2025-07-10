@@ -44,17 +44,13 @@ namespace AppService.Infrastructure.Repositories
             if (esVendedor)
             {
                xqueryDiario  =
-                    $"update AppGeneralQuotes set Fecha=CreatedAt,SearchText=Cotizacion + '-' + IdVendedor + '-' + (select top 1 NOMBRE from MtrVendedor where CODIGO=IdVendedor) + '-' + IdCliente + '-' + rtrim(ltrim(RazonSocial)) + '-' + Rif + '-' + (select top 1 ClaseCss from AppStatusQuote where AppStatusQuote.id= AppGeneralQuotes.IdEstatus) from AppGeneralQuotes WHERE IdVendedor={usuario} and DATEDIFF(DAY,CreatedAt,GETDATE())<=360";
-
-       
-            
-                
-                
+                    $"update AppGeneralQuotes set Fecha=CreatedAt,SearchText=Cotizacion + '-' + IdVendedor + '-' + (select top 1 NOMBRE from MtrVendedor where CODIGO=IdVendedor) + '-' + IdCliente + '-' + rtrim(ltrim(RazonSocial)) + '-' + Rif + '-' + (select top 1 ClaseCss from AppStatusQuote where AppStatusQuote.id= AppGeneralQuotes.IdEstatus) from AppGeneralQuotes WHERE IdVendedor={usuario} and DATEDIFF(DAY,CreatedAt,GETDATE())<=90";
+               
             }
             else
             {
               xqueryDiario  =
-                    $"update AppGeneralQuotes set Fecha=CreatedAt,SearchText=Cotizacion + '-' + IdVendedor + '-' + (select top 1 NOMBRE from MtrVendedor where CODIGO=IdVendedor) + '-' + IdCliente + '-' + rtrim(ltrim(RazonSocial)) + '-' + Rif + '-' + (select top 1 ClaseCss from AppStatusQuote where AppStatusQuote.id= AppGeneralQuotes.IdEstatus) from AppGeneralQuotes WHERE DATEDIFF(DAY,CreatedAt,GETDATE())<=360";
+                    $"update AppGeneralQuotes set Fecha=CreatedAt,SearchText=Cotizacion + '-' + IdVendedor + '-' + (select top 1 NOMBRE from MtrVendedor where CODIGO=IdVendedor) + '-' + IdCliente + '-' + rtrim(ltrim(RazonSocial)) + '-' + Rif + '-' + (select top 1 ClaseCss from AppStatusQuote where AppStatusQuote.id= AppGeneralQuotes.IdEstatus) from AppGeneralQuotes WHERE DATEDIFF(DAY,CreatedAt,GETDATE())<=90";
               
             }
 

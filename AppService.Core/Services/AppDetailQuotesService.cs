@@ -2504,10 +2504,10 @@ namespace AppService.Core.Services
                 foreach (var item in appDetailQuotes)
                 {
 
-                    var producto = await _unitOfWork.AppProductsRepository.GetById(item.IdProducto);
-                    var flete = await GetFlete((decimal)appGeneralQuotes.IdMunicipio,producto.Id);
-                    var detail = await this.GetById(item.Id);
-                    var statusAprobaion =await this.StatusAprobacion(detail,flete);
+                    //var producto = await _unitOfWork.AppProductsRepository.GetById(item.IdProducto);
+                    //var flete = await GetFlete((decimal)appGeneralQuotes.IdMunicipio,producto.Id);
+                    //var detail = await this.GetById(item.Id);
+                    var statusAprobaion =await this.StatusAprobacion(item,(decimal)item.Flete);
                     if (!statusAprobaion.Aprobado)
                     {
                         resultDto = true;
