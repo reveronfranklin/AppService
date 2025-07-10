@@ -35,7 +35,7 @@ namespace AppService.Core.Interfaces
 
         Task<ApiResponse<bool>> GanarPerder(AppGanarPerderDto appGanarPerderDto);
 
-        Task<bool> RequiereAprobacionAppGeneralQuotesId(int appGeneralQuotesId);
+        Task<bool> RequiereAprobacionAppGeneralQuotesId(int appGeneralQuotesId,AppGeneralQuotes  appGeneralQuotes);
         Task RecalcularCotizacionesOfficeProduct(int subCategory);
 
         Task<StatusAprobacionDto> StatusAprobacion(

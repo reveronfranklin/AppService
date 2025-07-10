@@ -2485,13 +2485,13 @@ namespace AppService.Core.Services
             return statusAprobacionDto1;
         }
 
-        public async Task<bool> RequiereAprobacionAppGeneralQuotesId(int appGeneralQuotesId)
+        public async Task<bool> RequiereAprobacionAppGeneralQuotesId(int appGeneralQuotesId,AppGeneralQuotes  appGeneralQuotes)
         {
             bool resultDto = false;
             try
             {
                 
-                var appGeneralQuotes = await _unitOfWork.AppGeneralQuotesRepository.GetById(appGeneralQuotesId);
+                //var appGeneralQuotes = await _unitOfWork.AppGeneralQuotesRepository.GetById(appGeneralQuotesId);
             
              
                 var appDetailQuotes =

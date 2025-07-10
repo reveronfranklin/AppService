@@ -1556,7 +1556,7 @@ namespace AppService.Core.Services
                 }
                 if (appStatusQuote.PrimeraEstacion == "X")
                 {
-                    var requiereAprobacion = await this._appDetailQuotesService.RequiereAprobacionAppGeneralQuotesId(AppGeneralQuotesId);
+                    var requiereAprobacion = await this._appDetailQuotesService.RequiereAprobacionAppGeneralQuotesId(AppGeneralQuotesId,generalQuotes);
                     if (requiereAprobacion)
                     {
                         resultDto.EnviarAlCliente = false;
@@ -1573,7 +1573,7 @@ namespace AppService.Core.Services
                 }
                 else
                 {
-                    var requiereAprobacion = await this._appDetailQuotesService.RequiereAprobacionAppGeneralQuotesId(AppGeneralQuotesId);
+                    var requiereAprobacion = await this._appDetailQuotesService.RequiereAprobacionAppGeneralQuotesId(AppGeneralQuotesId,generalQuotes);
                     if (requiereAprobacion)
                     {
                         resultDto.EnviarAlCliente = false;
