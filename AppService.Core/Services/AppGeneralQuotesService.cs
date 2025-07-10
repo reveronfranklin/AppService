@@ -159,7 +159,7 @@ namespace AppService.Core.Services
                 var permiteAdicionarDetalle = await _unitOfWork.AppGeneralQuotesRepository.PermiteAdicionarDetalle(appGeneralQuotesGetDto.Id);
                 appGeneralQuotesGetDto.PermiteAdicionarDetalle = permiteAdicionarDetalle;
 
-                appGeneralQuotesGetDto.AppGeneralQuotesActionSheetDto = await GetAppGeneralQuotesActionSheetDto(appGeneralQuotesGetDto.Id, appStatusQuote, appGeneralQuotesGetDto.Cotizacion);
+                appGeneralQuotesGetDto.AppGeneralQuotesActionSheetDto = await GetAppGeneralQuotesActionSheetDto(appGeneralQuotesGetDto.Id, appStatusQuote, appGeneralQuotesGetDto.Cotizacion,quotes);
 
                 ApiResponse<List<AppDetailQuotesGetDto>> listDetail = await _appDetailQuotesService.GetListAppDetailQuoteByAppGeneralQuotesId(appGeneralQuotesGetDto.Id);
                 if (listDetail != null)
@@ -357,7 +357,7 @@ namespace AppService.Core.Services
 
                         
                         
-                        itemAppGeneralQuotesGetDto.AppGeneralQuotesActionSheetDto = await GetAppGeneralQuotesActionSheetDto(item.Id, item.IdEstatusNavigation, item.Cotizacion);
+                        itemAppGeneralQuotesGetDto.AppGeneralQuotesActionSheetDto = await GetAppGeneralQuotesActionSheetDto(item.Id, item.IdEstatusNavigation, item.Cotizacion,item);
 
 
                         ApiResponse<List<AppDetailQuotesGetDto>> listDetail = await _appDetailQuotesService.GetListAppDetailQuoteByAppGeneralQuotesId(item.Id);
@@ -423,7 +423,7 @@ namespace AppService.Core.Services
                 List<AppGeneralQuotesGetDto> appGeneralQuotesGetDto = _mapper.Map<List<AppGeneralQuotesGetDto>>(quotes);
                 foreach (AppGeneralQuotesGetDto item in appGeneralQuotesGetDto)
                 {
-
+                    var quote = quotes.Where(q => q.Id == item.Id).FirstOrDefault();
 
                     MtrVendedor mtrVendedor = _unitOfWork.MtrVendedorRepository.GetById(item.IdVendedor);
                     if (mtrVendedor != null)
@@ -529,7 +529,7 @@ namespace AppService.Core.Services
                     var permiteAdicionarDetalle = await _unitOfWork.AppGeneralQuotesRepository.PermiteAdicionarDetalle(item.Id);
                     item.PermiteAdicionarDetalle = permiteAdicionarDetalle;
 
-                    item.AppGeneralQuotesActionSheetDto = await GetAppGeneralQuotesActionSheetDto(item.Id, appStatusQuote, item.Cotizacion);
+                    item.AppGeneralQuotesActionSheetDto = await GetAppGeneralQuotesActionSheetDto(item.Id, appStatusQuote, item.Cotizacion,quote);
 
 
                     ApiResponse<List<AppDetailQuotesGetDto>> listDetail = await _appDetailQuotesService.GetListAppDetailQuoteByAppGeneralQuotesId(item.Id);
@@ -779,7 +779,7 @@ namespace AppService.Core.Services
                 {
                     //TODO PRUEBA INTEGRAR COTIZACION POR LOTE
                     await this._cotizacionService.IntegrarCotizacion(AppGeneralQuotesInserted.Id, false);
-                    AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(AppGeneralQuotesInserted.Id, appStatusQuote, AppGeneralQuotesInserted.Cotizacion);
+                    AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(AppGeneralQuotesInserted.Id, appStatusQuote, AppGeneralQuotesInserted.Cotizacion,AppGeneralQuotesInserted);
                     resultDto = this._mapper.Map<AppGeneralQuotesGetDto>((object)AppGeneralQuotesInserted);
                     MtrVendedor byId2 = this._unitOfWork.MtrVendedorRepository.GetById(resultDto.IdVendedor);
                     if (byId2 != null)
@@ -891,7 +891,7 @@ namespace AppService.Core.Services
                 //TODO PRUEBA INTEGRAR COTIZACION POR LOTE 
                 await this._cotizacionService.IntegrarCotizacion(appGeneralQuotes.Id, true);
                 AppStatusQuote byId = await this._unitOfWork.AppStatusQuoteRepository.GetById(appGeneralQuotes.IdEstatus);
-                AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotes.Id, byId, appGeneralQuotes.Cotizacion);
+                AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotes.Id, byId, appGeneralQuotes.Cotizacion,appGeneralQuotes);
                 response.Meta = metadata;
                 response.Data = resultDto;
                 return response;
@@ -1023,7 +1023,7 @@ namespace AppService.Core.Services
                 //TODO PRUEBA INTEGRAR COTIZACION POR LOTE
                 await this._cotizacionService.IntegrarCotizacion(appGeneralQuotesInserted.Id, true);
                 AppStatusQuote byId = await this._unitOfWork.AppStatusQuoteRepository.GetById(appGeneralQuotesInserted.IdEstatus);
-                AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotesInserted.Id, byId, appGeneralQuotesInserted.Cotizacion);
+                AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotesInserted.Id, byId, appGeneralQuotesInserted.Cotizacion,appGeneralQuotesInserted);
                 response.Meta = metadata;
                 response.Data = resultDto;
                 return response;
@@ -1216,7 +1216,7 @@ namespace AppService.Core.Services
                 
                
                 await this._cotizacionService.IntegrarCotizacion(appGeneralQuotes.Id, true);
-                AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotes.Id, appStatusQuote, appGeneralQuotes.Cotizacion);
+                AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotes.Id, appStatusQuote, appGeneralQuotes.Cotizacion,appGeneralQuotes);
                 AppGeneralQuotesGetDto appGeneralQuotes1 = await this.GetOneAppGeneralQuotes(new AppGeneralQuotesQueryFilter()
                 {
                     Cotizacion = AppGeneralQuotesUpdated.Cotizacion,
@@ -1495,7 +1495,7 @@ namespace AppService.Core.Services
                     //TODO PRUEBA INTEGRAR COTIZACION POR LOTE
                     await this._cotizacionService.IntegrarCotizacion(appGeneralQuotes.Id, true);
                     AppStatusQuote byId1 = await this._unitOfWork.AppStatusQuoteRepository.GetById(appGeneralQuotes.IdEstatus);
-                    AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotes.Id, byId1, appGeneralQuotes.Cotizacion);
+                    AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotes.Id, byId1, appGeneralQuotes.Cotizacion,appGeneralQuotes);
                     resultDto = await this.GetAppGeneralQuotes(new AppGeneralQuotesQueryFilter()
                     {
                         Cotizacion = appGeneralQuotes.Cotizacion
@@ -1529,13 +1529,15 @@ namespace AppService.Core.Services
         public async Task<AppGeneralQuotesActionSheetDto> GetAppGeneralQuotesActionSheetDto(
           int AppGeneralQuotesId,
           AppStatusQuote appStatusQuote,
-          string cotizacion)
+          string cotizacion,
+          AppGeneralQuotes generalQuotes
+          )
         {
             AppGeneralQuotesActionSheetDto resultDto = new AppGeneralQuotesActionSheetDto()
             {
                 Cancel = true
             };
-            AppGeneralQuotes generalQuotes = await this.GetById(AppGeneralQuotesId);
+            //AppGeneralQuotes generalQuotes = await this.GetById(AppGeneralQuotesId);
             if (generalQuotes != null)
             {
                 resultDto.ExistQuotes = true;

@@ -1320,7 +1320,10 @@ namespace AppService.Core.Services
                   
                     _unitOfWork.AppDetailQuotesRepository.Update(appDetailUpdate);
                     //TODO PRUEBA INTEGRAR COTIZACION POR LOTEawait _unitOfWork.SaveChangesAsync();
-                    
+                    if (item.IdProductoNavigation.AppSubCategoryId == 9)
+                    {
+                        await ArmaDataReportEtiquetasPrime(item.Cotizacion);
+                    }
                     await this._cotizacionService.IntegrarCotizacion(item.AppGeneralQuotesId, true);
                 }
        

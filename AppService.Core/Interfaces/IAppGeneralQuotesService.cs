@@ -41,7 +41,7 @@ namespace AppService.Core.Interfaces
         Task<ApiResponse<AppGeneralQuotesGetDto>> EnviarAlCliente(AppGeneralQuotesChangeStatusDto dto);
 
 
-        Task<AppGeneralQuotesActionSheetDto> GetAppGeneralQuotesActionSheetDto(int AppGeneralQuotesId, AppStatusQuote appStatusQuote, string cotizacion);
+        Task<AppGeneralQuotesActionSheetDto> GetAppGeneralQuotesActionSheetDto(int AppGeneralQuotesId, AppStatusQuote appStatusQuote, string cotizacion,  AppGeneralQuotes generalQuotes);
         Task<AppGeneralQuotes> ClonarAppGeneralQuotes(AppGeneralQuotes appGeneralQuotes);
 
         Task<AppDetailQuotes> ClonarAppDetailQuotes(AppDetailQuotes appDetailQuotes);
