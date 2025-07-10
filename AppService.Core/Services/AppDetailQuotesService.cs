@@ -2278,7 +2278,8 @@ namespace AppService.Core.Services
             Wsmy502 cotizacionProducto = await this._unitOfWork.RenglonRepository.GetByCotizacionProducto(appDetailQuotes.Cotizacion, appDetailQuotes.IdProductoNavigation.ExternalCode);
             if (cotizacionProducto != null)
             {
-                var appProduct = await _unitOfWork.AppProductsRepository.GetById(appDetailQuotes.IdProducto);
+
+                var appProduct = appDetailQuotes.IdProductoNavigation; // _unitOfWork.AppProductsRepository.GetById(appDetailQuotes.IdProducto);
                 if (appProduct != null)
                 {
                     if (appProduct.PorcFlete > 0)
@@ -2286,6 +2287,8 @@ namespace AppService.Core.Services
                         porcflete= appProduct.PorcFlete;
                     }
                 }
+                
+                
                 Wsmy639 wsmy639Response = await this._aprobacionesServices.GetByCotizacionRenglonPrpopuesta(cotizacionProducto.Cotizacion, cotizacionProducto.Renglon, 1);
                 if (wsmy639Response != null)
                 {
@@ -2404,7 +2407,7 @@ namespace AppService.Core.Services
                     decimal unitPriceBaseProduction = (decimal)appDetailQuotes.UnitPriceBaseProduction;
                     var flete = (unitPriceBaseProduction* porcflete) / 100;
                     flete = Math.Truncate(100 * flete) / 100;
-                    decimal lista = Math.Round(unitPriceBaseProduction+flete, 2);
+                    decimal lista = Math.Round(unitPriceBaseProduction+(decimal)flete, 2);
                     if (appDetailQuotes.PrecioUsd >=  lista)
                     {
                         result.Aprobado = true;

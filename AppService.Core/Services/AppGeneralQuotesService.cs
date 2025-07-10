@@ -1540,7 +1540,30 @@ namespace AppService.Core.Services
             //AppGeneralQuotes generalQuotes = await this.GetById(AppGeneralQuotesId);
             if (generalQuotes != null)
             {
-                resultDto.ExistQuotes = true;
+                
+                var actionSheet = await _unitOfWork.AppGeneralQuotesActionSheetRepository.GetByCotizacion(generalQuotes.Cotizacion);
+                if (actionSheet != null)
+                {
+                    resultDto.ExistQuotes=actionSheet.ExistQuotes;
+                    resultDto.RetornarAGrabacion =actionSheet.RetornarAGrabacion;
+                    resultDto.Actualizar=actionSheet.Actualizar;
+                    resultDto.Cancel=actionSheet.Cancel;
+                    resultDto.Eliminar=actionSheet.Eliminar;
+                    resultDto.EnviarAlCliente=actionSheet.EnviarAlCliente;
+                    resultDto.Imprimir=actionSheet.Imprimir;
+                    resultDto.GanarPerder=actionSheet.GanarPerder;
+                    resultDto.Imprimir=actionSheet.Imprimir;
+                    resultDto.EnviarAprobacionPrecio=actionSheet.EnviarAprobacionPrecio;
+                    var requiereAprobacion = await this._appDetailQuotesService.RequiereAprobacionAppGeneralQuotesId(AppGeneralQuotesId,generalQuotes);
+                    if (requiereAprobacion)
+                    {
+                        resultDto.EnviarAlCliente = false;
+                        resultDto.GanarPerder = false;
+                    }
+                }
+                
+                
+                /*resultDto.ExistQuotes = true;
                 resultDto.RetornarAGrabacion = false;
                 if (appStatusQuote.PrimeraEstacion != "X" && !generalQuotes.TieneOrden)
                     resultDto.RetornarAGrabacion = true;
@@ -1608,7 +1631,7 @@ namespace AppService.Core.Services
                 if (cotizacionTieneOrden)
                 {
                     resultDto.RetornarAGrabacion = false;
-                }
+                }*/
               
             }
             else

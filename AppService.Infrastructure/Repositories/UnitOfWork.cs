@@ -51,6 +51,8 @@ namespace AppService.Infrastructure.Repositories
         //new
 
         private readonly IPowerBiOrdenesRepository _powerBiOrdenesRepository;
+
+        private readonly IAppGeneralQuotesActionSheetRepository _appGeneralQuotesActionSheetRepository;
         
         private readonly IAppCalculadoraRepository _appCalculadoraRepository;
         private readonly IAppQuotesPaginateRepository _appQuotesPaginateRepository;
@@ -305,6 +307,8 @@ namespace AppService.Infrastructure.Repositories
         public IEmailRepository EmailRepository => _emailRepository ?? new EmailRepository(_maestrosContext);
 
        
+        
+        public IAppGeneralQuotesActionSheetRepository AppGeneralQuotesActionSheetRepository => _appGeneralQuotesActionSheetRepository ?? new AppGeneralQuotesActionSheetRepository(_context);
 
         public IAppCalculadoraRepository AppCalculadoraRepository => _appCalculadoraRepository ?? new AppCalculadoraRepository(_context);
 

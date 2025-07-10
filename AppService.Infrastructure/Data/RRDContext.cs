@@ -22,6 +22,7 @@ namespace AppService.Infrastructure.Data
         public DbSet<AppVentas> AppVentas { get; set; }
         
         
+        public virtual DbSet<AppGeneralQuotesActionSheet> AppGeneralQuotesActionSheet { get; set; }
         public virtual DbSet<AppCalculadora> AppCalculadora { get; set; }
         public virtual DbSet<AppCostosEmbarque> AppCostosEmbarques { get; set; }
         public virtual DbSet<AppTituloVariable> AppTituloVariables { get; set; }
@@ -596,6 +597,17 @@ namespace AppService.Infrastructure.Data
         {
             
             
+            
+            modelBuilder.Entity<AppGeneralQuotesActionSheet>(builder =>
+            {
+              
+                builder.HasKey(table => new
+                {
+                    table.Cotizacion,
+
+                });
+                builder.ToTable("AppGeneralQuotesActionSheet");
+            });
             
                 
             modelBuilder.Entity<AppCalculadora>(builder =>

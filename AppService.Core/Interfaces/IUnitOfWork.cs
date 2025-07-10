@@ -11,6 +11,8 @@ namespace AppService.Core.Interfaces
     {
         
         
+        IAppGeneralQuotesActionSheetRepository AppGeneralQuotesActionSheetRepository { get; }
+        
         IEmailRepository EmailRepository { get; }
         IPowerBiOrdenesRepository PowerBiOrdenesRepository { get; }
         
