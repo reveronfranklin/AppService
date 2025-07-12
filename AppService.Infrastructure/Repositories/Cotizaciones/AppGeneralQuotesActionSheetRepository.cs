@@ -29,17 +29,25 @@ namespace AppService.Infrastructure.Repositories.Cotizaciones
        
         public async Task<AppGeneralQuotesActionSheet> GetByCotizacion(string cotizacion)
         {
-            
-            string query = $"EXEC [RRD].[dbo].[AppUpdateAppGeneralQuotesActionSheet] '{cotizacion}'";
+            AppGeneralQuotesActionSheet result = null;
+            try
+            {
+                string query = $"EXEC [RRD].[dbo].[AppUpdateAppGeneralQuotesActionSheet] '{cotizacion}'";
 
-            FormattableString xquery =
+                FormattableString xquery =
 
-                $"EXEC [RRD].[dbo].[AppUpdateAppGeneralQuotesActionSheet] '{cotizacion}'";
+                    $"EXEC [RRD].[dbo].[AppUpdateAppGeneralQuotesActionSheet] '{cotizacion}'";
              
-            await _context.Database.ExecuteSqlInterpolatedAsync(xquery);
+                await _context.Database.ExecuteSqlInterpolatedAsync(xquery);
             
-            var result= await _context.AppGeneralQuotesActionSheet.Where(x=> x.Cotizacion.Trim() == cotizacion.Trim() ).FirstOrDefaultAsync();
-            return result;
+                result= await _context.AppGeneralQuotesActionSheet.Where(x=> x.Cotizacion.Trim() == cotizacion.Trim() ).FirstOrDefaultAsync();
+                return result;
+            }
+            catch (Exception e)
+            {
+              return result;
+            }
+           
         }
         
          
