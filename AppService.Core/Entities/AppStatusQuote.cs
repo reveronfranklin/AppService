@@ -46,6 +46,17 @@ namespace AppService.Core.Entities
         public Decimal? CondicionRazonId { get; set; }
 
         public string OdooStatus { get; set; }
+        
+        
+        public bool RetornarAGrabacion { get; set; }
+        public bool Actualizar { get; set; }
+        public bool Eliminar { get; set; }
+        public bool EnviarAlCliente { get; set; }
+        public bool GanarPerder { get; set; }
+        public bool Imprimir { get; set; }
+        
+        
+        
 
         public virtual ICollection<AppService.Core.Entities.AppDetailQuotes> AppDetailQuotes { get; set; }
 

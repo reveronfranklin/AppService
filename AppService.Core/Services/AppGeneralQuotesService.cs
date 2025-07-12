@@ -1541,7 +1541,26 @@ namespace AppService.Core.Services
             if (generalQuotes != null)
             {
                 
-                var actionSheet = await _unitOfWork.AppGeneralQuotesActionSheetRepository.GetByCotizacion(generalQuotes.Cotizacion);
+                resultDto.ExistQuotes=true;
+                resultDto.RetornarAGrabacion =appStatusQuote.RetornarAGrabacion;
+                resultDto.Actualizar=appStatusQuote.Actualizar;
+                resultDto.Cancel=true;
+                resultDto.Eliminar=appStatusQuote.Eliminar;
+                resultDto.EnviarAlCliente=appStatusQuote.EnviarAlCliente;
+                resultDto.Imprimir=appStatusQuote.Imprimir;
+                resultDto.GanarPerder=appStatusQuote.GanarPerder;
+                resultDto.Imprimir=appStatusQuote.Imprimir;
+                resultDto.EnviarAprobacionPrecio=false;
+                var requiereAprobacion = await this._appDetailQuotesService.RequiereAprobacionAppGeneralQuotesId(AppGeneralQuotesId,generalQuotes);
+                if (requiereAprobacion)
+                {
+                    resultDto.EnviarAlCliente = false;
+                    resultDto.GanarPerder = false;
+                    resultDto.Imprimir = false;
+                }
+                
+                
+                /*var actionSheet = await _unitOfWork.AppGeneralQuotesActionSheetRepository.GetByCotizacion(generalQuotes.Cotizacion);
                 if (actionSheet != null)
                 {
                     resultDto.ExistQuotes=actionSheet.ExistQuotes;
@@ -1553,7 +1572,7 @@ namespace AppService.Core.Services
                     resultDto.Imprimir=actionSheet.Imprimir;
                     resultDto.GanarPerder=actionSheet.GanarPerder;
                     resultDto.Imprimir=actionSheet.Imprimir;
-                    resultDto.EnviarAprobacionPrecio=actionSheet.EnviarAprobacionPrecio;
+                    resultDto.EnviarAprobacionPrecio=false;
                     var requiereAprobacion = await this._appDetailQuotesService.RequiereAprobacionAppGeneralQuotesId(AppGeneralQuotesId,generalQuotes);
                     if (requiereAprobacion)
                     {
@@ -1561,7 +1580,7 @@ namespace AppService.Core.Services
                         resultDto.GanarPerder = false;
                         resultDto.Imprimir = false;
                     }
-                }
+                }*/
                 
                 
                 /*resultDto.ExistQuotes = true;
