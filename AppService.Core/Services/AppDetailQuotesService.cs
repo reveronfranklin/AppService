@@ -2404,8 +2404,8 @@ namespace AppService.Core.Services
                         result.StatusString = "ENVIAR APROBACION";
                     }
 
-                    appDetailQuotes.UnitPriceBaseProduction ??= 0;
-                    decimal unitPriceBaseProduction = (decimal)appDetailQuotes.UnitPriceBaseProduction;
+                    appDetailQuotes.UnitPriceConverted ??= 0;
+                    decimal unitPriceBaseProduction = (decimal)appDetailQuotes.UnitPriceConverted;
                     var flete = (unitPriceBaseProduction* porcflete) / 100;
                     flete = Math.Truncate(100 * flete) / 100;
                     decimal lista = Math.Round(unitPriceBaseProduction+(decimal)flete, 2);
