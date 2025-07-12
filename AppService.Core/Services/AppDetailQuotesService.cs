@@ -2403,7 +2403,8 @@ namespace AppService.Core.Services
                         result.Color = "danger";
                         result.StatusString = "ENVIAR APROBACION";
                     }
- 
+
+                    appDetailQuotes.UnitPriceBaseProduction ??= 0;
                     decimal unitPriceBaseProduction = (decimal)appDetailQuotes.UnitPriceBaseProduction;
                     var flete = (unitPriceBaseProduction* porcflete) / 100;
                     flete = Math.Truncate(100 * flete) / 100;
