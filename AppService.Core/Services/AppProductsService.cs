@@ -989,6 +989,7 @@ namespace AppService.Core.Services
                 AppSubCategory byId5 = await this._appSubCategoryService.GetById(appProductsFind.AppSubCategoryId.Value);
                 if (byId5 != null)
                     resultDto.AppSubCategoryGetDto = this._mapper.Map<AppSubCategoryGetDto>((object)byId5);
+                resultDto.AppPriceDto = this._mapper.Map<List<AppPriceDto>>((object)appProductsFind.AppPrices);
                 resultDto.Link = resultDto.UrlImage == "" || resultDto.UrlImage == null ? this._paginationOptions.UrlGetFiles + "NoImage.png" : this._paginationOptions.UrlGetFiles + resultDto.UrlImage;
                 response.Meta = metadata;
                 response.Data = resultDto;

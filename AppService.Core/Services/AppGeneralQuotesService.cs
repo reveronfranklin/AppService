@@ -1551,6 +1551,10 @@ namespace AppService.Core.Services
                 resultDto.GanarPerder=appStatusQuote.GanarPerder;
                 resultDto.Imprimir=appStatusQuote.Imprimir;
                 resultDto.EnviarAprobacionPrecio=false;
+                if (generalQuotes.TieneOrden)
+                {
+                    resultDto.RetornarAGrabacion = false;
+                }
                 var requiereAprobacion = await this._appDetailQuotesService.RequiereAprobacionAppGeneralQuotesId(AppGeneralQuotesId,generalQuotes);
                 if (requiereAprobacion)
                 {
