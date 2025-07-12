@@ -30,11 +30,11 @@ namespace AppService.Infrastructure.Repositories.Cotizaciones
         public async Task<AppGeneralQuotesActionSheet> GetByCotizacion(string cotizacion)
         {
             
-            string query = $"EXEC [RRD].[dbo].[AppUpdateAppGeneralQuotesActionSheet] {cotizacion}";
+            string query = $"EXEC [RRD].[dbo].[AppUpdateAppGeneralQuotesActionSheet] '{cotizacion}'";
 
             FormattableString xquery =
 
-                $"EXEC [RRD].[dbo].[AppUpdateAppGeneralQuotesActionSheet] {cotizacion}";
+                $"EXEC [RRD].[dbo].[AppUpdateAppGeneralQuotesActionSheet] '{cotizacion}'";
              
             await _context.Database.ExecuteSqlInterpolatedAsync(xquery);
             

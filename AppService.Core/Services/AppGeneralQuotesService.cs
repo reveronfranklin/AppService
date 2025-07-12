@@ -1559,6 +1559,7 @@ namespace AppService.Core.Services
                     {
                         resultDto.EnviarAlCliente = false;
                         resultDto.GanarPerder = false;
+                        resultDto.Imprimir = false;
                     }
                 }
                 
