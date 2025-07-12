@@ -49,7 +49,7 @@ namespace Automata.Workers
 
 
                 
-                Console.WriteLine("Ejecutando worker cada 5 minuto");
+               /* Console.WriteLine("Ejecutando worker cada 5 minuto");
                 var mensaje = "Iniciando envio de Emails: " + DateTime.Now;
 
                 Console.WriteLine(mensaje);
@@ -57,7 +57,7 @@ namespace Automata.Workers
 
                  await _emaiService.Send();
                 Console.WriteLine("Culminado envio de Emails: " + DateTime.Now);
-                await Task.Delay(300000);
+                await Task.Delay(300000);*/
                 
                 
                 
@@ -83,7 +83,7 @@ namespace Automata.Workers
 
 
 
-               /*Console.WriteLine("Ejecutando worker cada 7 Segundos");
+               Console.WriteLine("Ejecutando worker cada 5 Segundos");
                 var mensaje = "Iniciando integracion de cotizaciones: " + DateTime.Now;
 
                Console.WriteLine(mensaje);
@@ -91,7 +91,7 @@ namespace Automata.Workers
 
                await _cotizacionService.IntegrarCotizaciones();
                Console.WriteLine("Culminado integracion de cotizaciones: " + DateTime.Now); 
-               await Task.Delay(5000);*/
+               await Task.Delay(5000);
                
 
 

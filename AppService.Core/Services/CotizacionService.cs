@@ -241,7 +241,7 @@ namespace AppService.Core.Services
                 try
                 {
                     Console.WriteLine($"Integrando cotizacion: {item.Cotizacion}");
-                    await this.IntegrarCotizacion(item.Id, true);
+                    await this.IntegrarCotizacion(item.Id, true,true);
                     this._unitOfWork.AppGeneralQuotesRepository.MarcarIntegrado(false, item.Id);
                 }
                 catch (Exception e)
@@ -301,10 +301,18 @@ namespace AppService.Core.Services
         }
 
 
-        public async Task IntegrarCotizacion(int generalQuotesId, bool actualizarDetalle)
+        public async Task IntegrarCotizacion(int generalQuotesId, bool actualizarDetalle,bool integrar=true)
         {
-
-
+           /* var configIntegrar =await  _unitOfWork.AppConfigAppRepository.GetByKey("INTEGRAR");
+            if (configIntegrar != null)
+            {
+                if (!configIntegrar.Valor.IsNullOrEmpty())
+                {
+                    integrar = true;
+                }
+            }*/
+           
+            if(integrar==false) return;
             AppGeneralQuotes generalQuotes = await this._unitOfWork.AppGeneralQuotesRepository.GetById(generalQuotesId);
             if (generalQuotes == null)
             {

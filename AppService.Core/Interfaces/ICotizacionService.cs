@@ -31,7 +31,7 @@ namespace AppService.Core.Interfaces
         Task<ApiResponse<bool>> DeleteCotizacionOld(CotizacionDeleteDtocs dto);
         Task DeleteCotizacion(AppGeneralQuotes appGeneralQuotes);
 
-        Task IntegrarCotizacion(int generalQuotesId, bool actualizarDetalle);
+        Task IntegrarCotizacion(int generalQuotesId, bool actualizarDetalle,bool integrar=true);
 
 
         Task DeleteCotizacionRenglon(AppDetailQuotes appDetailQuotes);

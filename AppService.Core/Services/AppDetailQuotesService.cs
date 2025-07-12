@@ -2508,10 +2508,19 @@ namespace AppService.Core.Services
                 foreach (var item in appDetailQuotes)
                 {
 
-                    var producto = await _unitOfWork.AppProductsRepository.GetById(item.IdProducto);
-                    var flete = await GetFlete((decimal)appGeneralQuotes.IdMunicipio,producto.Id);
+                    //var producto = await _unitOfWork.AppProductsRepository.GetById(item.IdProducto);
+                    decimal flete ;
+                    if (item.PorcFlete == null || item.PorcFlete.Value == 0)
+                    {
+                      flete=  await GetFlete((decimal)appGeneralQuotes.IdMunicipio,item.IdProducto);
+                    }
+                    else
+                    {
+                        flete = (decimal)item.PorcFlete;
+                    }
+                 
                     //var detail = await this.GetById(item.Id);
-                    var statusAprobaion =await this.StatusAprobacion(item,flete);
+                    var statusAprobaion =await this.StatusAprobacion(item,(decimal)flete);
                     if (!statusAprobaion.Aprobado)
                     {
                         resultDto = true;
