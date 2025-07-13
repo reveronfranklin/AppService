@@ -2,7 +2,9 @@
 
 using AppService.Core.CustomEntities;
 using AppService.Core.Interfaces;
+using AppService.Core.Interfaces.PowerBi;
 using AppService.Core.Services;
+using AppService.Core.Services.PowerBi;
 using AppService.Infrastructure.Data;
 using AppService.Infrastructure.DataClientes;
 using AppService.Infrastructure.DataContratosStock;
@@ -16,6 +18,7 @@ using AppService.Infrastructure.DataMc;
 using AppService.Infrastructure.DataMooreve;
 using AppService.Infrastructure.DataNomina;
 using AppService.Infrastructure.DataPlanta;
+using AppService.Infrastructure.DataPowerBI;
 using AppService.Infrastructure.DataSap;
 using AppService.Infrastructure.DataSpi;
 using AppService.Infrastructure.Repositories;
@@ -61,9 +64,18 @@ internal class Program
         string estadisticasConecction = "Server=172.28.107.19\\FSVEMCYN03D;Database=Estadisticas;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true";
         string spiConnection = "Data Source=172.28.107.20:1521/SPI;User Id=INFOCENT;Password=SPISENIOR;Validate Connection=true;";
         string redisConnection = "localhost:6379";
+        string powerBiConection = "Server=172.28.107.19\\FSVEMCYN03D;Database=POWERBI;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true";
+
+        
         serviceCollection.Configure<PaginationOptions>(Configuration.GetSection("Pagination"));
      
 
+        serviceCollection.AddDbContext<POWERBIContext>(options =>
+        {
+            options.UseSqlServer(powerBiConection);
+
+        });
+        
         serviceCollection.AddDbContext<RRDContext>(options =>
         {
             options.UseSqlServer(rrdConection);
@@ -133,6 +145,9 @@ internal class Program
           options.UseSqlServer(dwConecction)
 
       );
+        
+     
+
 
         serviceCollection.AddDbContext<NominaContext>(options =>
 
@@ -150,7 +165,7 @@ internal class Program
         
         serviceCollection.AddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(redisConnection));
-
+        serviceCollection.AddTransient<IPowerBiOrdenesService, PowerBiOrdenesService>();
         serviceCollection.AddTransient<IAppConfigAppService, AppConfigAppService>();
         serviceCollection.AddTransient<IAppVariablesService, AppVariablesService>();
         serviceCollection.AddTransient<IHelperService, HelperService>();
@@ -193,6 +208,11 @@ internal class Program
                 services.AddHostedService<WorkerPresupuestoOdoo>()
                     .AddSingleton<ICotizacionService, CotizacionService>()
                     .AddSingleton<IUnitOfWork, UnitOfWork>()
+                    .AddDbContext<POWERBIContext>(options =>
+                    {
+                        options.UseSqlServer(powerBiConection);
+
+                    })
                     .AddDbContext<RRDContext>(options =>
                     {
                         options.UseSqlServer(rrdConection);
