@@ -12,7 +12,7 @@ namespace AppService.Core.Interfaces
     {
         Task IntegrarCotizacionesPorMes();
         Task<List<Wsmy501>> GetAll();
-
+        Task IntegrarCotizacionPorLote(int generalQuotesId, bool actualizarDetalle);
 
         Task<Wsmy501> GetById(int id);
 

@@ -241,7 +241,7 @@ namespace AppService.Core.Services
                 try
                 {
                     Console.WriteLine($"Integrando cotizacion: {item.Cotizacion}");
-                    await this.IntegrarCotizacion(item.Id, true,true);
+                    await this.IntegrarCotizacionPorLote(item.Id, true);
                     this._unitOfWork.AppGeneralQuotesRepository.MarcarIntegrado(false, item.Id);
                 }
                 catch (Exception e)
@@ -301,16 +301,79 @@ namespace AppService.Core.Services
         }
 
 
+        public async Task IntegrarCotizacionPorLote(int generalQuotesId, bool actualizarDetalle)
+        {
+          
+            AppGeneralQuotes generalQuotes = await this._unitOfWork.AppGeneralQuotesRepository.GetById(generalQuotesId);
+            if (generalQuotes == null)
+            {
+                generalQuotes = (AppGeneralQuotes)null;
+            }
+            else
+            {
+                await this.UpdateGeneralCotizacion(generalQuotes);
+                if (!(generalQuotes.AppDetailQuotes.Count > 0 & actualizarDetalle))
+                {
+                    generalQuotes = (AppGeneralQuotes)null;
+                }
+                else
+                {
+                    foreach (AppDetailQuotes item in (IEnumerable<AppDetailQuotes>)generalQuotes.AppDetailQuotes)
+                    {
+
+                        var prod = await _unitOfWork.AppProductsRepository.GetById(item.IdProducto);
+
+                        if (item.Precio > 0M)
+                        {
+                            await this.UpdateDetailCotizacion(item);
+                            if (item.SolicitarPrecio.Value)
+                            {
+                                Wsmy502 renglon = await this._unitOfWork.RenglonRepository.GetByCotizacionProducto(item.Cotizacion, prod.ExternalCode.Trim());
+
+                                if (renglon != null)
+                                {
+                                    
+                                    var solicitudAprobacion = await this._aprobacionesServices.GetByCotizacionRenglonPrpopuesta(renglon.Cotizacion, renglon.Renglon, 1);
+                                    if (solicitudAprobacion == null)
+                                    {
+                                        ApiResponse<Wsmy639> aprobacion = await this._aprobacionesServices.CreateAprobacion(item.Cotizacion, renglon.Renglon, 1, item.UserUpdate);
+                                        if (aprobacion.Data != null)
+                                        {
+                                            await this.UpdateSolicitudPropuesta(renglon.Cotizacion, renglon.Renglon, 1, (int)aprobacion.Data.IdSolicitud);
+                                            ApiResponse<Wsmy647> apiResponse = await this._aprobacionesServices.ActivarWORKFLOW(item.Cotizacion, renglon.Renglon, 1, item.UserUpdate, item);
+                                        }
+                                    }
+                                  
+                                    renglon = (Wsmy502)null;
+                                }
+
+                            
+                            }
+                        }
+
+                    }
+                   
+                    generalQuotes = (AppGeneralQuotes)null;
+                }
+
+
+
+
+            }
+        }
+
+        
+        
         public async Task IntegrarCotizacion(int generalQuotesId, bool actualizarDetalle,bool integrar=true)
         {
-           /* var configIntegrar =await  _unitOfWork.AppConfigAppRepository.GetByKey("INTEGRAR");
+           var configIntegrar =await  _unitOfWork.AppConfigAppRepository.GetByKey("INTEGRAR");
             if (configIntegrar != null)
             {
                 if (!configIntegrar.Valor.IsNullOrEmpty())
                 {
                     integrar = true;
                 }
-            }*/
+            }
            
             if(integrar==false) return;
             AppGeneralQuotes generalQuotes = await this._unitOfWork.AppGeneralQuotesRepository.GetById(generalQuotesId);
