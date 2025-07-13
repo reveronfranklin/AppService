@@ -83,7 +83,7 @@ namespace Automata.Workers
 
 
 
-               Console.WriteLine("Ejecutando worker cada 5 Segundos");
+               Console.WriteLine("Ejecutando worker cada 10 Segundos");
                 var mensaje = "Iniciando integracion de cotizaciones: " + DateTime.Now;
 
                Console.WriteLine(mensaje);
@@ -91,7 +91,7 @@ namespace Automata.Workers
 
                await _cotizacionService.IntegrarCotizaciones();
                Console.WriteLine("Culminado integracion de cotizaciones: " + DateTime.Now); 
-               await Task.Delay(5000);
+               await Task.Delay(10000);
                
 
 
