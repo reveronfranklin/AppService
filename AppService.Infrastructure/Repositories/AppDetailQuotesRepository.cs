@@ -213,7 +213,7 @@ namespace AppService.Infrastructure.Repositories
 
             try
             {
-                FormattableString queryGeneral = $"UPDATE AppGeneralQuotes SET IdCondPago ={condicionPago} WHERE ID={appGeneralQuotesId}";
+                FormattableString queryGeneral = $"UPDATE AppGeneralQuotes SET IdCondPago ={condicionPago} ,integrarCotizacion= 1 WHERE ID={appGeneralQuotesId}";
 
                 var resultGeneral = _context.Database.ExecuteSqlInterpolated(queryGeneral);
      

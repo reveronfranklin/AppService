@@ -285,11 +285,11 @@ namespace AppService.Core.Services
                 
                 //TODO ACTUALIZAR DATOS DE LISTA PRECIO EN EL DETALLE DE COTIZACION
                 int solicitarPrecio = 0;
-                var precioMasFlete = precio.Data.PrecioMinimo + precio.Data.Flete;
+                /*var precioMasFlete = precio.Data.PrecioMinimo + precio.Data.Flete;
                 if (precioMasFlete > item.PrecioUsd)
                 {
                     solicitarPrecio = 1;
-                }
+                }*/
                 _unitOfWork.AppDetailQuotesRepository.UpdatePrecios(item.Id,precio.Data.PrecioMinimo,precio.Data.PrecioMaximo,precio.Data.IdCalculo,solicitarPrecio);
                 
             }

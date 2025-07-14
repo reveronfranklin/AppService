@@ -1,5 +1,6 @@
 ﻿using AppService.Core.Interfaces;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Automata.Workers
 {
@@ -9,16 +10,19 @@ namespace Automata.Workers
         private readonly IAppDocumentosFiscalesService _service;
         private readonly IAppCostosEmbarqueService _appCostosEmbaqueService;
         private readonly IEmaiService _emaiService;
+        private readonly IUnitOfWork _unitOfWork;
 
         public WorkerPresupuestoOdoo(ICotizacionService cotizacionService, 
                                      IAppDocumentosFiscalesService service,
                                      IAppCostosEmbarqueService appCostosEmbaqueService,
-                                     IEmaiService emaiService)
+                                     IEmaiService emaiService,
+                                     IUnitOfWork unitOfWork)
         {
             _cotizacionService = cotizacionService;
             _service = service;
             _appCostosEmbaqueService = appCostosEmbaqueService;
             _emaiService = emaiService;
+            _unitOfWork = unitOfWork;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -88,10 +92,18 @@ namespace Automata.Workers
 
                Console.WriteLine(mensaje);
                var src = "";
-
+               int delayIntegacionCotizacion = 10000;
+               var config = await _unitOfWork.AppConfigAppRepository.GetByKey("delay_integrar_cotizacion");
+               if (config != null)
+               {
+                   if (!config.Valor.IsNullOrEmpty())
+                   {
+                       delayIntegacionCotizacion= Convert.ToInt32(config.Valor);
+                   }
+               }
                await _cotizacionService.IntegrarCotizaciones();
                Console.WriteLine("Culminado integracion de cotizaciones: " + DateTime.Now); 
-               await Task.Delay(10000);
+               await Task.Delay(delayIntegacionCotizacion);
                
 
 

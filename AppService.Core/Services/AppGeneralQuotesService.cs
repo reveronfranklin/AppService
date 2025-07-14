@@ -1441,7 +1441,7 @@ namespace AppService.Core.Services
                                         }
                                     }
                                     
-                                    decimal unitPriceBaseProduction = (decimal)detailQuotesGetDto.UnitPriceBaseProduction;
+                                    decimal unitPriceBaseProduction = (decimal)detailQuotesGetDto.UnitPriceConverted;
                                     var flete = (unitPriceBaseProduction* porcflete) / 100;
                                    
                                     flete = Math.Truncate(flete * 100) / 100;
