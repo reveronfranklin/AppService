@@ -73,6 +73,8 @@ namespace AppService.Core.Services
                     fleteMaximo = (precio.PrecioMaximo * porcFlete) / 100;
                 
                 }
+                
+               
                 response.Producto = producto;
                 response.Cantidad=cantidad;
                 response.PrecioMinimo = precio.Precio;

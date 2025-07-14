@@ -86,21 +86,21 @@ namespace Automata.Workers
                await Task.Delay(600000);*/
 
 
-
-               Console.WriteLine("Ejecutando worker cada 10 Segundos");
+                int delayIntegacionCotizacion = 10000;
+                var config = await _unitOfWork.AppConfigAppRepository.GetByKey("delay_integrar_cotizacion");
+                if (config != null)
+                {
+                    if (!config.Valor.IsNullOrEmpty())
+                    {
+                        delayIntegacionCotizacion= Convert.ToInt32(config.Valor);
+                    }
+                }
+               Console.WriteLine($"Ejecutando worker cada {delayIntegacionCotizacion/1000} Segundos");
                 var mensaje = "Iniciando integracion de cotizaciones: " + DateTime.Now;
 
                Console.WriteLine(mensaje);
                var src = "";
-               int delayIntegacionCotizacion = 10000;
-               var config = await _unitOfWork.AppConfigAppRepository.GetByKey("delay_integrar_cotizacion");
-               if (config != null)
-               {
-                   if (!config.Valor.IsNullOrEmpty())
-                   {
-                       delayIntegacionCotizacion= Convert.ToInt32(config.Valor);
-                   }
-               }
+        
                await _cotizacionService.IntegrarCotizaciones();
                Console.WriteLine("Culminado integracion de cotizaciones: " + DateTime.Now); 
                await Task.Delay(delayIntegacionCotizacion);

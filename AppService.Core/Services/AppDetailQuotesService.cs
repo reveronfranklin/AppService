@@ -272,7 +272,9 @@ namespace AppService.Core.Services
                 {
                     idCondicionPago=generalQuotes.IdCondPago;
                 }
-             
+
+                var condicion = await _unitOfWork.MtrCondicionPagoRepository.GetById((short)idCondicionPago);
+                
                 OptionsPreciosProductos optionsPreciosProductos = new OptionsPreciosProductos();
                 optionsPreciosProductos.Cantidad = (decimal)item.CantidadSolicitada;
                 optionsPreciosProductos.Producto = producto;
@@ -282,15 +284,16 @@ namespace AppService.Core.Services
                 optionsPreciosProductos.Municipio = municipioDto;
                 optionsPreciosProductos.IdUnidad=item.IdUnidad;
                 var precio = await _appGetPriceService.GetPrice(optionsPreciosProductos);
-                
-                //TODO ACTUALIZAR DATOS DE LISTA PRECIO EN EL DETALLE DE COTIZACION
+                var unitPriceBaseProduction =
+                    precio.Data.PrecioMinimo + (precio.Data.PrecioMinimo* condicion.PocGapAplicarPrecio) / 100;
+             
                 int solicitarPrecio = 0;
                 /*var precioMasFlete = precio.Data.PrecioMinimo + precio.Data.Flete;
                 if (precioMasFlete > item.PrecioUsd)
                 {
                     solicitarPrecio = 1;
                 }*/
-                _unitOfWork.AppDetailQuotesRepository.UpdatePrecios(item.Id,precio.Data.PrecioMinimo,precio.Data.PrecioMaximo,precio.Data.IdCalculo,solicitarPrecio);
+                _unitOfWork.AppDetailQuotesRepository.UpdatePrecios(item.Id,unitPriceBaseProduction,precio.Data.PrecioMaximo,precio.Data.IdCalculo,solicitarPrecio);
                 
             }
                 
