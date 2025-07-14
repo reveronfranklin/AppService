@@ -288,8 +288,8 @@ namespace AppService.Core.Services
                     precio.Data.PrecioMinimo + (precio.Data.PrecioMinimo* condicion.PocGapAplicarPrecio) / 100;
              
                 int solicitarPrecio = 0;
-                /*var precioMasFlete = precio.Data.PrecioMinimo + precio.Data.Flete;
-                if (precioMasFlete > item.PrecioUsd)
+                //var precioMasFlete = unitPriceBaseProduction + precio.Data.Flete;
+               /* if (precioMasFlete > item.PrecioUsd)
                 {
                     solicitarPrecio = 1;
                 }*/
@@ -2162,7 +2162,7 @@ namespace AppService.Core.Services
                 {
                     
                     var preciousd = appDetailQuotes.PrecioUsd;
-                    decimal unitPriceBaseProduction = (decimal)appDetailQuotes.UnitPriceBaseProduction;
+                    decimal unitPriceBaseProduction = (decimal)appDetailQuotes.UnitPriceConverted;
                     var flete = (unitPriceBaseProduction* porcflete) / 100;
                     
                     flete = Math.Truncate(flete * 100) / 100;
