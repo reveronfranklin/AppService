@@ -172,6 +172,7 @@ internal class Program
         serviceCollection.AddTransient<IAppRecipesByAppDetailQuotesService, AppRecipesByAppDetailQuotesService>();
         serviceCollection.AddTransient<IAppDetailQuotesService, AppDetailQuotesService>();
         serviceCollection.AddTransient<IAppStatusQuoteService, AppStatusQuoteService>();
+        serviceCollection.AddTransient<ITPaTasaReferencialServices, ITPaTasaReferencialServices>();
         serviceCollection.AddTransient<IAppTemplateConversionUnitService, AppTemplateConversionUnitService>();
         serviceCollection.AddTransient<IAppDetailQuotesConversionUnitService, AppDetailQuotesConversionUnitService>();
 
