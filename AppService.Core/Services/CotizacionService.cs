@@ -42,7 +42,7 @@ namespace AppService.Core.Services
         private readonly IAppProductsService _appProductsService;
         private readonly IMtrContactosService _mtrContactosService;
         private readonly IAppRecipesByAppDetailQuotesService _appRecipesByAppDetailQuotesService;
-        private readonly IAppDetailQuotesService _appDetailQuotesService;
+
 
         private readonly IConnectionMultiplexer _connectionMultiplexer;
 
@@ -58,7 +58,7 @@ namespace AppService.Core.Services
           IAppProductsService appProductsService,
           IMtrContactosService mtrContactosService,
           IAppRecipesByAppDetailQuotesService appRecipesByAppDetailQuotesService,
-          IAppDetailQuotesService appDetailQuotesService,
+      
        
           IConnectionMultiplexer connectionMultiplexer
        
@@ -74,7 +74,7 @@ namespace AppService.Core.Services
             _appProductsService = appProductsService;
             _mtrContactosService = mtrContactosService;
             _appRecipesByAppDetailQuotesService = appRecipesByAppDetailQuotesService;
-            _appDetailQuotesService = appDetailQuotesService;
+    
             _connectionMultiplexer = connectionMultiplexer;
         }
 
@@ -369,7 +369,7 @@ namespace AppService.Core.Services
         
         public async Task IntegrarCotizacion(int generalQuotesId, bool actualizarDetalle,bool integrar=true)
         {
-            await _appDetailQuotesService.RecalcularPreciosLista(generalQuotesId);
+          
             
            var configIntegrar =await  _unitOfWork.AppConfigAppRepository.GetByKey("INTEGRAR");
             if (configIntegrar != null)

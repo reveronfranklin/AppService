@@ -170,9 +170,10 @@ internal class Program
         serviceCollection.AddTransient<IAppVariablesService, AppVariablesService>();
         serviceCollection.AddTransient<IHelperService, HelperService>();
         serviceCollection.AddTransient<IAppRecipesByAppDetailQuotesService, AppRecipesByAppDetailQuotesService>();
-        serviceCollection.AddTransient<IAppDetailQuotesService, AppDetailQuotesService>();
+      
+        /*serviceCollection.AddTransient<IAppDetailQuotesService, AppDetailQuotesService>();
         serviceCollection.AddTransient<IAppStatusQuoteService, AppStatusQuoteService>();
-        serviceCollection.AddTransient<ITPaTasaReferencialServices, TPaTasaReferencialServices>();
+        serviceCollection.AddTransient<ITPaTasaReferencialServices, TPaTasaReferencialServices>();*/
         
         
         serviceCollection.AddTransient<IAppTemplateConversionUnitService, AppTemplateConversionUnitService>();
