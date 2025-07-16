@@ -170,7 +170,7 @@ internal class Program
         serviceCollection.AddTransient<IAppVariablesService, AppVariablesService>();
         serviceCollection.AddTransient<IHelperService, HelperService>();
         serviceCollection.AddTransient<IAppRecipesByAppDetailQuotesService, AppRecipesByAppDetailQuotesService>();
-
+        serviceCollection.AddTransient<IAppDetailQuotesService, AppDetailQuotesService>();
         serviceCollection.AddTransient<IAppTemplateConversionUnitService, AppTemplateConversionUnitService>();
         serviceCollection.AddTransient<IAppDetailQuotesConversionUnitService, AppDetailQuotesConversionUnitService>();
 
