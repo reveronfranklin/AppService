@@ -288,11 +288,11 @@ namespace AppService.Core.Services
                     precio.Data.PrecioMinimo + (precio.Data.PrecioMinimo* condicion.PocGapAplicarPrecio) / 100;
              
                 int solicitarPrecio = 0;
-                //var precioMasFlete = unitPriceBaseProduction + precio.Data.Flete;
-               /* if (precioMasFlete > item.PrecioUsd)
+                var precioMasFlete = unitPriceBaseProduction + precio.Data.Flete;
+               if (precioMasFlete > item.PrecioUsd)
                 {
                     solicitarPrecio = 1;
-                }*/
+                }
                 _unitOfWork.AppDetailQuotesRepository.UpdatePrecios(item.Id,unitPriceBaseProduction,precio.Data.PrecioMaximo,precio.Data.IdCalculo,solicitarPrecio);
                 
             }
