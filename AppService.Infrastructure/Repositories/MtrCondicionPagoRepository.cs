@@ -20,6 +20,11 @@ namespace AppService.Infrastructure.Repositories
             _context = context;
         }
 
+        public async Task<List<MtrCondicionPago>> GetByIds(List<short> ids)
+        {
+            return await _context.MtrCondicionPago.Where(c => ids.Contains(c.Codigo)).ToListAsync();
+        }
+        
         public async Task<List<MtrCondicionPago>> GetAll()
         {
 

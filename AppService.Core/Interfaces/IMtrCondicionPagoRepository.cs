@@ -10,6 +10,7 @@ namespace AppService.Core.Interfaces
     {
         Task<List<MtrCondicionPago>> GetAll();
         Task<MtrCondicionPago> GetById(short idCondicionPago);
+        Task<List<MtrCondicionPago>> GetByIds(List<short> ids);
 
     }
 }

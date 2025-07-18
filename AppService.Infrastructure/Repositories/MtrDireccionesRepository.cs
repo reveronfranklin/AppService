@@ -19,6 +19,11 @@ namespace AppService.Infrastructure.Repositories
             _context = context;
         }
 
+        
+        public async Task<List<MtrDirecciones>> GetByIds(List<decimal> ids)
+        {
+            return await _context.MtrDirecciones.Where(d => ids.Contains(d.Id)).ToListAsync();
+        }
         public async Task<List<MtrDirecciones>> GetByIdCliente(string idCliente)
         {
 

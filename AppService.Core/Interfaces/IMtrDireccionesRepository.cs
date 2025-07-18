@@ -14,5 +14,6 @@ namespace AppService.Core.Interfaces
         Task<MtrDirecciones> GetById(decimal id);
         MtrDirecciones Update(MtrDirecciones entity);
         MtrDirecciones Add(MtrDirecciones entity);
+        Task<List<MtrDirecciones>> GetByIds(List<decimal> ids);
     }
 }

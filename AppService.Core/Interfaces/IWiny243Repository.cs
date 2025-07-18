@@ -18,5 +18,6 @@ namespace AppService.Core.Interfaces
         Task<Decimal> GetFleteByIdMunicipo(Decimal id);
 
         Task<Winy243> GetByCodigoMunicipio(string municipio);
+        Task<List<Winy243>> GetByIds(List<decimal> recnums);
     }
 }

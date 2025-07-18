@@ -195,6 +195,260 @@ namespace AppService.Core.Services
             List<AppGeneralQuotes> quotes = await _unitOfWork.AppGeneralQuotesRepository.GetAll(filters);
             if (quotes.Count > 0)
             {
+                
+                // 3. Pre-fetch related data to avoid N+1 queries
+                // Collect all unique IDs for bulk fetching
+                var direccionEntregarIds = quotes.Select(q => q.IdDireccionEntregar).Where(id => id != null).Distinct().ToList();
+                var direccionFacturarIds = quotes.Select(q => q.IdDireccionFacturar).Where(id => id != null).Distinct().ToList();
+                var condicionPagoIds = quotes.Select(q => q.IdCondPago).Where(id => id != null).Distinct().ToList();
+                var municipioIds = quotes.Where(q =>  q.IdMunicipio.HasValue).Select(q => q.IdMunicipio.Value).Distinct().ToList();
+
+                // Fetch all related entities in a single batch for each type
+                var direccionesEntregarDict = await _unitOfWork.MtrDireccionesRepository.GetByIds(direccionEntregarIds);
+
+                var direccionesFacturarDict = await _unitOfWork.MtrDireccionesRepository.GetByIds(direccionFacturarIds);
+
+                var condicionesPagoDict = await _unitOfWork.MtrCondicionPagoRepository.GetByIds(condicionPagoIds);
+
+                var municipiosDict = await _unitOfWork.Winy243Repository.GetByIds(municipioIds);
+                  
+
+                
+                
+                List<AppGeneralQuotesGetDto> appGeneralQuotesGetDto = new List<AppGeneralQuotesGetDto>();
+                try
+                {
+                    foreach (var item in quotes)
+                    {
+                      
+                        AppGeneralQuotesGetDto itemAppGeneralQuotesGetDto = _mapper.Map<AppGeneralQuotesGetDto>(item);
+
+                        if (item.IdVendedorNavigation != null)
+                        {
+                            MtrVendedorDto mtrVendedorDto = _mapper.Map<MtrVendedorDto>(item.IdVendedorNavigation);
+                            itemAppGeneralQuotesGetDto.MtrVendedorDto = mtrVendedorDto;
+                        }
+
+
+                        if (item.IdClienteNavigation != null)
+                        {
+                            MtrClienteDto mtrClienteDto = _mapper.Map<MtrClienteDto>(item.IdClienteNavigation);
+                            itemAppGeneralQuotesGetDto.MtrClienteDto = mtrClienteDto;
+                            if (item.IdCliente == "000000")
+                            {
+                                itemAppGeneralQuotesGetDto.MtrClienteDto.Descripcion = item.IdCliente.Trim() + "-" + item.RazonSocial.Trim() + " RIF: " + item.Rif.ToString();
+                            }
+                        }
+
+
+                        if (item.IdContactoNavigation != null)
+                        {
+                            MtrContactosDto mtrContactosDto = _mapper.Map<MtrContactosDto>(item.IdContactoNavigation);
+                            itemAppGeneralQuotesGetDto.MtrContactosDto = mtrContactosDto;
+                        }
+
+
+                        //MtrDirecciones direccionEntregar = await _unitOfWork.MtrDireccionesRepository.GetById(item.IdDireccionEntregar);
+                        MtrDirecciones direccionEntregar =
+                            direccionesEntregarDict.FirstOrDefault(d => d.Id == item.IdDireccionEntregar);
+                        if (direccionEntregar != null)
+                        {
+                            try
+                            {
+                                MtrDireccionesDto dto = new MtrDireccionesDto();
+                                dto.Id = direccionEntregar.Id;
+                                dto.Codigo = direccionEntregar.Codigo;
+                                dto.Rif = direccionEntregar.Rif;
+                                dto.Direccion = direccionEntregar.Direccion.Trim();
+                                dto.Direccion1 = direccionEntregar.Direccion1.Trim();
+                                dto.Direccion2 = direccionEntregar.Direccion2.Trim();
+                                if (direccionEntregar.Estado == null) direccionEntregar.Estado = "";
+                                dto.Estado = direccionEntregar.Estado.Trim();
+                                if (direccionEntregar.Municipio == null) direccionEntregar.Municipio = "";
+                                dto.Municipio = direccionEntregar.Municipio.Trim();
+                                itemAppGeneralQuotesGetDto.MtrDireccionesEntregarDto = dto;
+
+                                //MtrDireccionesDto direccionEntregarDto = _mapper.Map<MtrDireccionesDto>(direccionEntregar);
+                                //itemAppGeneralQuotesGetDto.MtrDireccionesEntregarDto = direccionEntregarDto;
+                            }
+                            catch (Exception ex)
+                            {
+                                var msg = ex.Message;
+                            }
+
+                        }
+
+
+
+                       // MtrDirecciones direccionFacturar = await _unitOfWork.MtrDireccionesRepository.GetById(item.IdDireccionFacturar);
+                       
+                        MtrDirecciones direccionFacturar =
+                            direccionesFacturarDict.FirstOrDefault(d => d.Id == item.IdDireccionFacturar);
+                        if (direccionFacturar != null)
+                        {
+                            try
+                            {
+                                MtrDireccionesDto dto = new MtrDireccionesDto();
+                                dto.Id = direccionFacturar.Id;
+                                dto.Codigo = direccionFacturar.Codigo;
+                                dto.Rif = direccionFacturar.Rif;
+                                dto.Direccion = direccionFacturar.Direccion;
+                                dto.Direccion1 = direccionFacturar.Direccion1;
+                                dto.Direccion2 = direccionFacturar.Direccion2;
+                                if (direccionFacturar.Estado == null) direccionFacturar.Estado = "";
+                                dto.Estado = direccionFacturar.Estado;
+                                if (direccionFacturar.Municipio == null) direccionFacturar.Municipio = "";
+                                dto.Municipio = direccionFacturar.Municipio;
+                                itemAppGeneralQuotesGetDto.MtrDireccionesFacturarDto = dto;
+                            }
+                            catch (Exception ex)
+                            {
+                                var msg = ex.Message;
+                            }
+
+
+
+                            //MtrDireccionesDto direccionFacturarDto = _mapper.Map<MtrDireccionesDto>(direccionFacturar);
+                            //itemAppGeneralQuotesGetDto.MtrDireccionesFacturarDto = direccionFacturarDto;
+
+                        }
+
+                        //MtrCondicionPago condicionPago = await _unitOfWork.MtrCondicionPagoRepository.GetById(item.IdCondPago);
+                        MtrCondicionPago condicionPago = condicionesPagoDict.FirstOrDefault(c => c.Codigo==item.IdCondPago);
+                        if (condicionPago != null)
+                        {
+                            CondicionPagoDto condicionPagoDto = _mapper.Map<CondicionPagoDto>(condicionPago);
+                            itemAppGeneralQuotesGetDto.CondicionPagoDto = condicionPagoDto;
+
+                        }
+
+
+                        if (item.IdMtrTipoMonedaNavigation != null)
+                        {
+                            MtrTipoMonedaDto mtrTipoMonedaDto = _mapper.Map<MtrTipoMonedaDto>(item.IdMtrTipoMonedaNavigation);
+                            itemAppGeneralQuotesGetDto.MtrTipoMonedaDto = mtrTipoMonedaDto;
+
+                        }
+
+
+                        if (item.IdEstatusNavigation != null)
+                        {
+                            AppStatusQuoteGetDto appStatusQuoteDto = _mapper.Map<AppStatusQuoteGetDto>(item.IdEstatusNavigation);
+                            itemAppGeneralQuotesGetDto.AppStatusQuoteGetDto = appStatusQuoteDto;
+                            itemAppGeneralQuotesGetDto.ClaseCss = item.IdEstatusNavigation.ClaseCss;
+
+                        }
+
+                        if (item.IdCliente == "000000")
+                        {
+
+                            var municipio = await _unitOfWork.Winy243Repository.GetById((decimal)item.IdMunicipio);
+                            if (municipio != null)
+                            {
+                                itemAppGeneralQuotesGetDto.PorcFlete = municipio.PorcFlete;
+                                MunicipioGetDto municipioGetDto = _mapper.Map<MunicipioGetDto>(municipio);
+                                itemAppGeneralQuotesGetDto.MunicipioGetDto = municipioGetDto;
+                            }
+
+                        }
+                        else
+                        {
+                            itemAppGeneralQuotesGetDto.PorcFlete = await GetFleteByIdDireccionEntrega(item.IdDireccionEntregar);
+
+                            string idEstado = "";
+                            string idMunicipio = "";
+                            if (direccionEntregar.Estado == null)
+                            {
+                                idEstado = "01";
+                                idMunicipio = "01";
+                            }
+                            else
+                            {
+                                idEstado = direccionEntregar.Estado.Trim();
+                                idMunicipio = direccionEntregar.Municipio.Trim();
+                            }
+
+                            //var municipio = await _unitOfWork.Winy243Repository.GetByEstadoMunicipio(idEstado, idMunicipio);
+                            var municipio = municipiosDict.FirstOrDefault(c => c.CodigoEstado == idEstado && c.CodigoMcpo == idMunicipio);
+                            
+                            if (municipio != null)
+                            {
+                                itemAppGeneralQuotesGetDto.IdMunicipio = municipio.Recnum;
+                                itemAppGeneralQuotesGetDto.descripcionMunicipio = municipio.DescMunicipio;
+                                MunicipioGetDto municipioGetDto = _mapper.Map<MunicipioGetDto>(municipio);
+                                itemAppGeneralQuotesGetDto.MunicipioGetDto = municipioGetDto;
+                            }
+                        }
+
+                        var permiteAdicionarDetalle = await _unitOfWork.AppGeneralQuotesRepository.PermiteAdicionarDetalle(item.Id);
+                        itemAppGeneralQuotesGetDto.PermiteAdicionarDetalle = permiteAdicionarDetalle;
+
+                        
+                        
+                        itemAppGeneralQuotesGetDto.AppGeneralQuotesActionSheetDto = await GetAppGeneralQuotesActionSheetDto(item.Id, item.IdEstatusNavigation, item.Cotizacion,item);
+
+
+                        ApiResponse<List<AppDetailQuotesGetDto>> listDetail = await _appDetailQuotesService.GetListAppDetailQuoteByAppGeneralQuotesId(item.Id);
+                        if (listDetail != null)
+                        {
+                            //itemAppGeneralQuotesGetDto.ProductosCotizados = await _appDetailQuotesService.DescripcionProductosCotizadosAppGeneralQuotesId(item.Id);
+                            itemAppGeneralQuotesGetDto.ProductosCotizados = "";
+                            foreach (var itemDetail in listDetail.Data)
+                            {
+                                itemAppGeneralQuotesGetDto.OrdenAnterior = itemDetail.OrdenAnterior;
+                             
+
+                                itemAppGeneralQuotesGetDto.ProductosCotizados = itemAppGeneralQuotesGetDto.ProductosCotizados + "" + itemDetail.NombreComercialProducto;
+                            }
+                            itemAppGeneralQuotesGetDto.AppDetailQuotesGetDto = listDetail.Data;
+                        }
+
+                        itemAppGeneralQuotesGetDto.FechaString = item.Fecha.ToString("dd/MM/yyyy");
+
+                        appGeneralQuotesGetDto.Add(itemAppGeneralQuotesGetDto);
+
+                    }
+                    PagedList<AppGeneralQuotesGetDto> pagedResult = PagedList<AppGeneralQuotesGetDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize);
+
+                    return pagedResult;
+
+                }
+                catch (Exception ex)
+                {
+                    var msg = ex.Message;
+                    PagedList<AppGeneralQuotesGetDto> pagedResult = PagedList<AppGeneralQuotesGetDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize);
+
+                    return pagedResult;
+                }
+            
+
+
+
+             
+            }
+            else
+            {
+                return null;
+            }
+
+
+
+
+
+        }
+
+            public async Task<PagedList<AppGeneralQuotesGetDto>> GetAllAppGeneralQuotesOld(AppGeneralQuotesQueryFilter filters)
+        {
+
+
+            filters.PageNumber = filters.PageNumber == 0 ? _paginationOptions.DefaultPageNumber : filters.PageNumber;
+            filters.PageSize = filters.PageSize == 0 ? _paginationOptions.DefaultPageSize : filters.PageSize;
+
+
+
+            List<AppGeneralQuotes> quotes = await _unitOfWork.AppGeneralQuotesRepository.GetAll(filters);
+            if (quotes.Count > 0)
+            {
                 List<AppGeneralQuotesGetDto> appGeneralQuotesGetDto = new List<AppGeneralQuotesGetDto>();
                 try
                 {

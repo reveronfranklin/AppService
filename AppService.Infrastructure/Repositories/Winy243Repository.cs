@@ -20,6 +20,12 @@ namespace AppService.Infrastructure.Repositories
             _context = context;
         }
 
+        
+        public async Task<List<Winy243>> GetByIds(List<decimal> recnums)
+        {
+            return await _context.Winy243.Where(m => recnums.Contains(m.Recnum)).ToListAsync();
+        }
+        
         public async Task<Winy243> GetById(decimal id)
         {
             return await _context.Winy243.Where(x => x.Recnum == id).FirstOrDefaultAsync();
