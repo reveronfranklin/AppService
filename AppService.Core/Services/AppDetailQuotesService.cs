@@ -2521,14 +2521,27 @@ namespace AppService.Core.Services
                     {
                         flete = (decimal)item.PorcFlete;
                     }
-                 
-                    //var detail = await this.GetById(item.Id);
-                    var statusAprobaion =await this.StatusAprobacion(item,(decimal)flete);
-                    if (!statusAprobaion.Aprobado)
+
+
+                    if (item.PrecioUsd>=item.UnitPriceConverted + item.Flete )
                     {
-                        resultDto = true;
-                        return resultDto;
+                        resultDto = false;
                     }
+                    else
+                    {
+                        var statusAprobaion =await this.StatusAprobacion(item,(decimal)flete);
+                        if (!statusAprobaion.Aprobado)
+                        {
+                            resultDto = true;
+                            return true;
+
+                        }
+                    }
+                   
+                    
+                    
+                    //var detail = await this.GetById(item.Id);
+                   
                 }
                 
               
