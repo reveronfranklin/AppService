@@ -95,7 +95,7 @@ namespace AppService.Infrastructure.Repositories
         }
         
         
-        public async Task<List<AppGeneralQuotes>> GetAll(AppGeneralQuotesQueryFilter filter)
+        public async Task<List<AppGeneralQuotes>> GetAllOld(AppGeneralQuotesQueryFilter filter)
         {
 
            // var query = "exec AppReparaStatusEnEsperaCliente";
@@ -312,6 +312,111 @@ namespace AppService.Infrastructure.Repositories
 
         }
 
+        
+        public async Task<List<AppGeneralQuotes>> GetAll(AppGeneralQuotesQueryFilter filter)
+{
+    // 1. Date Handling
+    DateTime fechaDesde;
+    DateTime fechaHasta;
+
+    if (filter.FechaDesde == null)
+    {
+        fechaDesde = DateTime.Now.AddDays(-30);
+        fechaHasta = DateTime.Now;
+    }
+    else
+    {
+        fechaDesde = Convert.ToDateTime(filter.FechaDesde);
+        fechaHasta = Convert.ToDateTime(filter.FechaHasta);
+    }
+    // 2. Role Determination
+    // Use a more descriptive name for the connected user ID
+    string usuarioConectadoId = filter.UsuarioConectado;
+    bool esVendedor = false;
+    bool esSupervisor = false;
+
+    MtrVendedor? vendedor = await _context.MtrVendedor
+                                         .AsNoTracking() // Use AsNoTracking for read-only operations
+                                         .FirstOrDefaultAsync(x => x.Codigo == usuarioConectadoId);
+
+    if (vendedor != null)
+    {
+        // A supervisor would typically also be a seller, consider the hierarchy carefully.
+        // If a blank supervisor means they ARE a supervisor and NOT a seller, then the logic is correct.
+        if (string.IsNullOrEmpty(vendedor.Supervisor))
+        {
+            esSupervisor = true;
+        }
+        else
+        {
+            esVendedor = true;
+        }
+    }
+
+    // 3. Base Query Construction
+    // Start with a base query that includes common includes and AsNoTracking
+    var query = _context.AppGeneralQuotes
+                        .AsNoTracking()
+                        .Include(x => x.IdClienteNavigation)
+                        .Include(x => x.IdVendedorNavigation)
+                        .Include(x => x.IdContactoNavigation)
+                        .Include(x => x.IdEstatusNavigation)
+                        .Include(x => x.IdMtrTipoMonedaNavigation)
+                        .Where(x => x.CreatedAt >= fechaDesde && x.CreatedAt <= fechaHasta);
+
+    // 4. Apply Role-Based Filtering
+    if (esSupervisor)
+    {
+        // A supervisor can see their own sales or those of their supervised sellers.
+        // Assuming 'Supervisor' property in AppGeneralQuotes stores the supervisor's ID.
+        query = query.Where(x => x.Supervisor == usuarioConectadoId || x.IdVendedor == usuarioConectadoId);
+    }
+    else if (esVendedor)
+    {
+        // A regular seller only sees their own sales.
+        query = query.Where(x => x.IdVendedor == usuarioConectadoId);
+    }
+    // If neither supervisor nor seller, no specific IdVendedor/Supervisor filter is applied,
+    // meaning they see all quotes within the date range (be careful if this is not the desired behavior).
+
+    // 5. Apply Search and Quote Filters
+    // Use string.IsNullOrWhiteSpace for more robust checking of string emptiness
+    if (!string.IsNullOrWhiteSpace(filter.SearchText))
+    {
+        string searchTextLower = filter.SearchText.Trim().ToLower();
+        query = query.Where(x => x.SearchText != null && x.SearchText.Trim().ToLower().Contains(searchTextLower));
+    }
+    else if (!string.IsNullOrWhiteSpace(filter.Cotizacion))
+    {
+        string cotizacionTrimmed = filter.Cotizacion.Trim();
+        query = query.Where(x => x.Cotizacion != null && x.Cotizacion.Trim() == cotizacionTrimmed);
+    }
+
+    // 6. Ordering and Pagination
+    query = query.OrderByDescending(x => x.CreatedAt)
+                 .Skip((filter.PageNumber - 1) * filter.PageSize)
+                 .Take(filter.PageSize);
+
+    // 7. Execute Query and Handle Potential Errors
+    try
+    {
+        List<AppGeneralQuotes> result = await query.ToListAsync();
+        return result;
+    }
+    catch (Exception ex)
+    {
+        // Log the exception for debugging purposes.
+        // It's generally better to throw the exception or return an empty list
+        // and let the calling method handle the error appropriately,
+        // rather than catching and returning an empty list silently.
+        // For example: _logger.LogError(ex, "Error fetching general quotes.");
+        // Depending on your application's error handling strategy, you might rethrow:
+        // throw;
+        // Or return an empty list:
+        return new List<AppGeneralQuotes>();
+    }
+}
+        
         public async Task<AppGeneralQuotes> GetById(int id)
         {
 
