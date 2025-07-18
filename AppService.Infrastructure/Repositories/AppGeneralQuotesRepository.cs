@@ -69,6 +69,32 @@ namespace AppService.Infrastructure.Repositories
         
         }
         
+        
+        public void UpdatSearchTextById(int id)
+        {
+
+         
+            FormattableString xqueryDiario = $"";
+            xqueryDiario  =
+                $"update AppGeneralQuotes set Fecha=CreatedAt,SearchText=Cotizacion + '-' + IdVendedor + '-' + (select top 1 NOMBRE from MtrVendedor where CODIGO=IdVendedor) + '-' + IdCliente + '-' + rtrim(ltrim(RazonSocial)) + '-' + Rif + '-' + (select top 1 ClaseCss from AppStatusQuote where AppStatusQuote.id= AppGeneralQuotes.IdEstatus) from AppGeneralQuotes WHERE id ={id}";
+
+
+            try
+            {
+        
+                _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Console.WriteLine(xqueryDiario);
+                throw;
+            }
+           
+        
+        }
+        
+        
         public async Task<List<AppGeneralQuotes>> GetAll(AppGeneralQuotesQueryFilter filter)
         {
 
@@ -77,7 +103,7 @@ namespace AppService.Infrastructure.Repositories
 
             //var result1 = _context.AppGeneralQuotes.FromSqlRaw(query);
 
-            await UpdatSearchText(filter.UsuarioConectado);
+           // await UpdatSearchText(filter.UsuarioConectado);
             DateTime fechaDesde;
             DateTime fechaHasta;
 
@@ -187,7 +213,7 @@ namespace AppService.Infrastructure.Repositories
                              .Include(x => x.IdContactoNavigation)
                              .Include(x => x.IdEstatusNavigation)
                              .Include(x => x.IdMtrTipoMonedaNavigation)
-                             .Where(x => x.IdVendedor == filter.UsuarioConectado.ToString() && x.CreatedAt >= fechaDesde && x.CreatedAt <= fechaHasta && x.SearchText.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower()))
+                             .Where(x => x.CreatedAt >= fechaDesde && x.CreatedAt <= fechaHasta && x.IdVendedor == filter.UsuarioConectado.ToString()  && x.SearchText.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower()))
                              .OrderByDescending(x => x.CreatedAt).Skip((filter.PageNumber - 1) * filter.PageSize)
                              .Take(filter.PageSize)
                              .ToListAsync();
@@ -217,7 +243,7 @@ namespace AppService.Infrastructure.Repositories
                             .Include(x => x.IdContactoNavigation)
                             .Include(x => x.IdEstatusNavigation)
                             .Include(x => x.IdMtrTipoMonedaNavigation)
-                            .Where(x => x.IdVendedor == filter.UsuarioConectado.ToString() && x.CreatedAt >= fechaDesde && x.CreatedAt <= fechaHasta)
+                            .Where(x =>  x.CreatedAt >= fechaDesde && x.CreatedAt <= fechaHasta && x.IdVendedor == filter.UsuarioConectado.ToString() )
                             .OrderByDescending(x => x.CreatedAt).Skip((filter.PageNumber - 1) * filter.PageSize)
                             .Take(filter.PageSize)
                             .ToListAsync();
@@ -426,7 +452,7 @@ namespace AppService.Infrastructure.Repositories
         {
             entity.IntegrarCotizacion = true;
             await _context.AppGeneralQuotes.AddAsync(entity);
-
+             UpdatSearchTextById(entity.Id);
 
         }
 
@@ -436,6 +462,7 @@ namespace AppService.Infrastructure.Repositories
         {
             entity.IntegrarCotizacion = true;
             _context.AppGeneralQuotes.Update(entity);
+            UpdatSearchTextById(entity.Id);
 
         }
 
