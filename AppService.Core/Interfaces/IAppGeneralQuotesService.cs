@@ -12,7 +12,13 @@ namespace AppService.Core.Interfaces
 {
     public interface IAppGeneralQuotesService
     {
+
+        Task<PagedList<CotizacionResponseDtoDto>> GetCotizaciones(AppGeneralQuotesQueryFilter filters);
+        
+        
         Task<AppGeneralQuotes> GetById(int id);
+        
+        
 
         Task<AppGeneralQuotesGetDto> GetAppGeneralQuotes(AppGeneralQuotesQueryFilter filters);
 

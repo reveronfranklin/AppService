@@ -60,4 +60,28 @@ namespace AppService.Core.DTOs
 
 
     }
+    
+    public class CotizacionResponseDtoDto
+    {
+
+        public int Id { get; set; }
+        public string Cotizacion { get; set; }
+        public string IdVendedor { get; set; }
+        public string IdCliente { get; set; }
+        public string DescricionCliente { get; set; }
+        public string Estatus { get; set; }
+        public string Fecha { get; set; }
+        public string Items { get; set; }
+        public long Orden { get; set; }
+        public string claseCss { get; set; }
+        
+        
+        
+     
+      
+        public AppGeneralQuotesActionSheetDto AppGeneralQuotesActionSheetDto { get; set; }
+
+
+    }
 }
+

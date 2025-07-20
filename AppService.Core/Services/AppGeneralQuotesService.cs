@@ -183,7 +183,8 @@ namespace AppService.Core.Services
 
         }
 
-        public async Task<PagedList<AppGeneralQuotesGetDto>> GetAllAppGeneralQuotes(AppGeneralQuotesQueryFilter filters)
+        
+            public async Task<PagedList<AppGeneralQuotesGetDto>> GetAllAppGeneralQuotes(AppGeneralQuotesQueryFilter filters)
         {
 
 
@@ -296,9 +297,9 @@ namespace AppService.Core.Services
                                 dto.Direccion1 = direccionFacturar.Direccion1;
                                 dto.Direccion2 = direccionFacturar.Direccion2;
                                 if (direccionFacturar.Estado == null) direccionFacturar.Estado = "";
-                                dto.Estado = direccionFacturar.Estado;
+                                dto.Estado = direccionFacturar.Estado.Trim();
                                 if (direccionFacturar.Municipio == null) direccionFacturar.Municipio = "";
-                                dto.Municipio = direccionFacturar.Municipio;
+                                dto.Municipio = direccionFacturar.Municipio.Trim();
                                 itemAppGeneralQuotesGetDto.MtrDireccionesFacturarDto = dto;
                             }
                             catch (Exception ex)
@@ -343,6 +344,8 @@ namespace AppService.Core.Services
                         {
 
                             var municipio = await _unitOfWork.Winy243Repository.GetById((decimal)item.IdMunicipio);
+                            
+
                             if (municipio != null)
                             {
                                 itemAppGeneralQuotesGetDto.PorcFlete = municipio.PorcFlete;
@@ -437,6 +440,10 @@ namespace AppService.Core.Services
 
         }
 
+        
+            
+            
+  
             public async Task<PagedList<AppGeneralQuotesGetDto>> GetAllAppGeneralQuotesOld(AppGeneralQuotesQueryFilter filters)
         {
 
@@ -813,6 +820,80 @@ namespace AppService.Core.Services
         }
 
 
+        
+        public async Task<PagedList<CotizacionResponseDtoDto>>  GetCotizaciones(AppGeneralQuotesQueryFilter filters)
+        {
+
+
+            filters.PageNumber = filters.PageNumber == 0 ? _paginationOptions.DefaultPageNumber : filters.PageNumber;
+            filters.PageSize = filters.PageSize == 0 ? _paginationOptions.DefaultPageSize : filters.PageSize;
+
+
+            List<AppGeneralQuotes> quotes = await _unitOfWork.AppGeneralQuotesRepository.GetAll(filters);
+            if (quotes.Count > 0)
+            {
+                List<CotizacionResponseDtoDto> appGeneralQuotesGetDto = new List<CotizacionResponseDtoDto>();
+                foreach (AppGeneralQuotes item in quotes)
+                {
+                    CotizacionResponseDtoDto cotizacion = new CotizacionResponseDtoDto();
+
+                    cotizacion.Id = item.Id;
+                    cotizacion.Cotizacion = item.Cotizacion;
+                    cotizacion.IdVendedor = item.IdVendedor;
+                    cotizacion.IdCliente = item.IdCliente;
+                    if (item.IdCliente == "000000")
+                    {
+                        cotizacion.DescricionCliente  = item.IdCliente.Trim() + "-" + item.RazonSocial.Trim() + " RIF: " + item.Rif.ToString();
+
+                    }
+                    else
+                    {
+                        cotizacion.DescricionCliente  = item.IdCliente.Trim() + "-" + item.IdClienteNavigation.Nombre+ " RIF: " + item.IdClienteNavigation.NoRegTribut;
+
+                    }
+       
+                    cotizacion.Estatus =item.IdEstatusNavigation.Descripcion;
+                    cotizacion.claseCss =item.IdEstatusNavigation.ClaseCss;
+                    cotizacion.Fecha = item.Fecha.ToString("dd/MM/yyyy");
+                    cotizacion.Items = "";
+                    cotizacion.Orden=(long)item.Orden;
+                     cotizacion.AppGeneralQuotesActionSheetDto = await GetAppGeneralQuotesActionSheetDto(item.Id, item.IdEstatusNavigation, item.Cotizacion,item);
+
+
+                     ApiResponse<List<AppDetailQuotesGetDto>> listDetail = await _appDetailQuotesService.GetListAppDetailQuoteByAppGeneralQuotesId(item.Id);
+                     if (listDetail != null)
+                     {
+                         //itemAppGeneralQuotesGetDto.ProductosCotizados = await _appDetailQuotesService.DescripcionProductosCotizadosAppGeneralQuotesId(item.Id);
+                         cotizacion.Items = "";
+                         foreach (var itemDetail in listDetail.Data)
+                         {
+                             
+                             cotizacion.Items = cotizacion.Items  + "" + itemDetail.NombreComercialProducto;
+                         }
+                         
+                     }
+
+                     appGeneralQuotesGetDto.Add(cotizacion);
+                }
+
+                PagedList<CotizacionResponseDtoDto> pagedResult = PagedList<CotizacionResponseDtoDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize);
+
+                return pagedResult;
+            }
+            else
+            {
+                return null;
+            }
+
+
+
+
+
+        }
+
+
+        
+        
 
         public async Task<PagedList<AppGeneralQuotesGetDto>> GetAllSimpleAppGeneralQuotes(AppGeneralQuotesQueryFilter filters)
         {

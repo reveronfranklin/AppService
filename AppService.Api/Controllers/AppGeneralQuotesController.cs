@@ -242,6 +242,98 @@ namespace AppService.Api.Controllers
         }
 
 
+        [HttpPost]
+        [Route("[action]")]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(ApiResponse<List<AppGeneralQuotesGetDto>>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> GetCotizaciones(AppGeneralQuotesQueryFilter filters)
+        {
+
+            Metadata metadata = new Metadata
+            {
+                IsValid = false,
+                Message = "",
+                TotalCount = 0
+            };
+
+
+            try
+            {
+
+
+                //_cotizacionService.IntegrarCotizaciones();
+
+                // await _cotizacionService.IntegrarCotizacion(667, true);
+
+
+
+                var generalQuotes = await _appGeneralQuotesService.GetCotizaciones(filters);
+
+
+
+                if (generalQuotes != null)
+                {
+                    metadata.IsValid = true;
+                    metadata.Message = "";
+                    metadata.TotalCount = generalQuotes.TotalCount;
+                    metadata.PageSize = generalQuotes.PageSize;
+                    metadata.CurrentPage = generalQuotes.CurrentPage;
+                    metadata.TotalPage = generalQuotes.TotalPage;
+                    metadata.HasNextPage = generalQuotes.HasNextPage;
+                    metadata.HasPreviousPage = generalQuotes.HasPreviousPage;
+                    metadata.NextPageUrl = "";
+                    metadata.PreviousPageUrl = "";
+
+                    ApiResponse<List<CotizacionResponseDtoDto>> response = new ApiResponse<List<CotizacionResponseDtoDto>>(generalQuotes)
+                    {
+                        Meta = metadata
+                    };
+
+                    return Ok(response);
+                }
+                else
+                {
+                    metadata.IsValid = true;
+                    metadata.Message = "No Data.......";
+                    metadata.TotalCount = 0;
+                    metadata.PageSize = filters.PageSize;
+                    metadata.CurrentPage = 0;
+                    metadata.TotalPage = filters.PageNumber;
+                    metadata.HasNextPage = false;
+                    metadata.HasPreviousPage = false;
+                    metadata.NextPageUrl = "";
+                    metadata.PreviousPageUrl = "";
+
+                    ApiResponse<List<CotizacionResponseDtoDto>> response = new ApiResponse<List<CotizacionResponseDtoDto>>(generalQuotes)
+                    {
+                        Meta = metadata
+                    };
+
+                    return Ok(response);
+                }
+
+
+            }
+            catch (Exception e)
+            {
+
+                metadata.IsValid = false;
+                metadata.Message = e.InnerException.Message;
+                var responseError = new ApiResponse<IEnumerable<CobAdjuntosCobranzaDto>>(null)
+                {
+                    Meta = metadata
+                };
+
+
+                return Ok(responseError);
+            }
+
+
+        }
+
+        
+        
+        
         /// <summary>
         /// Retorna los datos de AppGeneralQuotes
         /// Filtros a aplicar AppGeneralQuotesQueryFilter, si en el objeto incluye Cotizacion, 
