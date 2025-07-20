@@ -2499,7 +2499,11 @@ namespace AppService.Core.Services
             {
                 
                 //var appGeneralQuotes = await _unitOfWork.AppGeneralQuotesRepository.GetById(appGeneralQuotesId);
-            
+                if (appGeneralQuotes.IdEstatus >= 5)
+                {
+                    resultDto = true;
+                    return resultDto;
+                }
              
                 var appDetailQuotes =
                     await this._unitOfWork.AppDetailQuotesRepository.GetByAppGeneralQuotesId(appGeneralQuotesId);
