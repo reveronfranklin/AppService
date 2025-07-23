@@ -284,16 +284,16 @@ namespace AppService.Core.Services
                 optionsPreciosProductos.Municipio = municipioDto;
                 optionsPreciosProductos.IdUnidad=item.IdUnidad;
                 var precio = await _appGetPriceService.GetPrice(optionsPreciosProductos);
-                var unitPriceBaseProduction =
-                    precio.Data.PrecioMinimo + (precio.Data.PrecioMinimo* condicion.PocGapAplicarPrecio) / 100;
+               /* var unitPriceBaseProduction =
+                    precio.Data.PrecioMinimo + (precio.Data.PrecioMinimo* condicion.PocGapAplicarPrecio) / 100;*/
              
                 int solicitarPrecio = 0;
-                var precioMasFlete = unitPriceBaseProduction + precio.Data.Flete;
+                var precioMasFlete =precio.Data.PrecioMinimo + precio.Data.Flete;
                if (precioMasFlete > item.PrecioUsd)
                 {
                     solicitarPrecio = 1;
                 }
-                _unitOfWork.AppDetailQuotesRepository.UpdatePrecios(item.Id,unitPriceBaseProduction,precio.Data.PrecioMaximo,precio.Data.IdCalculo,solicitarPrecio);
+                _unitOfWork.AppDetailQuotesRepository.UpdatePrecios(item.Id,precio.Data.PrecioMinimo,precio.Data.PrecioMaximo,precio.Data.IdCalculo,solicitarPrecio);
                 
             }
                 
@@ -1104,10 +1104,11 @@ namespace AppService.Core.Services
                 }
 
                 AppDetailQuotes appDetailQuotesUpdated = await this.Update(appDetailQuotes);
-                if (appDetailQuotesUpdateDto.CalculoId == 0)
+                await RecalcularPreciosLista(appDetailQuotes.AppGeneralQuotesId);
+                /*if (appDetailQuotesUpdateDto.CalculoId == 0)
                 {
                     await RecalcularPreciosLista(appDetailQuotes.AppGeneralQuotesId);
-                }
+                }*/
                 
                 _unitOfWork.AppDetailQuotesRepository.UpdateCondicionPago(appDetailQuotesUpdated.AppGeneralQuotesId,appDetailQuotesUpdated.IdCondPago);
 
@@ -1123,11 +1124,11 @@ namespace AppService.Core.Services
                 }
             
 
-                if (recalcularPrecio)
+                /*if (recalcularPrecio)
                 {
                     await RecalcularPreciosLista(appDetailQuotes.AppGeneralQuotesId);
 
-                }
+                }*/
                  
               
 
@@ -1341,7 +1342,7 @@ namespace AppService.Core.Services
             if (appDetailQuotes.Count > 0)
             {
                 var firstRecord = appDetailQuotes.First();
-                await RecalcularPreciosLista(firstRecord.AppGeneralQuotesId);
+                //await RecalcularPreciosLista(firstRecord.AppGeneralQuotesId);
                 foreach (var item in appDetailQuotes)
                 {
                     var listCalculo = await this._unitOfWork.AppRecipesByAppDetailQuotesRepository.GetListRecipesByIdCalculoCodeHistorico((int)item.CalculoId);
