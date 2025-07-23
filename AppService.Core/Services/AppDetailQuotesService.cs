@@ -238,8 +238,11 @@ namespace AppService.Core.Services
                     if (general!=null)
                     {
                         var porcFlete = await GetFlete((decimal)general.IdMunicipio, item.IdProducto);
+                        
                         var flete = (item.UnitPriceBaseProduction * porcFlete)/100;
-                       Console.WriteLine($"Actualizando la cotizacion: {item.Cotizacion}");
+                   
+                        flete = (decimal?)(Math.Truncate((double)(flete * 100)) / 100);
+                        
                         _unitOfWork.AppDetailQuotesRepository.UpdateFlete(item.Id,porcFlete,(decimal)flete);
                     }
                 }
@@ -290,6 +293,8 @@ namespace AppService.Core.Services
              
                 int solicitarPrecio = 0;
                 var precioMasFlete =precio.Data.PrecioMinimo + precio.Data.Flete;
+                
+            
                if (precioMasFlete > item.PrecioUsd)
                 {
                     solicitarPrecio = 1;
@@ -1097,7 +1102,7 @@ namespace AppService.Core.Services
                 var porcFlete = await GetFlete((decimal)generalQuotes.IdMunicipio, appDetailQuotes.IdProducto);
                 appDetailQuotes.PorcFlete = porcFlete;
                 appDetailQuotes.Flete = ((decimal)appDetailQuotes.UnitPriceBaseProduction * porcFlete) / 100;
-
+                appDetailQuotes.Flete  = (decimal?)(Math.Truncate((double)( appDetailQuotes.Flete * 100)) / 100);
                 
                 if (appDetailQuotes.IdCondPago == 0)
                 {
@@ -2527,8 +2532,8 @@ namespace AppService.Core.Services
                     {
                         flete = (decimal)item.PorcFlete;
                     }
-
-
+                  
+                  
                     if (item.PrecioUsd>=item.UnitPriceConverted + item.Flete )
                     {
                         resultDto = false;
