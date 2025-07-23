@@ -11,4 +11,7 @@ public class OptionsPreciosProductos
     public int IdUnidad { get; set; }
     public MunicipioGetDto Municipio { get; set; }
     public int CondicionPago { get; set; }
+    
+    public int AppDetailQuotesId { get; set; }
+   
 }

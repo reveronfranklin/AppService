@@ -283,6 +283,7 @@ namespace AppService.Core.Services
                 optionsPreciosProductos.CondicionPago = idCondicionPago;
                 optionsPreciosProductos.Municipio = municipioDto;
                 optionsPreciosProductos.IdUnidad=item.IdUnidad;
+                optionsPreciosProductos.AppDetailQuotesId=item.Id;
                 var precio = await _appGetPriceService.GetPrice(optionsPreciosProductos);
                /* var unitPriceBaseProduction =
                     precio.Data.PrecioMinimo + (precio.Data.PrecioMinimo* condicion.PocGapAplicarPrecio) / 100;*/
