@@ -134,6 +134,7 @@ namespace AppService.Core.Services
             filter.Ancho = options.MedidaOpuesta;
             filter.UnidadId = options.IdUnidad;
             filter.CondicionDePago = options.CondicionPago;
+            filter.AppDetailQuotesId = options.AppDetailQuotesId;
         
             
             var calculo = await _appRecipesByAppDetailQuotesService.GetPrice(filter);
