@@ -138,6 +138,37 @@ namespace AppService.Core.Services
             return porcflete;
         }
 
+        public async Task<long> getOrdenAnterior(appRecipesByAppDetailQuotesQueryFilter filter)
+        {
+            long ordenAnterior;
+            if (filter.AppDetailQuotesId == null) {
+                filter.AppDetailQuotesId = 0;
+                ordenAnterior = 0;
+                if (filter.OrdenAnterior >=0)
+                {
+                    ordenAnterior = (long)filter.OrdenAnterior;
+                }
+            }
+            else
+            {
+                var detail = await _unitOfWork.AppDetailQuotesRepository.GetById((int)filter.AppDetailQuotesId);
+                if (detail != null)
+                {
+                    ordenAnterior = (long)detail.OrdenAnterior;
+                }
+                else
+                {
+                    ordenAnterior = 0;
+                    if (filter.OrdenAnterior >=0)
+                    {
+                        ordenAnterior = (long)filter.OrdenAnterior;
+                    }
+                }
+            }
+            return ordenAnterior;
+        }
+        
+        
         
         public async Task<ApiResponse<AppPriceGetDto>> GetPrice(appRecipesByAppDetailQuotesQueryFilter filter)
         {
@@ -342,25 +373,8 @@ namespace AppService.Core.Services
                         return result;
 
                     }
-                    long ordenAnterior;
-                    if (filter.AppDetailQuotesId == null) {
-                        filter.AppDetailQuotesId = 0;
-                        ordenAnterior = 0;
-                    }
-                    else
-                    {
-                        var detail = await _unitOfWork.AppDetailQuotesRepository.GetById((int)filter.AppDetailQuotesId);
-                        if (detail != null)
-                        {
-                            ordenAnterior = (long)detail.OrdenAnterior;
-                        }
-                        else
-                        {
-                            ordenAnterior = 0;
-                        }
-                    }
                     
-                   
+                    long ordenAnterior = await getOrdenAnterior(filter);
 
                     var resultConversion = await CalculaConversion(filter.Cantidad, (decimal)filter.Largo, (decimal)filter.Ancho);
                     if (filter.UnidadId == null) filter.UnidadId = 4;
@@ -423,25 +437,8 @@ namespace AppService.Core.Services
                         return result;
 
                     }
-                    long ordenAnterior;
-                    if (filter.AppDetailQuotesId == null)
-                    {
-                        filter.AppDetailQuotesId = 0;
-                        ordenAnterior = 0;
-                    }
-                    else
-                    {
-                        var detail = await _unitOfWork.AppDetailQuotesRepository.GetById((int)filter.AppDetailQuotesId);
-                        if (detail != null)
-                        {
-                            ordenAnterior = (long)detail.OrdenAnterior;
-                        }
-                        else
-                        {
-                            ordenAnterior = 0;
-                        }
-                    }
 
+                    long ordenAnterior = await getOrdenAnterior(filter);
                     // var resultConversion = await CalculaConversion(filter.Cantidad, (decimal)filter.Largo, (decimal)filter.Ancho);
                     var price = await this.GetPrecioEtiquetasPrime(filter.AppProuctId, filter.Cantidad, (decimal)filter.Largo, (decimal)filter.Ancho, ordenAnterior,filter.CondicionDePago);
                     AppPriceGetDto resultPrice = new AppPriceGetDto();

@@ -22,6 +22,8 @@ namespace AppService.Core.DTOs
         public int? AppDetailQuotesId { get; set; }
         public int? UnidadId { get; set; }
         public int CondicionDePago { get; set; } = 40;
+        
+        public long OrdenAnterior { get; set; }
 
     }
 }

@@ -328,6 +328,7 @@ namespace AppService.Infrastructure.Repositories
     {
         fechaDesde = Convert.ToDateTime(filter.FechaDesde);
         fechaHasta = Convert.ToDateTime(filter.FechaHasta);
+        fechaHasta = fechaHasta.AddDays(1);
     }
     // 2. Role Determination
     // Use a more descriptive name for the connected user ID
