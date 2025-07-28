@@ -140,7 +140,7 @@ namespace AppService.Infrastructure.Repositories.Comisiones
 
             try
             {
-                FormattableString xqueryDiario = $"UPDATE MOOREVE.DBO.PcOrdenesSinCalculoComision SET MOOREVE.DBO.WSMY685.SearchText = cast(ORDEN as nvarchar(20)) WHERE (SearchText IS NULL)";
+                FormattableString xqueryDiario = $"UPDATE MOOREVE.DBO.PcOrdenesSinCalculoComision SET MOOREVE.DBO.PcOrdenesSinCalculoComision.SearchText = cast(ORDEN as nvarchar(20)) WHERE (SearchText IS NULL)";
 
                 var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
                 return "";
