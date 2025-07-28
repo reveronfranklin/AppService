@@ -4,7 +4,7 @@ namespace AppService.Core.EntitiesMooreve;
 
 public class PcOrdenesSinCalculoComision
 {
-    public int Id { get; set; }
+    public decimal Id { get; set; }
     public decimal? Orden { get; set; }
     public string? SearchText { get; set; } 
 }
