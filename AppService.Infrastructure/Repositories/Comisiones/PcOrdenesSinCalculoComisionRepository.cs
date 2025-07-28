@@ -67,11 +67,43 @@ namespace AppService.Infrastructure.Repositories.Comisiones
 
                     totalPage = (totalRegistros + filter.PageSize - 1) / filter.PageSize;
 
-                    pageData = _context.PcOrdenesSinCalculoComision
+                    /*pageData = _context.PcOrdenesSinCalculoComision
                        
                         .Skip((filter.PageNumber - 1) * filter.PageSize)
                         .Take(filter.PageSize)
-                        .ToList();
+                        .ToList();*/
+                    
+                    
+                // Definir el número de filas a saltar y el número de filas a tomar
+                int skipRows = (filter.PageNumber - 1) * filter.PageSize;
+                int takeRows = filter.PageSize;
+
+                // La consulta SQL con ROW_NUMBER() para compatibilidad con SQL Server 2008 R2
+                // REEMPLAZA 'IdOrden' CON LA COLUMNA POR LA QUE QUIERES ORDENAR TUS DATOS
+                // Y 'PcOrdenesSinCalculoComision' CON EL NOMBRE REAL DE TU TABLA SI ES DIFERENTE
+                string sqlQuery = $@"
+                SELECT *
+                FROM (
+                SELECT
+                *, -- Selecciona todas las columnas que necesitas. Considera listar solo las que necesitas.
+                ROW_NUMBER() OVER (ORDER BY Orden) AS RowNum -- Cambia 'IdOrden' por la columna de ordenación
+                FROM
+                PcOrdenesSinCalculoComision
+                ) AS PagedResults
+                WHERE
+                RowNum BETWEEN ({skipRows} + 1) AND ({skipRows} + {takeRows})
+                ORDER BY
+                RowNum; -- O por la columna original si lo prefieres para la ordenación final
+                ";
+
+                // Ejecutar la consulta SQL raw con FromSqlRaw (Entity Framework Core)
+                // Asegúrate de que el tipo <TEntity> sea la entidad mapeada para PcOrdenesSinCalculoComision
+                pageData = _context.PcOrdenesSinCalculoComision
+                .FromSqlRaw(sqlQuery)
+                .ToList();
+
+                    
+                    
 
                 }
                 
