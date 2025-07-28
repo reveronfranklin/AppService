@@ -275,6 +275,8 @@ namespace AppService.Infrastructure.Repositories
         public readonly ITasaConsolidadoRepository _tasaConsolidadoRepository;
         public readonly IWpry254Repository _wpry254Repository;
         public readonly IEmailRepository _emailRepository;
+        public readonly IPcOrdenesSinCalculoComisionRepository _pcOrdenesSinCalculoComisionRepository;
+        
         
 
         public UnitOfWork(RRDContext context, MooreveContext mooreveContext, MCContext mcContext, IMaestrosContext maestrosContext, SapContext sapContext, ClientesContext clientesContext, FacturacionContext facturacionContext, ContratosStockContext contratosStockContext, DWContext dWContext, NominaContext nominaContext, SpiContext spiContext, PlantaContext plantaContext, MaterialesContext materialesContext,EstadisticasContext estadisticasContext,IConnectionMultiplexer connectionMultiplexer,POWERBIContext powerBIContext)
@@ -432,6 +434,9 @@ namespace AppService.Infrastructure.Repositories
 
         //Mooreve
         
+        
+        public IPcOrdenesSinCalculoComisionRepository PcOrdenesSinCalculoComisionRepository => _pcOrdenesSinCalculoComisionRepository ?? new PcOrdenesSinCalculoComisionRepository(_mooreveContext);
+
         
         public IWpry254Repository Wpry254Repository => _wpry254Repository ?? new Wpry254Repository(_mooreveContext);
         public IPcTipoPagoRepository PcTipoPagoRepository => _pcTipoPagoRepository ?? new PcTipoPagoRepository(_mooreveContext);

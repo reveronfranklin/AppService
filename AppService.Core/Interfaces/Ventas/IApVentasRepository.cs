@@ -10,4 +10,5 @@ public interface IAppVentasRepository
 {
     Task<ResultDto<List<AppVentas>>> GetPaginate(AppVentasFilter filter);
     Task<AppVentas> GetByOrdenProducto(decimal orden, string producto);
+    Task<AppVentas> GetByOrden(decimal orden);
 }

@@ -11,7 +11,6 @@ using AppService.Infrastructure.DataFacturacion;
 using AppService.Infrastructure.DataMaestros;
 using AppService.Infrastructure.DataMateriales;
 using AppService.Infrastructure.DataMc;
-
 using AppService.Infrastructure.DataMooreve;
 using AppService.Infrastructure.DataNomina;
 using AppService.Infrastructure.DataPlanta;
@@ -52,8 +51,6 @@ namespace AppService.Api
 {
     public class Startup
     {
-
-
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -64,30 +61,23 @@ namespace AppService.Api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
             //services.AddCors();
-
-
 
 
             services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 
 
-
-
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-            services.AddControllers(options =>
-            {
-                options.Filters.Add<GlobalExceptionFilter>();
-            }).AddNewtonsoftJson(options =>
-            {
-                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-                options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-            }).ConfigureApiBehaviorOptions(options =>
-            {
-                // options.SuppressModelStateInvalidFilter = true;
-            });
+            services.AddControllers(options => { options.Filters.Add<GlobalExceptionFilter>(); })
+                .AddNewtonsoftJson(options =>
+                {
+                    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                    options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+                }).ConfigureApiBehaviorOptions(options =>
+                {
+                    // options.SuppressModelStateInvalidFilter = true;
+                });
 
             services.Configure<PaginationOptions>(Configuration.GetSection("Pagination"));
 
@@ -95,132 +85,107 @@ namespace AppService.Api
             {
                 options.UseSqlServer(Configuration.GetConnectionString("rrdConecction"),
                     sqlServerOptions => sqlServerOptions.CommandTimeout(3600)
-                   );
-
+                );
             });
 
             services.AddDbContext<SapContext>(options =>
-
-               options.UseSqlServer(Configuration.GetConnectionString("sapConecction"),
-                   sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
-
-                );
+                options.UseSqlServer(Configuration.GetConnectionString("sapConecction"),
+                    sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
+            );
 
             /*services.AddDbContext<MooreveContext>(options =>
             {
-                options.UseSqlServer(Configuration.GetConnectionString("mooreveConecction")); 
+                options.UseSqlServer(Configuration.GetConnectionString("mooreveConecction"));
 
             });*/
 
 
-             services.AddDbContext<MooreveContext>(
-                 x => x.UseSqlServer(Configuration.GetConnectionString("mooreveConecction"),
-                     sqlServerOptions => sqlServerOptions.CommandTimeout(3600)
-                 ),
-                 ServiceLifetime.Transient);
-             
-             
-             services.AddDbContext<POWERBIContext>(
-                 x => x.UseSqlServer(Configuration.GetConnectionString("powerbiConecction"),
-                     sqlServerOptions => sqlServerOptions.CommandTimeout(3600)
-                 ),
-                 ServiceLifetime.Transient);
+            services.AddDbContext<MooreveContext>(
+                x => x.UseSqlServer(Configuration.GetConnectionString("mooreveConecction"),
+                    sqlServerOptions => sqlServerOptions.CommandTimeout(3600)
+                ),
+                ServiceLifetime.Transient);
 
-             
+
+            services.AddDbContext<POWERBIContext>(
+                x => x.UseSqlServer(Configuration.GetConnectionString("powerbiConecction"),
+                    sqlServerOptions => sqlServerOptions.CommandTimeout(3600)
+                ),
+                ServiceLifetime.Transient);
+
 
             services.AddDbContext<MaterialesContext>(options =>
-
-              options.UseSqlServer(Configuration.GetConnectionString("materialesConecction"),
-                  sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
-
-               );
+                options.UseSqlServer(Configuration.GetConnectionString("materialesConecction"),
+                    sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
+            );
 
             services.AddDbContext<ClientesContext>(options =>
-
-             options.UseSqlServer(Configuration.GetConnectionString("clientesConecction"),
-                 sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
-
-              );
+                options.UseSqlServer(Configuration.GetConnectionString("clientesConecction"),
+                    sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
+            );
 
 
             services.AddDbContext<MCContext>(options =>
-
-            options.UseSqlServer(Configuration.GetConnectionString("mcConecction"),
-                sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
-
-             );
+                options.UseSqlServer(Configuration.GetConnectionString("mcConecction"),
+                    sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
+            );
 
             services.AddDbContext<CXCContext>(options =>
-
                 options.UseSqlServer(Configuration.GetConnectionString("cxcConecction"))
-
             );
             services.AddDbContext<IMaestrosContext>(options =>
-
-               options.UseSqlServer(Configuration.GetConnectionString("maestrosConecction"),
-                   sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
-
-           );
+                options.UseSqlServer(Configuration.GetConnectionString("maestrosConecction"),
+                    sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
+            );
 
             services.AddDbContext<FacturacionContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("facturacionConecction"),
+                    sqlServerOptions => sqlServerOptions.CommandTimeout(3600)
+                )
+            );
 
-                          options.UseSqlServer(Configuration.GetConnectionString("facturacionConecction"),
-                          sqlServerOptions => sqlServerOptions.CommandTimeout(3600)
-)
-
-                      );
-
-          
 
             services.AddDbContext<PlantaContext>(options =>
-
-                         options.UseSqlServer(Configuration.GetConnectionString("plantaConecction"),
-                             sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
-
-                     );
-
+                options.UseSqlServer(Configuration.GetConnectionString("plantaConecction"),
+                    sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
+            );
 
 
             services.AddDbContext<ContratosStockContext>(options =>
-
-              options.UseSqlServer(Configuration.GetConnectionString("contratosStockConecction"),
-                  sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
-
-          );
+                options.UseSqlServer(Configuration.GetConnectionString("contratosStockConecction"),
+                    sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
+            );
             services.AddDbContext<DWContext>(options =>
-
-              options.UseSqlServer(Configuration.GetConnectionString("dwConecction"),
-                  sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
-
-          );
+                options.UseSqlServer(Configuration.GetConnectionString("dwConecction"),
+                    sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
+            );
 
             services.AddDbContext<NominaContext>(options =>
-
-               options.UseSqlServer(Configuration.GetConnectionString("nominaConecction"),
-                   sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
-          );
+                options.UseSqlServer(Configuration.GetConnectionString("nominaConecction"),
+                    sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
+            );
             services.AddDbContext<EstadisticasContext>(options =>
-
-           options.UseSqlServer(Configuration.GetConnectionString("estadisticasConecction"),
-               sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
+                options.UseSqlServer(Configuration.GetConnectionString("estadisticasConecction"),
+                    sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
             );
 
             services.AddDbContext<SpiContext>(options =>
-                      options.UseOracle(Configuration.GetConnectionString("spiConnection"), b => b.UseOracleSQLCompatibility("11")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+                options.UseOracle(Configuration.GetConnectionString("spiConnection"),
+                    b => b.UseOracleSQLCompatibility("11")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
             );
 
             services.AddSingleton<IConnectionMultiplexer>(_ =>
                 ConnectionMultiplexer.Connect(Configuration.GetConnectionString("redisConnection")));
 
-            
-            
-            services.AddTransient<IPowerBiOrdenesService, PowerBiOrdenesService>();
 
-           
+            services.AddTransient<IPowerBiOrdenesService, PowerBiOrdenesService>();
+            services.AddTransient<IPcOrdenesSinCalculoComisionServices, PcOrdenesSinCalculoComisionServices>();
+
+
             services.AddTransient<IAppOrdenProductoRepeticionServices, AppOrdenProductoRepeticionServices>();
             services.AddTransient<ICobAdjuntosCobranzaService, CobAdjuntosCobranzaService>();
             services.AddTransient<IAppAdjuntosCotizacionService, AppAdjuntosCotizacionService>();
-            
+
             services.AddTransient<IGeneralCobranzaService, GeneralCobranzaService>();
             services.AddTransient<ISegUsuarioService, SegUsuarioService>();
             services.AddTransient<IMtrClienteService, MtrClienteService>();
@@ -283,15 +248,13 @@ namespace AppService.Api
             services.AddTransient<IAppEspecificacionesServices, AppEspecificacionesServices>();
             services.AddTransient<IPeriodosService, PeriodosService>();
             services.AddTransient<IAppCalculadoraService, AppCalculadoraService>();
-            
+
 
             services.AddHttpClient<ISapClient, SapClient>();
             services.AddHttpClient<IOdooClient, OdooClient>();
-            
-            
-            services.AddTransient<ITasaConsolidadoService, TasaConsolidadoService>();
-            
 
+
+            services.AddTransient<ITasaConsolidadoService, TasaConsolidadoService>();
 
 
             services.AddTransient<INmm024Service, Nmm024Service>();
@@ -301,7 +264,7 @@ namespace AppService.Api
             services.AddTransient<IMotivoGanarPerderService, MotivoGanarPerderService>();
 
             services.AddTransient<IVCotizacionesPorAprobarService, VCotizacionesPorAprobarService>();
-            
+
             services.AddTransient<IHistoricoComisionesService, HistoricoComisionesService>();
 
             services.AddTransient<IPagosManualesService, PagosManualesService>();
@@ -313,10 +276,8 @@ namespace AppService.Api
             services.AddTransient<IAppGetPriceService, AppGetPriceService>();
             services.AddTransient<IEmaiService, EmaiService>();
             services.AddTransient<IEmailClient, EmailClient>();
-            
-            
-            
-            
+
+
             services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));
             services.AddTransient<IUnitOfWork, UnitOfWork>();
 
@@ -339,7 +300,6 @@ namespace AppService.Api
                 string xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
 
                 doc.IncludeXmlComments(xmlPath);
-
             });
 
 
@@ -357,19 +317,18 @@ namespace AppService.Api
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = Configuration["Authentication:Issuer"],
                     ValidAudience = Configuration["Authentication:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Authentication:SecrectKey"])),
+                    IssuerSigningKey =
+                        new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Authentication:SecrectKey"])),
                 };
             });
-
 
 
             services.AddCors(o => o.AddPolicy("charppolicy", builder =>
             {
                 builder
-
-                        .AllowAnyOrigin()
-                       .AllowAnyMethod()
-                       .AllowAnyHeader();
+                    .AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
             }));
 
             // services.ConfigureHangFire(Configuration);
@@ -378,27 +337,23 @@ namespace AppService.Api
 
 
             services.AddMvc(options =>
-           {
-               options.Filters.Add<ValidationFilter>();
-               options.ReturnHttpNotAcceptable = false;
-           }).AddFluentValidation(options =>
-           {
-
-               options.RegisterValidatorsFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
-           });
+            {
+                options.Filters.Add<ValidationFilter>();
+                options.ReturnHttpNotAcceptable = false;
+            }).AddFluentValidation(options =>
+            {
+                options.RegisterValidatorsFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(
-                                IApplicationBuilder app,
-                                IWebHostEnvironment env,
-                                ILoggerFactory loggerFactory,
-                                //IRecurringJobManager recurringJobManager,
-                                IServiceProvider serviceProvider)
+            IApplicationBuilder app,
+            IWebHostEnvironment env,
+            ILoggerFactory loggerFactory,
+            //IRecurringJobManager recurringJobManager,
+            IServiceProvider serviceProvider)
         {
-
-
-
             loggerFactory.AddFile("Log-{Date}.txt");
 
 
@@ -413,7 +368,6 @@ namespace AppService.Api
 
             app.UseSwaggerUI(options =>
             {
-
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "App Service API V1");
                 options.RoutePrefix = string.Empty;
             });
@@ -429,11 +383,7 @@ namespace AppService.Api
             app.UseAuthorization();
 
 
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
+            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
 
 
             //**GENERAADOR DE EXPRESIONES
@@ -444,11 +394,8 @@ namespace AppService.Api
             // recurringJobManager.AddOrUpdate("Integrar_cotizaciones_odoo", () => cotizacionServices.UpdateCotizacionesToOdoo(), "*/30 * * * * *");
 
 
-
             // var cobEstadoCuentaService = serviceProvider.GetService<ICobEstadoCuentaService>();
             // recurringJobManager.AddOrUpdate("ActualizarEstadoCuentaMultimonedas", () => cobEstadoCuentaService.GenerateEstadoCuentaMultimoneda(), Cron.Daily());
-
-
         }
     }
 }

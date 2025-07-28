@@ -14,6 +14,7 @@ namespace AppService.Core.Interfaces
         IAppGeneralQuotesActionSheetRepository AppGeneralQuotesActionSheetRepository { get; }
         
         IEmailRepository EmailRepository { get; }
+        IPcOrdenesSinCalculoComisionRepository PcOrdenesSinCalculoComisionRepository { get; }
         IPowerBiOrdenesRepository PowerBiOrdenesRepository { get; }
         
         IAppCalculadoraRepository AppCalculadoraRepository { get; }

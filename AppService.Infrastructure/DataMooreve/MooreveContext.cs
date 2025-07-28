@@ -17,7 +17,8 @@ namespace AppService.Infrastructure.DataMooreve
         }
 
 
-
+        
+        public virtual DbSet<PcOrdenesSinCalculoComision> PcOrdenesSinCalculoComision { get; set; }
         public virtual DbSet<VHistoricoComsiones> VHistoricoComsiones { get; set; }
         public virtual DbSet<AppVariablesEspecificacionesPartes> AppVariablesEspecificacionesPartes { get; set; }
         public virtual DbSet<AppValoresVariablesEspecificacionesPartes> AppValoresVariablesEspecificacionesPartes { get; set; }
@@ -907,6 +908,22 @@ namespace AppService.Infrastructure.DataMooreve
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
 
+            
+             modelBuilder.Entity<PcOrdenesSinCalculoComision>(entity =>
+            {
+                entity.HasKey(e => e.Id)
+                    .HasName("PK_PcOrdenesSinCalculoComision");
+                entity.HasIndex(e => new { e.Orden })
+                    .HasName("IX_PcOrdenesSinCalculoComision");
+                
+
+                entity.ToTable("PcOrdenesSinCalculoComision");
+
+            });
+            
+            
+            
+            
             modelBuilder.Entity<TasaConsolidada>(entity =>
             {
                 entity.HasNoKey();

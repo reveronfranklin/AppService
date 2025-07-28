@@ -32,6 +32,12 @@ namespace AppService.Infrastructure.Repositories.Ventas
             return result;
         }
         
+        public async Task<AppVentas> GetByOrden(decimal orden)
+        {
+            var result= await _context.AppVentas.Where(x=> x.Orden == orden ).FirstOrDefaultAsync();
+            return result;
+        }
+        
         public async Task<ResultDto<List<AppVentas>>> GetPaginate(AppVentasFilter filter)
         {
             ResultDto<List<AppVentas>> result = new ResultDto<List<AppVentas>>(null);
