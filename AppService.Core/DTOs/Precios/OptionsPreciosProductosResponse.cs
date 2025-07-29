@@ -10,4 +10,6 @@ public class OptionsPreciosProductosResponse
     public int IdCalculo { get; set; }
     public decimal Flete { get; set; }
     public decimal FleteMaximo { get; set; }
+    public bool PorDebajoDeCantidadMinima { get; set; }
+    
 }

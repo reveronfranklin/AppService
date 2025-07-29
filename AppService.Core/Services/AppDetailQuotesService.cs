@@ -159,7 +159,11 @@ namespace AppService.Core.Services
                         item.PorcFlete= flete;
                         item.Flete = (item.UnitPriceBaseProduction * flete) / 100;
                     }
-                
+
+                    if (item.UnitPriceConverted == 0)
+                    {
+                        item.UnitPriceConverted = item.UnitPriceBaseProduction;
+                    }
                     
                     item.StatusAprobacionDto = await this.StatusAprobacion(byId3,flete);
                     if (byId3.OrdenAnterior == null)
@@ -299,6 +303,12 @@ namespace AppService.Core.Services
                 {
                     solicitarPrecio = 1;
                 }
+
+                if (precio.Data.PorDebajoDeCantidadMinima)
+                {
+                    solicitarPrecio = 1;
+                }
+            
                 _unitOfWork.AppDetailQuotesRepository.UpdatePrecios(item.Id,precio.Data.PrecioMinimo,precio.Data.PrecioMaximo,precio.Data.IdCalculo,solicitarPrecio);
                 
             }

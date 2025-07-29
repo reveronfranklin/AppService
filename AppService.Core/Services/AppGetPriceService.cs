@@ -158,6 +158,7 @@ namespace AppService.Core.Services
             response.IdCalculo = idCalculo;
             response.Flete = flete;
             response.FleteMaximo = fleteMaximo;
+            response.PorDebajoDeCantidadMinima=calculo.Data.PorDebajoDeCantidadMinima;
             
             return response;
             
@@ -202,7 +203,7 @@ namespace AppService.Core.Services
             response.IdCalculo = precio.IdCalculo;
             response.Flete =flete;
             response.FleteMaximo = fleteMaximo;
-            
+            response.PorDebajoDeCantidadMinima=precio.PorDebajoDeCantidadMinima;
             return response;
 
         }
@@ -250,6 +251,7 @@ namespace AppService.Core.Services
             response.IdCalculo = idCalculo;
             response.Flete =flete;
             response.FleteMaximo = fleteMaximo;
+            response.PorDebajoDeCantidadMinima=calculo.Data.PorDebajoDeCantidadMinima;
             return response;
 
         }
@@ -288,6 +290,7 @@ namespace AppService.Core.Services
             response.IdCalculo = idCalculo;
             response.Flete =flete;
             response.FleteMaximo = fleteMaximo;
+            response.PorDebajoDeCantidadMinima=calculo.PorDebajoDeCantidadMinima;
             return response;
             
             return response;
@@ -311,6 +314,7 @@ namespace AppService.Core.Services
                 decimal flete = 0;
                 decimal fleteMaximo = 0;
                 decimal porcFlete = 0;
+                bool porDebajoDeCantidadMinima=false;
 
                 if (options.Cantidad <= 0)
                 {
@@ -385,6 +389,7 @@ namespace AppService.Core.Services
                         flete = resultEntradaLargoAncho.Flete;
                         fleteMaximo = resultEntradaLargoAncho.FleteMaximo;
                         idCalculo=resultEntradaLargoAncho.IdCalculo;
+                        porDebajoDeCantidadMinima=resultEntradaLargoAncho.PorDebajoDeCantidadMinima;
                         
                         break;
                     case 2:
@@ -396,6 +401,7 @@ namespace AppService.Core.Services
                         flete = precio.Flete;
                         fleteMaximo = precio.FleteMaximo;
                         idCalculo = precio.IdCalculo;
+                        porDebajoDeCantidadMinima=precio.PorDebajoDeCantidadMinima;
                         break;
                     case 3:
                         var resultEntradaLargoAncho3 = await RecalculoPrecioPorProductoCantidad(options);
@@ -405,6 +411,7 @@ namespace AppService.Core.Services
                         idCalculo = resultEntradaLargoAncho3.IdCalculo;
                         flete = resultEntradaLargoAncho3.Flete;
                         fleteMaximo = resultEntradaLargoAncho3.FleteMaximo;
+                        porDebajoDeCantidadMinima=resultEntradaLargoAncho3.PorDebajoDeCantidadMinima;
                         break;
                     case 4:
                         var resultEntradaLargoAncho4 = await RecalculoPrecioPorProductoCantidadLargoAncho(options);
@@ -414,6 +421,7 @@ namespace AppService.Core.Services
                         idCalculo = resultEntradaLargoAncho4.IdCalculo;
                         flete = resultEntradaLargoAncho4.Flete;
                         fleteMaximo = resultEntradaLargoAncho4.FleteMaximo;
+                        porDebajoDeCantidadMinima=resultEntradaLargoAncho4.PorDebajoDeCantidadMinima;
                         break;
                     case 5:
                         var resultEntradaLargoAncho5 = await RecalculoPrecioPorProductoCantidadLargoRollo(options);
@@ -423,6 +431,7 @@ namespace AppService.Core.Services
                         idCalculo = resultEntradaLargoAncho5.IdCalculo;
                         flete = resultEntradaLargoAncho5.Flete;
                         fleteMaximo = resultEntradaLargoAncho5.FleteMaximo;
+                        porDebajoDeCantidadMinima=resultEntradaLargoAncho5.PorDebajoDeCantidadMinima;
                         break;
                     case 6:
 
@@ -433,6 +442,7 @@ namespace AppService.Core.Services
                         idCalculo = resultEntradaLargoAncho6.IdCalculo;
                         flete = resultEntradaLargoAncho6.Flete;
                         fleteMaximo = resultEntradaLargoAncho6.FleteMaximo;
+                        porDebajoDeCantidadMinima=resultEntradaLargoAncho6.PorDebajoDeCantidadMinima;
                         break;
                 }
 
@@ -444,6 +454,7 @@ namespace AppService.Core.Services
                 data.Flete = flete;
                 data.FleteMaximo = fleteMaximo;
                 data.IdCalculo = idCalculo;
+                data.PorDebajoDeCantidadMinima = porDebajoDeCantidadMinima;
                 
                 
                 result.Data = data;
