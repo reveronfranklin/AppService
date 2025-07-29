@@ -2544,7 +2544,7 @@ namespace AppService.Core.Services
                     }
                   
                   
-                    if (item.PrecioUsd>=item.UnitPriceConverted + item.Flete )
+                    if ((item.PrecioUsd>=item.UnitPriceConverted + item.Flete) || item.SolicitarPrecio==true )
                     {
                         resultDto = false;
                     }
