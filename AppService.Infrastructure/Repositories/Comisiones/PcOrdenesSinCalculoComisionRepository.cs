@@ -22,14 +22,38 @@ namespace AppService.Infrastructure.Repositories.Comisiones
             _context = context;
         }
 
-      
+      /*
+       *
+       *  if (filter.PageNumber == 0) filter.PageNumber = 1;
+                   if (filter.PageSize == 0) filter.PageSize = 100;
+                   if (filter.PageSize >100) filter.PageSize = 100;
+                   if (filter.SearchText == null) filter.SearchText = "";
+                   var totalRegistros = 0;
+                   var totalPage = 0;
+                   List<PRE_V_SALDOS> preVSaldos;
+
+                   if ( filter.SearchText.Length > 0)
+                   {
+                       preVSaldos = await _context.PRE_V_SALDOS.
+                           Where(x => 
+                               x.CODIGO_PRESUPUESTO == filter.CodigoPresupuesto && 
+                               x.DISPONIBLE>0 &&
+                               x.SEARCH_TEXT.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower()))
+                           .OrderBy(x=>x.CODIGO_ICP_CONCAT)
+                           .ThenBy(x=> x.CODIGO_PUC_CONCAT)
+                           .Skip((filter.PageNumber - 1) * filter.PageSize)
+                           .Take(filter.PageSize)
+                           .ToListAsync();
+       * 
+       */
         public async Task<Core.DTOs.Shared.ResultDto<List<PcOrdenesSinCalculoComision>>> GetPaginate(PagosManualesFilter filter)
         {
             Core.DTOs.Shared.ResultDto<List<PcOrdenesSinCalculoComision>> result = new Core.DTOs.Shared.ResultDto<List<PcOrdenesSinCalculoComision>>(null);
             
-            filter.PageNumber =  filter.PageNumber+1;
+            if (filter.PageNumber == 0) filter.PageNumber = 1;
             if (filter.PageSize == 0) filter.PageSize = 100;
             if (filter.PageSize >100) filter.PageSize = 100;
+            if (filter.SearchText == null) filter.SearchText = "";
 
             if (string.IsNullOrEmpty(filter.SearchText))
             {
@@ -47,32 +71,33 @@ namespace AppService.Infrastructure.Repositories.Comisiones
             
                 if (filter.SearchText.Length>0)
                 {
-                    totalRegistros = _context.PcOrdenesSinCalculoComision
+                    totalRegistros =await _context.PcOrdenesSinCalculoComision
                         .Where(x => x.SearchText.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower()))
-                        .Count();
+                        .CountAsync();
 
                     totalPage = (totalRegistros + filter.PageSize - 1) / filter.PageSize;
 
-                    pageData = _context.PcOrdenesSinCalculoComision
+                    pageData =await  _context.PcOrdenesSinCalculoComision
                         .Where(x =>  x.SearchText.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower()))
-                        .OrderBy(x => x.Id) // Debes especificar un orden para paginación consistente
+                        .OrderBy(x => x.Id) 
+
                         .Skip((filter.PageNumber - 1) * filter.PageSize)
                         .Take(filter.PageSize)
-                        .ToList();
+                        .ToListAsync();
                     
                 }
                 else
                 {
-                    totalRegistros = _context.PcOrdenesSinCalculoComision
-                        .Count();
+                    totalRegistros =await _context.PcOrdenesSinCalculoComision
+                        .CountAsync();
 
                     totalPage = (totalRegistros + filter.PageSize - 1) / filter.PageSize;
 
-                    pageData = _context.PcOrdenesSinCalculoComision
+                    pageData = await  _context.PcOrdenesSinCalculoComision
                         .OrderBy(x => x.Id) // Debes especificar un orden para paginación consistente
                         .Skip((filter.PageNumber - 1) * filter.PageSize)
                         .Take(filter.PageSize)
-                        .ToList();
+                        .ToListAsync();
                     
                     
                
