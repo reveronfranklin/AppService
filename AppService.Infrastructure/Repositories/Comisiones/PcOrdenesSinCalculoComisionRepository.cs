@@ -7,16 +7,17 @@ using System.Threading.Tasks;
 using AppService.Core.DTOs.Comisiones;
 using AppService.Core.EntitiesMooreve;
 using AppService.Core.Interfaces.Comisiones;
-using AppService.Infrastructure.DataMooreve;
+using AppService.Infrastructure.Data;
+
 
 namespace AppService.Infrastructure.Repositories.Comisiones
 {
     public class PcOrdenesSinCalculoComisionRepository:IPcOrdenesSinCalculoComisionRepository
     {
-        private readonly MooreveContext _context;
+        private readonly RRDContext _context;
 
 
-        public PcOrdenesSinCalculoComisionRepository(MooreveContext context)
+        public PcOrdenesSinCalculoComisionRepository(RRDContext context)
         {
             _context = context;
         }

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using AppService.Core.EntitiesMooreve;
 
 namespace AppService.Infrastructure.Data
 {
@@ -21,7 +22,7 @@ namespace AppService.Infrastructure.Data
         
         public DbSet<AppVentas> AppVentas { get; set; }
         
-        
+        public virtual DbSet<PcOrdenesSinCalculoComision> PcOrdenesSinCalculoComision { get; set; }
         public virtual DbSet<AppGeneralQuotesActionSheet> AppGeneralQuotesActionSheet { get; set; }
         public virtual DbSet<AppCalculadora> AppCalculadora { get; set; }
         public virtual DbSet<AppCostosEmbarque> AppCostosEmbarques { get; set; }
@@ -596,6 +597,18 @@ namespace AppService.Infrastructure.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             
+            
+            modelBuilder.Entity<PcOrdenesSinCalculoComision>(entity =>
+            {
+               
+                
+                entity.Property(e => e.Id) // Asegúrate que "Id" coincida con tu propiedad
+                    .HasColumnName("Id") // Nombre exacto de la columna en BD
+                    .UseIdentityColumn();
+                entity.ToTable("PcOrdenesSinCalculoComision");
+
+            });
+
             
             
             modelBuilder.Entity<AppGeneralQuotesActionSheet>(builder =>

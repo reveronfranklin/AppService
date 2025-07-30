@@ -435,7 +435,7 @@ namespace AppService.Infrastructure.Repositories
         //Mooreve
         
         
-        public IPcOrdenesSinCalculoComisionRepository PcOrdenesSinCalculoComisionRepository => _pcOrdenesSinCalculoComisionRepository ?? new PcOrdenesSinCalculoComisionRepository(_mooreveContext);
+        public IPcOrdenesSinCalculoComisionRepository PcOrdenesSinCalculoComisionRepository => _pcOrdenesSinCalculoComisionRepository ?? new PcOrdenesSinCalculoComisionRepository(_context);
 
         
         public IWpry254Repository Wpry254Repository => _wpry254Repository ?? new Wpry254Repository(_mooreveContext);
