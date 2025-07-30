@@ -55,7 +55,9 @@ namespace AppService.Infrastructure.Repositories.Comisiones
 
                     pageData = _context.PcOrdenesSinCalculoComision
                         .Where(x =>  x.SearchText.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower()))
-                       
+                        .OrderBy(x => x.Id) // Debes especificar un orden para paginación consistente
+                        .Skip((filter.PageNumber - 1) * filter.PageSize)
+                        .Take(filter.PageSize)
                         .ToList();
                     
                 }
@@ -67,7 +69,9 @@ namespace AppService.Infrastructure.Repositories.Comisiones
                     totalPage = (totalRegistros + filter.PageSize - 1) / filter.PageSize;
 
                     pageData = _context.PcOrdenesSinCalculoComision
-                            
+                        .OrderBy(x => x.Id) // Debes especificar un orden para paginación consistente
+                        .Skip((filter.PageNumber - 1) * filter.PageSize)
+                        .Take(filter.PageSize)
                         .ToList();
                     
                     
