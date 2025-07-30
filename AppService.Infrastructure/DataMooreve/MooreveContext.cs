@@ -911,12 +911,11 @@ namespace AppService.Infrastructure.DataMooreve
             
              modelBuilder.Entity<PcOrdenesSinCalculoComision>(entity =>
             {
-                entity.HasKey(e => e.Id)
-                    .HasName("PK_PcOrdenesSinCalculoComision");
-                entity.HasIndex(e => new { e.Orden })
-                    .HasName("IX_PcOrdenesSinCalculoComision");
+               
                 
-
+                entity.Property(e => e.Id) // Asegúrate que "Id" coincida con tu propiedad
+                    .HasColumnName("Id") // Nombre exacto de la columna en BD
+                    .UseIdentityColumn();
                 entity.ToTable("PcOrdenesSinCalculoComision");
 
             });
