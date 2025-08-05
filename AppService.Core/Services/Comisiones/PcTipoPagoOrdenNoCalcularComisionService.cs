@@ -72,6 +72,8 @@ namespace AppService.Core.Services
                 ordenSinComision.Orden = dto.Orden;
                 ordenSinComision.Cliente =ventas.Cliente;
                 ordenSinComision.DescripcionTipoPago = tipoPago.Descripcion;
+                ordenSinComision.UsuarioActualizacion = dto.UsuarioConectado.ToString();
+                ordenSinComision.FechaActualizacion = DateTime.Now;
                 ordenSinComision.SearchText = dto.Orden.ToString() + ventas.Cliente;
                 
 
@@ -132,6 +134,8 @@ namespace AppService.Core.Services
                 entity.Cliente = ventas.Cliente;    
                 entity.DescripcionTipoPago = tipoPago.Descripcion;
                 entity.SearchText = dto.Orden.ToString() + ventas.Cliente;
+                entity.FechaCreacion = DateTime.Now;
+                entity.UsuarioCreacion =dto.UsuarioConectado.ToString();
 
 
                 await _unitOfWork.PcTipoPagoOrdenNoCalcularComisionRepository.Add(entity);
