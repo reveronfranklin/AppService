@@ -40,4 +40,6 @@ public class PCTipoPagoOrdenNoCalcularComision
 
     [StringLength(50)]
     public string? UsuarioActualizacion { get; set; }
+    
+    public bool Activo { get; set; }
 }

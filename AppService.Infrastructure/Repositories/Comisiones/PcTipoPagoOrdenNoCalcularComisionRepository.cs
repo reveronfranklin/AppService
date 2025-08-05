@@ -50,13 +50,13 @@ namespace AppService.Infrastructure.Repositories.Comisiones
                 if (filter.SearchText.Length>0)
                 {
                     totalRegistros =await _context.PCTipoPagoOrdenNoCalcularComision
-                        .Where(x => x.SearchText.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower()))
+                        .Where(x =>x.Activo==true && x.SearchText.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower()))
                         .CountAsync();
 
                     totalPage = (totalRegistros + filter.PageSize - 1) / filter.PageSize;
 
                     pageData =await  _context.PCTipoPagoOrdenNoCalcularComision
-                        .Where(x =>  x.SearchText.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower()))
+                        .Where(x => x.Activo==true && x.SearchText.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower()))
                         .OrderBy(x => x.Id) 
 
                         .Skip((filter.PageNumber - 1) * filter.PageSize)
@@ -67,11 +67,13 @@ namespace AppService.Infrastructure.Repositories.Comisiones
                 else
                 {
                     totalRegistros =await _context.PCTipoPagoOrdenNoCalcularComision
+                        .Where(x=> x.Activo == true)
                         .CountAsync();
 
                     totalPage = (totalRegistros + filter.PageSize - 1) / filter.PageSize;
 
                     pageData = await  _context.PCTipoPagoOrdenNoCalcularComision
+                        .Where(x=> x.Activo == true)
                         .OrderBy(x => x.Id) // Debes especificar un orden para paginación consistente
                         .Skip((filter.PageNumber - 1) * filter.PageSize)
                         .Take(filter.PageSize)
@@ -104,24 +106,25 @@ namespace AppService.Infrastructure.Repositories.Comisiones
         public async Task<PCTipoPagoOrdenNoCalcularComision> GetById(long id)
         {
             
-            return await _context.PCTipoPagoOrdenNoCalcularComision.Where(x=>x.Id==id).FirstOrDefaultAsync();
+            return await _context.PCTipoPagoOrdenNoCalcularComision.Where(x=>x.Id==id && x.Activo==true).FirstOrDefaultAsync();
         }
         
         public async Task<PCTipoPagoOrdenNoCalcularComision> GetByOrden(long orden)
         {
             
-            return await _context.PCTipoPagoOrdenNoCalcularComision.Where(x=>x.Orden==orden).FirstOrDefaultAsync();
+            return await _context.PCTipoPagoOrdenNoCalcularComision.Where(x=>x.Activo==true && x.Orden==orden).FirstOrDefaultAsync();
         }
         
         public async Task<PCTipoPagoOrdenNoCalcularComision> GetByTipoPagoOrden(int tipoPago,long orden)
         {
             
-            return await _context.PCTipoPagoOrdenNoCalcularComision.Where(x=>x.IdTipoPago==tipoPago && x.Orden==orden).FirstOrDefaultAsync();
+            return await _context.PCTipoPagoOrdenNoCalcularComision.Where(x=>x.Activo==true && x.IdTipoPago==tipoPago && x.Orden==orden).FirstOrDefaultAsync();
         }
         
         public async Task Add(PCTipoPagoOrdenNoCalcularComision entity)
         {
             entity.SearchText = entity.Orden.ToString() + entity.Cliente;
+            entity.Activo = true;
             
             await _context.PCTipoPagoOrdenNoCalcularComision.AddAsync(entity);
 
@@ -138,7 +141,9 @@ namespace AppService.Infrastructure.Repositories.Comisiones
         public async Task Delete(long id)
         {
             PCTipoPagoOrdenNoCalcularComision entity = await GetById(id);
-            _context.PCTipoPagoOrdenNoCalcularComision.Remove(entity);
+            entity.SearchText = entity.Orden.ToString() + entity.Cliente;
+            entity.Activo = false;
+            _context.PCTipoPagoOrdenNoCalcularComision.Update(entity);
 
         }
         
