@@ -299,7 +299,8 @@ namespace AppService.Core.Services
              
                 int solicitarPrecio = 0;
                 var precioMasFlete =precio.Data.PrecioMinimo + precio.Data.Flete;
-                
+         
+                precioMasFlete = Math.Truncate(precioMasFlete * 100m) / 100m;
             
                if (precioMasFlete > item.PrecioUsd)
                 {
