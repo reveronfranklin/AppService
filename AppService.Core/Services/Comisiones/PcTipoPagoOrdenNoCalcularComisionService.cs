@@ -71,6 +71,7 @@ namespace AppService.Core.Services
 
                 ordenSinComision.Orden = dto.Orden;
                 ordenSinComision.Cliente =ventas.Cliente;
+                ordenSinComision.IdTipoPago = dto.TipoPagoId;
                 ordenSinComision.DescripcionTipoPago = tipoPago.Descripcion;
                 ordenSinComision.UsuarioActualizacion = dto.UsuarioConectado.ToString();
                 ordenSinComision.FechaActualizacion = DateTime.Now;
@@ -131,7 +132,8 @@ namespace AppService.Core.Services
 
                 PCTipoPagoOrdenNoCalcularComision entity = new PCTipoPagoOrdenNoCalcularComision();
                 entity.Orden = dto.Orden;
-                entity.Cliente = ventas.Cliente;    
+                entity.Cliente = ventas.Cliente;
+                entity.IdTipoPago = dto.TipoPagoId;
                 entity.DescripcionTipoPago = tipoPago.Descripcion;
                 entity.SearchText = dto.Orden.ToString() + ventas.Cliente;
                 entity.FechaCreacion = DateTime.Now;
