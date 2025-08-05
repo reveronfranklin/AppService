@@ -21,7 +21,7 @@ namespace AppService.Infrastructure.Data
         public DbSet<OSS_USUARIO_ROL> OSS_USUARIO_ROL { get; set; }
         
         public DbSet<AppVentas> AppVentas { get; set; }
-        
+        public DbSet<PCTipoPagoOrdenNoCalcularComision> PCTipoPagoOrdenNoCalcularComision { get; set; }
         public virtual DbSet<PcOrdenesSinCalculoComision> PcOrdenesSinCalculoComision { get; set; }
         public virtual DbSet<AppGeneralQuotesActionSheet> AppGeneralQuotesActionSheet { get; set; }
         public virtual DbSet<AppCalculadora> AppCalculadora { get; set; }
@@ -596,6 +596,18 @@ namespace AppService.Infrastructure.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            
+            
+            modelBuilder.Entity<PCTipoPagoOrdenNoCalcularComision>(entity =>
+            {
+                entity.Property(e => e.Id) // Asegúrate que "Id" coincida con tu propiedad
+                    .HasColumnName("Id") // Nombre exacto de la columna en BD
+                    .UseIdentityColumn();
+                entity.ToTable("PCTipoPagoOrdenNoCalcularComision");
+            
+                    
+           
+            });
             
             
             modelBuilder.Entity<PcOrdenesSinCalculoComision>(entity =>

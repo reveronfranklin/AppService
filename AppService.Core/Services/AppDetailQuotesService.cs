@@ -165,6 +165,8 @@ namespace AppService.Core.Services
                         item.UnitPriceConverted = item.UnitPriceBaseProduction;
                     }
                     
+           
+                    
                     item.StatusAprobacionDto = await this.StatusAprobacion(byId3,flete);
                     if (byId3.OrdenAnterior == null)
                     {

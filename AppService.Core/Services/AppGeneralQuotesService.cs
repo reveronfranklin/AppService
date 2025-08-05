@@ -400,7 +400,7 @@ namespace AppService.Core.Services
                             {
                                 itemAppGeneralQuotesGetDto.OrdenAnterior = itemDetail.OrdenAnterior;
                              
-
+                                
                                 itemAppGeneralQuotesGetDto.ProductosCotizados = itemAppGeneralQuotesGetDto.ProductosCotizados + "" + itemDetail.NombreComercialProducto;
                             }
                             itemAppGeneralQuotesGetDto.AppDetailQuotesGetDto = listDetail.Data;

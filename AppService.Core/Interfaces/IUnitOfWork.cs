@@ -15,6 +15,9 @@ namespace AppService.Core.Interfaces
         
         IEmailRepository EmailRepository { get; }
         IPcOrdenesSinCalculoComisionRepository PcOrdenesSinCalculoComisionRepository { get; }
+        IPcTipoPagoOrdenNoCalcularComisionRepository PcTipoPagoOrdenNoCalcularComisionRepository { get; }
+        
+        
         IPowerBiOrdenesRepository PowerBiOrdenesRepository { get; }
         
         IAppCalculadoraRepository AppCalculadoraRepository { get; }

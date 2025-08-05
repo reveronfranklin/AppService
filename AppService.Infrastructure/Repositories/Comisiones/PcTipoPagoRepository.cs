@@ -20,6 +20,21 @@ namespace AppService.Infrastructure.Repositories.Comisiones
         {
             _context = context;
         }
+        
+        public async Task<PCTipoPago> GetById(int id)
+        {
+            try
+            {
+                var tipos= await _context.PCTipoPago.Where(x=>x.Id==id).FirstOrDefaultAsync();
+                return tipos;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return null;
+            }
+          
+        }
 
         public async Task<List<PCTipoPago>> GetAll()
         {

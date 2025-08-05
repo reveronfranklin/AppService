@@ -14,7 +14,9 @@ namespace AppService.Core.DTOs
         public string Role { get; set; }
         public List<PageMenuDto> PageMenuDto { get; set; }
         public string NombreUsuario { get; set; }
-
+        public string BasePath { get; set; }
+        public string BasePathHub { get; set; }
+        
 
 
     }

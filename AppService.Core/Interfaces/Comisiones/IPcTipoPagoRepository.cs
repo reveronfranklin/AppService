@@ -8,4 +8,6 @@ public interface IPcTipoPagoRepository
 {
     Task<List<PCTipoPago>> GetAll();
     Task<List<PCTipoPago>> GetAllManuales();
+    Task<PCTipoPago> GetById(int id);
+    
 }

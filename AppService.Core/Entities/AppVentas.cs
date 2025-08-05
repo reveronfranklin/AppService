@@ -10,5 +10,6 @@ public class AppVentas
     public string SearchText { get; set; }
     public int? Alo_Contable { get; set; }
     public int? Mes_Contable { get; set; }
+    public string Cliente { get; set; }
     
 }

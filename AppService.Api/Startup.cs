@@ -180,7 +180,10 @@ namespace AppService.Api
 
             services.AddTransient<IPowerBiOrdenesService, PowerBiOrdenesService>();
             services.AddTransient<IPcOrdenesSinCalculoComisionServices, PcOrdenesSinCalculoComisionServices>();
+            services.AddTransient<IPcTipoPagoOrdenNoCalcularComisionService, PcTipoPagoOrdenNoCalcularComisionService>();
 
+            
+            
 
             services.AddTransient<IAppOrdenProductoRepeticionServices, AppOrdenProductoRepeticionServices>();
             services.AddTransient<ICobAdjuntosCobranzaService, CobAdjuntosCobranzaService>();

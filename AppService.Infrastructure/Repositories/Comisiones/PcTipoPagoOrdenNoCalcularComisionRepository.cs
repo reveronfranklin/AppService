@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AppService.Core.DTOs.Comisiones;
+using AppService.Core.Entities;
 using AppService.Core.EntitiesMooreve;
 using AppService.Core.Interfaces.Comisiones;
 using AppService.Infrastructure.Data;
@@ -12,43 +13,20 @@ using AppService.Infrastructure.Data;
 
 namespace AppService.Infrastructure.Repositories.Comisiones
 {
-    public class PcOrdenesSinCalculoComisionRepository:IPcOrdenesSinCalculoComisionRepository
+    public class PcTipoPagoOrdenNoCalcularComisionRepository:IPcTipoPagoOrdenNoCalcularComisionRepository
     {
         private readonly RRDContext _context;
 
 
-        public PcOrdenesSinCalculoComisionRepository(RRDContext context)
+        public PcTipoPagoOrdenNoCalcularComisionRepository(RRDContext context)
         {
             _context = context;
         }
 
-      /*
-       *
-       *  if (filter.PageNumber == 0) filter.PageNumber = 1;
-                   if (filter.PageSize == 0) filter.PageSize = 100;
-                   if (filter.PageSize >100) filter.PageSize = 100;
-                   if (filter.SearchText == null) filter.SearchText = "";
-                   var totalRegistros = 0;
-                   var totalPage = 0;
-                   List<PRE_V_SALDOS> preVSaldos;
-
-                   if ( filter.SearchText.Length > 0)
-                   {
-                       preVSaldos = await _context.PRE_V_SALDOS.
-                           Where(x => 
-                               x.CODIGO_PRESUPUESTO == filter.CodigoPresupuesto && 
-                               x.DISPONIBLE>0 &&
-                               x.SEARCH_TEXT.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower()))
-                           .OrderBy(x=>x.CODIGO_ICP_CONCAT)
-                           .ThenBy(x=> x.CODIGO_PUC_CONCAT)
-                           .Skip((filter.PageNumber - 1) * filter.PageSize)
-                           .Take(filter.PageSize)
-                           .ToListAsync();
-       * 
-       */
-        public async Task<Core.DTOs.Shared.ResultDto<List<PcOrdenesSinCalculoComision>>> GetPaginate(PagosManualesFilter filter)
+      
+        public async Task<Core.DTOs.Shared.ResultDto<List<PCTipoPagoOrdenNoCalcularComision>>> GetPaginate(PagosManualesFilter filter)
         {
-            Core.DTOs.Shared.ResultDto<List<PcOrdenesSinCalculoComision>> result = new Core.DTOs.Shared.ResultDto<List<PcOrdenesSinCalculoComision>>(null);
+            Core.DTOs.Shared.ResultDto<List<PCTipoPagoOrdenNoCalcularComision>> result = new Core.DTOs.Shared.ResultDto<List<PCTipoPagoOrdenNoCalcularComision>>(null);
             
             if (filter.PageNumber == 0) filter.PageNumber = 1;
             if (filter.PageSize == 0) filter.PageSize = 100;
@@ -66,18 +44,18 @@ namespace AppService.Infrastructure.Repositories.Comisiones
 
                 await UpdateSearchText();
                 
-                List<PcOrdenesSinCalculoComision> pageData = new List<PcOrdenesSinCalculoComision>();
+                List<PCTipoPagoOrdenNoCalcularComision> pageData = new List<PCTipoPagoOrdenNoCalcularComision>();
 
             
                 if (filter.SearchText.Length>0)
                 {
-                    totalRegistros =await _context.PcOrdenesSinCalculoComision
+                    totalRegistros =await _context.PCTipoPagoOrdenNoCalcularComision
                         .Where(x => x.SearchText.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower()))
                         .CountAsync();
 
                     totalPage = (totalRegistros + filter.PageSize - 1) / filter.PageSize;
 
-                    pageData =await  _context.PcOrdenesSinCalculoComision
+                    pageData =await  _context.PCTipoPagoOrdenNoCalcularComision
                         .Where(x =>  x.SearchText.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower()))
                         .OrderBy(x => x.Id) 
 
@@ -88,26 +66,19 @@ namespace AppService.Infrastructure.Repositories.Comisiones
                 }
                 else
                 {
-                    totalRegistros =await _context.PcOrdenesSinCalculoComision
+                    totalRegistros =await _context.PCTipoPagoOrdenNoCalcularComision
                         .CountAsync();
 
                     totalPage = (totalRegistros + filter.PageSize - 1) / filter.PageSize;
 
-                    pageData = await  _context.PcOrdenesSinCalculoComision
+                    pageData = await  _context.PCTipoPagoOrdenNoCalcularComision
                         .OrderBy(x => x.Id) // Debes especificar un orden para paginación consistente
                         .Skip((filter.PageNumber - 1) * filter.PageSize)
                         .Take(filter.PageSize)
                         .ToListAsync();
-                    
-                    
-               
-                    
-                    
 
                 }
                 
-             
-
                 if (filter.PageNumber > 0) filter.PageNumber = filter.PageNumber - 1;
                 result.CantidadRegistros = totalRegistros;
                 result.TotalPage = totalPage;
@@ -130,38 +101,44 @@ namespace AppService.Infrastructure.Repositories.Comisiones
         } 
         
 
-        public async Task<PcOrdenesSinCalculoComision> GetById(long id)
+        public async Task<PCTipoPagoOrdenNoCalcularComision> GetById(long id)
         {
             
-            return await _context.PcOrdenesSinCalculoComision.Where(x=>x.Id==id).FirstOrDefaultAsync();
+            return await _context.PCTipoPagoOrdenNoCalcularComision.Where(x=>x.Id==id).FirstOrDefaultAsync();
         }
         
-        public async Task<PcOrdenesSinCalculoComision> GetByOrden(long orden)
+        public async Task<PCTipoPagoOrdenNoCalcularComision> GetByOrden(long orden)
         {
             
-            return await _context.PcOrdenesSinCalculoComision.Where(x=>x.Orden==orden).FirstOrDefaultAsync();
+            return await _context.PCTipoPagoOrdenNoCalcularComision.Where(x=>x.Orden==orden).FirstOrDefaultAsync();
         }
         
-        public async Task Add(PcOrdenesSinCalculoComision entity)
+        public async Task<PCTipoPagoOrdenNoCalcularComision> GetByTipoPagoOrden(int tipoPago,long orden)
         {
-            entity.SearchText = entity.Orden.ToString();
             
-            await _context.PcOrdenesSinCalculoComision.AddAsync(entity);
+            return await _context.PCTipoPagoOrdenNoCalcularComision.Where(x=>x.IdTipoPago==tipoPago && x.Orden==orden).FirstOrDefaultAsync();
+        }
+        
+        public async Task Add(PCTipoPagoOrdenNoCalcularComision entity)
+        {
+            entity.SearchText = entity.Orden.ToString() + entity.Cliente;
+            
+            await _context.PCTipoPagoOrdenNoCalcularComision.AddAsync(entity);
 
 
         }
 
-        public void Update(PcOrdenesSinCalculoComision entity)
+        public void Update(PCTipoPagoOrdenNoCalcularComision entity)
         {
-            entity.SearchText = entity.Orden.ToString();
-            _context.PcOrdenesSinCalculoComision.Update(entity);
+            entity.SearchText = entity.Orden.ToString() + entity.Cliente;
+            _context.PCTipoPagoOrdenNoCalcularComision.Update(entity);
 
         }
 
         public async Task Delete(long id)
         {
-            PcOrdenesSinCalculoComision entity = await GetById(id);
-            _context.PcOrdenesSinCalculoComision.Remove(entity);
+            PCTipoPagoOrdenNoCalcularComision entity = await GetById(id);
+            _context.PCTipoPagoOrdenNoCalcularComision.Remove(entity);
 
         }
         
@@ -170,7 +147,7 @@ namespace AppService.Infrastructure.Repositories.Comisiones
 
             try
             {
-                FormattableString xqueryDiario = $"UPDATE MOOREVE.DBO.PcOrdenesSinCalculoComision SET MOOREVE.DBO.PcOrdenesSinCalculoComision.SearchText = cast(ORDEN as nvarchar(20)) + Cliente WHERE (SearchText IS NULL)";
+                FormattableString xqueryDiario = $"UPDATE MOOREVE.DBO.PCTipoPagoOrdenNoCalcularComision SET RRD.DBO.PCTipoPagoOrdenNoCalcularComision.SearchText = cast(ORDEN as nvarchar(20)) + Cliente WHERE (SearchText IS NULL)";
 
                 var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
                 return "";

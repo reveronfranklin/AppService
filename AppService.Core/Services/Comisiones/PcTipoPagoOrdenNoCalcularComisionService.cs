@@ -8,19 +8,20 @@ using System.Linq;
 using System.Threading.Tasks;
 using AppService.Core.DTOs.Comisiones;
 using AppService.Core.DTOs.Comisiones.PcOrdenesSinCalculoComision;
+using AppService.Core.Entities;
 using AppService.Core.EntitiesMooreve;
 using AppService.Core.Interfaces.Comisiones;
 using Microsoft.IdentityModel.Tokens;
 
 namespace AppService.Core.Services
 {
-    public class PcOrdenesSinCalculoComisionServices:IPcOrdenesSinCalculoComisionServices
+    public class PcTipoPagoOrdenNoCalcularComisionService:IPcTipoPagoOrdenNoCalcularComisionService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly PaginationOptions _paginationOptions;
 
-        public PcOrdenesSinCalculoComisionServices(IUnitOfWork unitOfWork, IMapper mapper,
+        public PcTipoPagoOrdenNoCalcularComisionService(IUnitOfWork unitOfWork, IMapper mapper,
             IOptions<PaginationOptions> options)
         {
             _unitOfWork = unitOfWork;
@@ -28,19 +29,19 @@ namespace AppService.Core.Services
             _paginationOptions = options.Value;
         }
 
-        public async Task<DTOs.Shared.ResultDto<List<PcOrdenesSinCalculoComision>>> GetPaginate(
+        public async Task<DTOs.Shared.ResultDto<List<PCTipoPagoOrdenNoCalcularComision>>> GetPaginate(
             PagosManualesFilter filter)
         {
-            return await _unitOfWork.PcOrdenesSinCalculoComisionRepository.GetPaginate(filter);
+            return await _unitOfWork.PcTipoPagoOrdenNoCalcularComisionRepository.GetPaginate(filter);
         }
 
 
-        public async Task<ResultDto<PcOrdenesSinCalculoComision>> Update(PcOrdenesSinCalculoComisionUpdateDto dto)
+        public async Task<ResultDto<PCTipoPagoOrdenNoCalcularComision>> Update(PcTipoPagoOrdenNoCalcularComisionUpdateDto dto)
         {
-            ResultDto<PcOrdenesSinCalculoComision> result = new ResultDto<PcOrdenesSinCalculoComision>(null);
+            ResultDto<PCTipoPagoOrdenNoCalcularComision> result = new ResultDto<PCTipoPagoOrdenNoCalcularComision>(null);
             try
             {
-                var ordenSinComision = await _unitOfWork.PcOrdenesSinCalculoComisionRepository.GetById(dto.Id);
+                var ordenSinComision = await _unitOfWork.PcTipoPagoOrdenNoCalcularComisionRepository.GetById(dto.Id);
                 if (ordenSinComision == null)
                 {
                     result.Data = null;
@@ -59,11 +60,22 @@ namespace AppService.Core.Services
                     return result;
                 }
 
+                var tipoPago = await _unitOfWork.PcTipoPagoRepository.GetById(dto.TipoPagoId);
+                if (tipoPago == null)
+                {
+                    result.Data = null;
+                    result.IsValid = false;
+                    result.Message = "Tipo de Pago  No existe";
+                    return result;
+                }
 
                 ordenSinComision.Orden = dto.Orden;
                 ordenSinComision.Cliente =ventas.Cliente;
+                ordenSinComision.DescripcionTipoPago = tipoPago.Descripcion;
+                ordenSinComision.SearchText = dto.Orden.ToString() + ventas.Cliente;
+                
 
-                _unitOfWork.PcOrdenesSinCalculoComisionRepository.Update(ordenSinComision);
+                _unitOfWork.PcTipoPagoOrdenNoCalcularComisionRepository.Update(ordenSinComision);
                 await _unitOfWork.SaveChangesAsync();
 
 
@@ -83,17 +95,17 @@ namespace AppService.Core.Services
             return result;
         }
 
-        public async Task<ResultDto<PcOrdenesSinCalculoComision>> Create(PcOrdenesSinCalculoComisionUpdateDto dto)
+        public async Task<ResultDto<PCTipoPagoOrdenNoCalcularComision>> Create(PcTipoPagoOrdenNoCalcularComisionUpdateDto dto)
         {
-            ResultDto<PcOrdenesSinCalculoComision> result = new ResultDto<PcOrdenesSinCalculoComision>(null);
+            ResultDto<PCTipoPagoOrdenNoCalcularComision> result = new ResultDto<PCTipoPagoOrdenNoCalcularComision>(null);
             try
             {
-                var pago = await _unitOfWork.PcOrdenesSinCalculoComisionRepository.GetByOrden(dto.Orden);
+                var pago = await _unitOfWork.PcTipoPagoOrdenNoCalcularComisionRepository.GetByTipoPagoOrden(dto.TipoPagoId,dto.Orden);
                 if (pago != null)
                 {
                     result.Data = null;
                     result.IsValid = false;
-                    result.Message = "Orden ya  existe";
+                    result.Message = "Orden y tipo de pago ya  existe";
                     return result;
                 }
 
@@ -102,17 +114,27 @@ namespace AppService.Core.Services
                 {
                     result.Data = null;
                     result.IsValid = false;
-                    result.Message = "Orden - Producto No existe";
+                    result.Message = "Orden No existe";
+                    return result;
+                }
+                var tipoPago = await _unitOfWork.PcTipoPagoRepository.GetById(dto.TipoPagoId);
+                if (tipoPago == null)
+                {
+                    result.Data = null;
+                    result.IsValid = false;
+                    result.Message = "Tipo de Pago  No existe";
                     return result;
                 }
 
 
-                PcOrdenesSinCalculoComision entity = new PcOrdenesSinCalculoComision();
+                PCTipoPagoOrdenNoCalcularComision entity = new PCTipoPagoOrdenNoCalcularComision();
                 entity.Orden = dto.Orden;
                 entity.Cliente = ventas.Cliente;    
+                entity.DescripcionTipoPago = tipoPago.Descripcion;
+                entity.SearchText = dto.Orden.ToString() + ventas.Cliente;
 
 
-                await _unitOfWork.PcOrdenesSinCalculoComisionRepository.Add(entity);
+                await _unitOfWork.PcTipoPagoOrdenNoCalcularComisionRepository.Add(entity);
                 await _unitOfWork.SaveChangesAsync();
                 result.Data = null;
                 result.IsValid = true;
@@ -131,23 +153,23 @@ namespace AppService.Core.Services
             return result;
         }
 
-        public async Task<ResultDto<PcOrdenesSinCalculoComisionUpdateDto>> Delete(
-            PcOrdenesSinCalculoComisionUpdateDto dto)
+        public async Task<ResultDto<PcTipoPagoOrdenNoCalcularComisionUpdateDto>> Delete(
+            PcTipoPagoOrdenNoCalcularComisionUpdateDto dto)
         {
-            ResultDto<PcOrdenesSinCalculoComisionUpdateDto> result =
-                new ResultDto<PcOrdenesSinCalculoComisionUpdateDto>(null);
+            ResultDto<PcTipoPagoOrdenNoCalcularComisionUpdateDto> result =
+                new ResultDto<PcTipoPagoOrdenNoCalcularComisionUpdateDto>(null);
             try
             {
-                var pago = await _unitOfWork.PcOrdenesSinCalculoComisionRepository.GetById(dto.Id);
+                var pago = await _unitOfWork.PcTipoPagoOrdenNoCalcularComisionRepository.GetById(dto.Id);
                 if (pago == null)
                 {
                     result.Data = null;
                     result.IsValid = false;
-                    result.Message = "Orden no existe";
+                    result.Message = "Orden - Tipo Pago - no existe";
                     return result;
                 }
 
-                await _unitOfWork.PcOrdenesSinCalculoComisionRepository.Delete(dto.Id);
+                await _unitOfWork.PcTipoPagoOrdenNoCalcularComisionRepository.Delete(dto.Id);
                 await _unitOfWork.SaveChangesAsync();
                 result.Data = dto;
                 result.IsValid = false;

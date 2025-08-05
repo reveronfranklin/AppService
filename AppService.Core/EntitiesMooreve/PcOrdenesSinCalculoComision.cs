@@ -11,5 +11,7 @@ public class PcOrdenesSinCalculoComision
 
   
     public string? SearchText { get; set; }
+    
+    public string? Cliente { get; set; }
 
 }
