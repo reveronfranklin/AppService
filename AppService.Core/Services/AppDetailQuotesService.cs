@@ -254,7 +254,30 @@ namespace AppService.Core.Services
                 }
             }
         }
-   
+
+
+        public async Task<bool> CotizacionProductoEstimadoSinSolicitud(AppProducts appProducts ,AppDetailQuotes appDetailQuotes )
+        {
+            
+            bool result = false;
+            Wsmy502 renglon = await this._unitOfWork.RenglonRepository.GetByCotizacionProducto(appDetailQuotes.Cotizacion, appDetailQuotes.IdProductoNavigation.ExternalCode);
+            if (renglon != null)
+            {
+                var solicitudAprobacion =
+                    await this._aprobacionesServices.GetByCotizacionRenglonPrpopuesta(renglon.Cotizacion, renglon.Renglon,
+                        1);
+                if (solicitudAprobacion == null && appProducts.RequiereEstimacion==true)
+                {
+                    result = true;
+                }
+            }
+          
+            
+
+            return result;
+
+        }
+        
         public async Task RecalcularPreciosLista(int appGeneralQuotesId)
         {
             var generalQuotes = await _unitOfWork.AppGeneralQuotesRepository.GetById(appGeneralQuotesId);
@@ -308,6 +331,12 @@ namespace AppService.Core.Services
                 }
 
                 if (precio.Data.PorDebajoDeCantidadMinima)
+                {
+                    solicitarPrecio = 1;
+                }
+
+                var cotizacionProductoEstimadoSinSolicitud =await  CotizacionProductoEstimadoSinSolicitud(item.IdProductoNavigation, item);
+                if (cotizacionProductoEstimadoSinSolicitud)
                 {
                     solicitarPrecio = 1;
                 }
@@ -1128,6 +1157,7 @@ namespace AppService.Core.Services
                 {
                     await RecalcularPreciosLista(appDetailQuotes.AppGeneralQuotesId);
                 }*/
+                
                 
                 _unitOfWork.AppDetailQuotesRepository.UpdateCondicionPago(appDetailQuotesUpdated.AppGeneralQuotesId,appDetailQuotesUpdated.IdCondPago);
 
@@ -2392,7 +2422,7 @@ namespace AppService.Core.Services
 
                                 cantidadAlternativa = (decimal)precio.Data.CantidadConvertidaAlternativa;
                             }
-                            if ((bool)appProduct.RequiereEstimacion || appProduct.CantidadMinima >cantidadAlternativa )
+                            if ((bool)appProduct.RequiereEstimacion || appProduct.CantidadMinima >cantidadAlternativa  || (bool)wsmy639Response.Estimada)
                             {
                                 
                                 result.precioEstimacion = wsmy639Response.ValorVentaAprobarUsd;

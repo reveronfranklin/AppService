@@ -254,6 +254,11 @@ namespace AppService.Core.Services
                         {
                             TintasValidasGetDto itemTintasValidasGetDto = new TintasValidasGetDto();
                             itemTintasValidasGetDto.Codigo = itemTintas.Codigo.Trim();
+                            itemTintasValidasGetDto.FlagNoContar = false;
+                            if (itemTintas.FlagNoContar == "X")
+                            {
+                                itemTintasValidasGetDto.FlagNoContar = true;
+                            }
                             listTintasValidasGetDto.Add(itemTintasValidasGetDto);
                         }
 

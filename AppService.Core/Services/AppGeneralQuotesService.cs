@@ -677,7 +677,7 @@ namespace AppService.Core.Services
             filters.PageNumber = filters.PageNumber == 0 ? _paginationOptions.DefaultPageNumber : filters.PageNumber;
             filters.PageSize = filters.PageSize == 0 ? _paginationOptions.DefaultPageSize : filters.PageSize;
 
-
+          
             List<AppGeneralQuotes> quotes = await _unitOfWork.AppGeneralQuotesRepository.GetAll(filters);
             if (quotes.Count > 0)
             {
@@ -1560,7 +1560,7 @@ namespace AppService.Core.Services
                 if (AppGeneralQuotesUpdated != null)
                 {
                     metadata.IsValid = true;
-                    metadata.Message = "Cotizacion: " + appGeneralQuotes1.Cotizacion + " Actualizada Satisfactoriamente!!";
+                    metadata.Message = "Cotizacion: " + AppGeneralQuotesUpdated.Cotizacion + " Actualizada Satisfactoriamente!!";
                 }
                 else
                 {

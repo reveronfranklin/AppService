@@ -729,6 +729,7 @@ namespace AppService.Core.Services
             result.Precio =precio;
             
             result.PrecioMaximo = result.Precio;
+            
             result.CantidadConvertida = cantidad;
             result.CantidadPorUnidad = 0; // cantidad / result.CantidadConvertida;
             result.PrecioPorUnidad = 0; //result.Precio / result.CantidadPorUnidad;

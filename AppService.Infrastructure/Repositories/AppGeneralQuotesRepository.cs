@@ -321,7 +321,7 @@ namespace AppService.Infrastructure.Repositories
 
     if (filter.FechaDesde == null)
     {
-        fechaDesde = DateTime.Now.AddDays(-30);
+        fechaDesde = DateTime.Now.AddDays(-90);
         fechaHasta = DateTime.Now;
     }
     else

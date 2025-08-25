@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AppService.Core.Entities;
 
-[Table("PCTemporalAjustes")]
+[Table("PCTipoPagoOrdenNoCalcularComision")]
 public class PCTipoPagoOrdenNoCalcularComision
 {
     [Key]

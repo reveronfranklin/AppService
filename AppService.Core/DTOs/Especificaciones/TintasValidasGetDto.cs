@@ -4,5 +4,6 @@
     {
 
         public string Codigo { get; set; }
+        public bool FlagNoContar  { get; set; }
     }
 }

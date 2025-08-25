@@ -54,40 +54,9 @@ namespace AppService.Core.Services
 
             return result;
         }
-        public async Task<OptionsPreciosProductosResponse> GetPrecioProductoCantidad(int idMunicipio,decimal cantidad,int idProducto ){ 
-            
-                
-                
-                var resultProducto = await _appProductsService.GetProduct(idProducto);
-                var producto = resultProducto.Data;
-                var precio = producto.AppPriceDto.Where(x=>  cantidad >=x.Desde && cantidad<=x.Hasta).FirstOrDefault();
-                OptionsPreciosProductosResponse response = new OptionsPreciosProductosResponse();
-                decimal porcFlete = 0;
-                decimal flete = 0;
-                decimal fleteMaximo = 0;
-                porcFlete= await GetPorcFlete(idMunicipio,idProducto);
-
-                if (precio!=null)
-                {
-                    flete = (precio.Precio * porcFlete) / 100;
-                    fleteMaximo = (precio.PrecioMaximo * porcFlete) / 100;
-                
-                }
-                
-               
-                response.Producto = producto;
-                response.Cantidad=cantidad;
-                response.PrecioMinimo = precio.Precio;
-                response.PrecioMaximo = precio.PrecioMaximo;
-                response.CantidadConvertida=cantidad;
-                response.Flete = flete;
-                response.FleteMaximo = fleteMaximo;
-                response.IdCalculo = 0;
-                return response;
-                
-            
-        }
-
+        
+        
+     
 
         public ResultConversionUnidadesMetrosCuadrados CalculaConversion(decimal cantidadSolicitada,decimal medidaBasica,decimal medidaOpuesta)
         {
@@ -190,7 +159,7 @@ namespace AppService.Core.Services
 
             cantidadConvertida = (decimal)options.Cantidad / (decimal)cantidadPorUnidadProduccion;
             var precio =
-                await GetPrecioProductoCantidad((int)options.Municipio.Recnum, cantidadConvertida, options.Producto.Id);
+                await GetPrecioProductoCantidad(options);
 
             porcFlete = await GetPorcFlete((int)options.Municipio.Recnum, options.Producto.Id);
             flete = (precio.PrecioMinimo * porcFlete) / 100;
@@ -256,6 +225,53 @@ namespace AppService.Core.Services
 
         }
 
+        public async Task<OptionsPreciosProductosResponse> GetPrecioProductoCantidad(OptionsPreciosProductos options){ 
+            
+                
+                
+            OptionsPreciosProductosResponse response = new OptionsPreciosProductosResponse();
+            decimal cantidadConvertida = 0;
+            decimal precioMinimo = 0;
+            decimal precioMaximo = 0;
+            int idCalculo = 0;
+            decimal flete = 0;
+            decimal fleteMaximo = 0;
+            decimal porcFlete = 0;
+            
+         
+            var calculo = await _appRecipesByAppDetailQuotesService.GetPrecioProductoCantidadOfficeProduct(options.Producto.Id,options.Cantidad);
+            
+            if (calculo != null)
+            {
+                decimal porcentajeCondicioPago = 0;
+                var condicion= await _unitOfWork.MtrCondicionPagoRepository.GetById((short)options.CondicionPago);
+                if (condicion != null)
+                {
+                    porcentajeCondicioPago = condicion.PocGapAplicarPrecio;
+                }
+                
+                
+                precioMinimo = calculo.Precio +(calculo.Precio*porcentajeCondicioPago)/100;
+                precioMaximo = calculo.PrecioMaximo +(calculo.PrecioMaximo*porcentajeCondicioPago)/100;;
+                cantidadConvertida = (decimal)calculo.CantidadConvertida;
+                idCalculo = (int)calculo.CalculoId;
+                porcFlete = await GetPorcFlete((int)options.Municipio.Recnum, options.Producto.Id);
+                flete = (precioMinimo * porcFlete) / 100;
+                fleteMaximo = (precioMaximo * porcFlete) / 100;
+            }
+            response.Producto = options.Producto;
+            response.Cantidad = options.Cantidad;
+            response.PrecioMinimo = precioMinimo;
+            response.PrecioMaximo = precioMaximo;
+            response.CantidadConvertida = cantidadConvertida;
+            response.IdCalculo = idCalculo;
+            response.Flete =flete;
+            response.FleteMaximo = fleteMaximo;
+            response.PorDebajoDeCantidadMinima=calculo.PorDebajoDeCantidadMinima;
+            return response;
+                
+            
+        }
 
 
         public async Task<OptionsPreciosProductosResponse> RecalculoPrecioPorProductoCantidad(OptionsPreciosProductos options)
@@ -292,8 +308,7 @@ namespace AppService.Core.Services
             response.FleteMaximo = fleteMaximo;
             response.PorDebajoDeCantidadMinima=calculo.PorDebajoDeCantidadMinima;
             return response;
-            
-            return response;
+      
         }
 
 
@@ -393,8 +408,7 @@ namespace AppService.Core.Services
                         
                         break;
                     case 2:
-                        var precio = await GetPrecioProductoCantidad((int)options.Municipio.Recnum, options.Cantidad,
-                            options.Producto.Id);
+                        var precio = await GetPrecioProductoCantidad(options);
                         precioMinimo = precio.PrecioMinimo;
                         precioMaximo = precio.PrecioMaximo;
                         cantidadConvertida = precio.CantidadConvertida;

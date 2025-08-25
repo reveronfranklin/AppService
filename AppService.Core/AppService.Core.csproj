@@ -31,6 +31,7 @@
   <ItemGroup>
     <Folder Include="DTOs\DocumentosFiscales\" />
     <Folder Include="EntitiesEstadisticas\" />
+    <Folder Include="Services\Estimacion\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="EntitiesMooreve\AppConfigAppService.cs">
