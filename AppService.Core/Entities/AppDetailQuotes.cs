@@ -86,6 +86,7 @@ namespace AppService.Core.Entities
         public int? OdooId { get; set; }
 
         public long? OrdenAnterior { get; set; }
+        public long? Orden { get; set; }
 
         public string Papeles { get; set; } = string.Empty;
         public string TipoPapeles { get; set; } = string.Empty;
@@ -117,6 +118,14 @@ namespace AppService.Core.Entities
         public short IdCondPago { get; set; }
         public decimal? PorcFlete { get; set; }
         public decimal? Flete { get; set; }
+        
+        public bool? Estimada { get; set; }
+        
+        public string? MensajeSolicitarPrecio { get; set; }
+        public string? CodigoProducto { get; set; }
+        
+        
+
 
         public virtual ICollection<AppService.Core.Entities.AppDetailQuotesConversionUnit> AppDetailQuotesConversionUnit { get; set; }
     }

@@ -102,7 +102,7 @@ namespace AppService.Api.Controllers
 
             IEnumerable<CobGeneralCobranzaDto> generalCobranzasDtos = _mapper.Map<IEnumerable<CobGeneralCobranzaDto>>(generalCobranzas);
 
-            PagedList<CobGeneralCobranzaDto> pagedCobranzas = PagedList<CobGeneralCobranzaDto>.Create(generalCobranzasDtos, filters.PageNumber, filters.PageSize);
+            PagedList<CobGeneralCobranzaDto> pagedCobranzas = PagedList<CobGeneralCobranzaDto>.Create(generalCobranzasDtos, filters.PageNumber, filters.PageSize,0);
 
             Metadata metadata = new Metadata
             {
@@ -303,7 +303,7 @@ namespace AppService.Api.Controllers
 
 
 
-            PagedList<CobGeneralCobranzaDto> pagedCobranzas = PagedList<CobGeneralCobranzaDto>.Create(pagedCobranzasOrdenado, filters.PageNumber, filters.PageSize);
+            PagedList<CobGeneralCobranzaDto> pagedCobranzas = PagedList<CobGeneralCobranzaDto>.Create(pagedCobranzasOrdenado, filters.PageNumber, filters.PageSize,pagedCobranzasOrdenado.Count);
 
 
           
@@ -394,7 +394,7 @@ namespace AppService.Api.Controllers
             filters.PageNumber = 0;
             filters.PageSize = 100;
 
-            PagedList<CobGeneralCobranzaDto> pagedCobranzas = PagedList<CobGeneralCobranzaDto>.Create(generalCobranzasDtos, filters.PageNumber, filters.PageSize);
+            PagedList<CobGeneralCobranzaDto> pagedCobranzas = PagedList<CobGeneralCobranzaDto>.Create(generalCobranzasDtos, filters.PageNumber, filters.PageSize,generalCobranzasDtos.Count());
 
 
             final = DateTime.Now;
@@ -491,7 +491,7 @@ namespace AppService.Api.Controllers
             filters.PageNumber = 0;
             filters.PageSize = 100;
 
-            PagedList<CobGeneralCobranzaDto> pagedCobranzas = PagedList<CobGeneralCobranzaDto>.Create(generalCobranzasDtos, filters.PageNumber, filters.PageSize);
+            PagedList<CobGeneralCobranzaDto> pagedCobranzas = PagedList<CobGeneralCobranzaDto>.Create(generalCobranzasDtos, filters.PageNumber, filters.PageSize,generalCobranzasDtos.Count());
 
 
             final = DateTime.Now;

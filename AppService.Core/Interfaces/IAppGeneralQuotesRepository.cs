@@ -8,7 +8,8 @@ namespace AppService.Core.Interfaces
     public interface IAppGeneralQuotesRepository
     {
         Task<List<AppGeneralQuotes>> GetListCotizacionesUltimoMes();
-        Task<List<AppGeneralQuotes>> GetAll(AppGeneralQuotesQueryFilter filter);
+        //Task<List<AppGeneralQuotes>> GetAll(AppGeneralQuotesQueryFilter filter);
+        Task<(List<AppGeneralQuotes> Data, int TotalCount)> GetAll(AppGeneralQuotesQueryFilter filter);
 
         Task<AppGeneralQuotes> GetById(int id);
 
@@ -33,6 +34,7 @@ namespace AppService.Core.Interfaces
         Task<List<AppGeneralQuotes>> GetByCotizacionesPendientesIntegrar();
 
         Task<List<string>> GetListCotizaciones();
+        void EliminarCotizacionRetornar(string cotizacion);
 
     }
 }

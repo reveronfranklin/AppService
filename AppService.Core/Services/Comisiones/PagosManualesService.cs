@@ -177,7 +177,7 @@ namespace AppService.Core.Services
                     return result;
                 }
                 
-                List<string> tipos = new List<string> { "PN", "PM" };
+                /*List<string> tipos = new List<string> { "PN", "PM","PR" };
                 var findTipo = tipos.Where(x => x == dto.Transaccion).First();
                 if (findTipo == null)
                 {
@@ -185,7 +185,7 @@ namespace AppService.Core.Services
                     result.IsValid = false;
                     result.Message = "Transaccion Invalida";
                     return result;
-                }
+                }*/
                 
                 Wsmy685 entity = new Wsmy685();
                 entity.Orden = dto.Orden;

@@ -55,18 +55,40 @@ namespace AppService.Infrastructure.Repositories
             return await _context.Wpry240.Where(x => x.Cotizacion == cotizacion && x.Renglon == renglon).ToListAsync();
         }
 
+
+        public async Task GuardarWpry240(Wpry240 entidad)
+        {
+       
+
+               try
+                {
+                    FormattableString xqueryDiario = $"EXEC [dbo].[usp_WPRY240_InsertSimple] {entidad.Cotizacion},{entidad.Renglon},{entidad.Propuesta},{entidad.IdParte},{entidad.IdPapel},{entidad.IdConstruccion},{entidad.LargoCm},{entidad.AnchoCm},{entidad.Cantidad},{entidad.MedidaBase},{entidad.MedidaOpuesta},{entidad.FrasesMarginales},0,{entidad.Orden},{entidad.TipoPapel},{entidad.Gramaje},{entidad.MedidaBasicaFraccionPulgada},{entidad.MedidaOpuestaFraccionPulgada}";
+
+                    var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+                }
+                catch (System.Exception e)
+                {
+                    
+                    Console.WriteLine(e);
+                }
+            
+        }
+
         public async Task Add(Wpry240 entity)
         {
 
 
             try
             {
-                await _context.Wpry240.AddAsync(entity);
+                //await _context.Wpry240.AddAsync(entity);
+                await GuardarWpry240(entity);
+
+               
             }
             catch (Exception ex)
             {
                 var msg = ex.InnerException.Message;
-                throw;
+            
             }
         }
 
@@ -152,11 +174,15 @@ namespace AppService.Infrastructure.Repositories
 
             try
             {
-                Wpry240 entity = await GetByCotizacionRenglonPropuestaParte(cotizacion, renglon, propuesta, parte);
+                /*Wpry240 entity = await GetByCotizacionRenglonPropuestaParte(cotizacion, renglon, propuesta, parte);
                 if (entity != null)
                 {
                     _context.Wpry240.Remove(entity);
-                }
+                }*/
+                  FormattableString xqueryDiario = $"DELETE FROM Wpry240 WHERE Cotizacion = {cotizacion} AND Renglon = {renglon} AND Propuesta = {propuesta} AND IdParte = {parte}";
+
+                var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+
             }
             catch (Exception e)
             {

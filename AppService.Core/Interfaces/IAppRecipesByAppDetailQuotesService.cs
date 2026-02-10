@@ -22,5 +22,6 @@ namespace AppService.Core.Interfaces
         Task ValidaFormula(AppRecipes recipe);
         Task<AppPriceGetDto> GetPrecioProductoCantidadOfficeProduct(int productId, Decimal cantidad);
         Task<AppPriceGetDto> GetPrecioProductoCantidad(int productId, Decimal cantidad, int condicionDePago);
+        Task UpdateCoticacionEnCalculo(int appDetailQuotesId, int calculoId);
     }
 }

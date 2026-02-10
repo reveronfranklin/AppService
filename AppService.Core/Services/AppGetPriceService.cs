@@ -109,6 +109,13 @@ namespace AppService.Core.Services
             var calculo = await _appRecipesByAppDetailQuotesService.GetPrice(filter);
             if (calculo.Meta.IsValid == true)
             {
+                if ( filter.AppDetailQuotesId > 0  && calculo.Data.CalculoId> 0)
+                {
+                    //ACTUALIZAR COTIZACION EN HISTORICO DE CALCULO
+                    await _appRecipesByAppDetailQuotesService.UpdateCoticacionEnCalculo((int)filter.AppDetailQuotesId ,(int)calculo.Data.CalculoId);
+
+                }
+
                 precioMinimo = calculo.Data.Precio;
                 precioMaximo = calculo.Data.PrecioMaximo;
                 cantidadConvertida = (decimal)calculo.Data.CantidadConvertida;
@@ -203,6 +210,12 @@ namespace AppService.Core.Services
             var calculo = await _appRecipesByAppDetailQuotesService.GetPrice(filter);
             if (calculo.Meta.IsValid == true)
             {
+                 if ( filter.AppDetailQuotesId > 0  && calculo.Data.CalculoId> 0)
+                {
+                    //ACTUALIZAR COTIZACION EN HISTORICO DE CALCULO
+                    await _appRecipesByAppDetailQuotesService.UpdateCoticacionEnCalculo((int)filter.AppDetailQuotesId ,(int)calculo.Data.CalculoId);
+
+                }
                 precioMinimo = calculo.Data.Precio;
                 precioMaximo = calculo.Data.PrecioMaximo;
                 cantidadConvertida = (decimal)calculo.Data.CantidadConvertida;

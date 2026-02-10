@@ -29,5 +29,7 @@ namespace AppService.Core.Interfaces
 
         Task<bool> EnviarCotizacionAdministradora(string cotizacion, int renglon, int propuesta,
             string usuarioConectado);
+
+        void ActuaclizaPrecio(string cotizacion, string producto);
     }
 }

@@ -97,6 +97,24 @@ namespace AppService.Infrastructure.Repositories
             return detail;
 
         }
+        
+        public async Task<bool> EsDigital(string cotizacion)
+        {
+            var result = false;
+            var detail = await _context.AppDetailQuotes.Where(x => x.Cotizacion == cotizacion).FirstOrDefaultAsync();
+            if (detail != null)
+            {
+                var producto = await _context.AppProducts.Where(x => x.Id == detail.IdProducto).FirstOrDefaultAsync();
+                if (producto != null &&  producto.TipoCalculo==4)
+                {
+                   result = true;
+                }
+            }
+            return result;
+
+        }
+        
+        
         public async Task<AppDetailQuotes> GetByQuetesProduct(string cotizacion, int idProduct)
         {
             var detail = await _context.AppDetailQuotes.Where(x => x.Cotizacion == cotizacion && x.IdProducto == idProduct).FirstOrDefaultAsync();
@@ -150,11 +168,36 @@ namespace AppService.Infrastructure.Repositories
         {
             try
             {
-                string porcFleteString = porcFlete.ToString();
-                string fleteString = flete.ToString();
-                porcFleteString = porcFleteString.Replace(",", ".");
-                fleteString = fleteString.Replace(",", ".");
-                FormattableString xqueryDiario = $"UPDATE AppDetailQuotes SET PorcFlete={porcFleteString},Flete={fleteString} WHERE ID={appDetailQuotesId}";
+                
+              
+                    string porcFleteString = porcFlete.ToString();
+                    string fleteString = flete.ToString();
+                    porcFleteString = porcFleteString.Replace(",", ".");
+                    fleteString = fleteString.Replace(",", ".");
+                    FormattableString xqueryDiario = $"UPDATE AppDetailQuotes SET PorcFlete={porcFleteString},Flete={fleteString} WHERE ID={appDetailQuotesId}";
+
+                    var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+                
+              
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+         
+            
+
+        }
+        
+        public async Task AppEvaluarRequiereSolicitarPrecio(int appDetailQuotesId,decimal cantidad)
+        {
+            try
+            {
+              
+                string cantidadString = cantidad.ToString();
+
+                cantidadString = cantidadString.Replace(",", ".");
+                FormattableString xqueryDiario = $"EXECUTE AppEvaluarRequiereSolicitarPrecio {appDetailQuotesId},{cantidadString}";
 
                 var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
             }
@@ -166,19 +209,38 @@ namespace AppService.Infrastructure.Repositories
             
 
         }
+
+
+       /* public async Task<bool> Editable(int appDetailQuotesId)
+        {
+            bool result = false;
+            var appDetailQuotes = await _context.AppDetailQuotes.Where(x => x.Id == appDetailQuotesId).FirstOrDefaultAsync();
+            if (appDetailQuotes != null && appDetailQuotes.IdEstatus < 5)
+            {
+                result = true;
+            }
+            return result;
+            
+        }*/
+        
         
         public async Task UpdatePrecioMinimo(int appDetailQuotesId,decimal precioMinimo,decimal precioMaximo,int calculoId)
         {
             try
             {
-                string minimo = precioMinimo.ToString();
-                string maximo = precioMaximo.ToString();
-                minimo = minimo.Replace(",", ".");
-                maximo = maximo.Replace(",", ".");
-                var query =$"exec UpdatePrecioListaCotizacion {appDetailQuotesId},{minimo}, {maximo},{calculoId}";
-                FormattableString xqueryDiario = $"exec UpdatePrecioListaCotizacion {appDetailQuotesId},{minimo}, {maximo},{calculoId}";
+                 
+                 
+         
+                    string minimo = precioMinimo.ToString();
+                    string maximo = precioMaximo.ToString();
+                    minimo = minimo.Replace(",", ".");
+                    maximo = maximo.Replace(",", ".");
+                    var query =$"exec UpdatePrecioListaCotizacion {appDetailQuotesId},{minimo}, {maximo},{calculoId}";
+                    FormattableString xqueryDiario = $"exec UpdatePrecioListaCotizacion {appDetailQuotesId},{minimo}, {maximo},{calculoId}";
 
-                var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+                    var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+            
+              
             }
             catch (Exception e)
             {
@@ -192,18 +254,22 @@ namespace AppService.Infrastructure.Repositories
         
         
         
-        public void UpdatePrecios(int appDetailsId,decimal precioMinimo,decimal precioMaximo, int calculoId,int solicitarPrecio)
+        public async Task   UpdatePrecios(int appDetailsId,decimal precioMinimo,decimal precioMaximo, int calculoId,int solicitarPrecio)
         {
-            var precioMinimoString = precioMinimo.ToString();
-            precioMinimoString = precioMinimoString.Replace(",", ".");
-            var precioMaximoString = precioMaximo.ToString();
-            precioMaximoString = precioMaximoString.Replace(",", ".");
+           
+         
+                var precioMinimoString = precioMinimo.ToString();
+                precioMinimoString = precioMinimoString.Replace(",", ".");
+                var precioMaximoString = precioMaximo.ToString();
+                precioMaximoString = precioMaximoString.Replace(",", ".");
             
-            FormattableString queryGeneral = $"update AppDetailQuotes set UnitPriceBaseProduction= {precioMinimoString} ,UnitPriceBaseProductionMaximo={precioMaximoString},CalculoId={calculoId},SolicitarPrecio={solicitarPrecio} where id={appDetailsId}";
+                FormattableString queryGeneral = $"update AppDetailQuotes set UnitPriceBaseProduction= {precioMinimoString} ,UnitPriceBaseProductionMaximo={precioMaximoString},CalculoId={calculoId},SolicitarPrecio={solicitarPrecio} where id={appDetailsId}";
 
-            var resultGeneral = _context.Database.ExecuteSqlInterpolated(queryGeneral);
-     
+                var resultGeneral = _context.Database.ExecuteSqlInterpolated(queryGeneral);
+
+
             
+         
        
             
 
@@ -213,6 +279,9 @@ namespace AppService.Infrastructure.Repositories
 
             try
             {
+              
+
+                
                 FormattableString queryGeneral = $"UPDATE AppGeneralQuotes SET IdCondPago ={condicionPago} ,integrarCotizacion= 1 WHERE ID={appGeneralQuotesId}";
 
                 var resultGeneral = _context.Database.ExecuteSqlInterpolated(queryGeneral);
@@ -234,14 +303,57 @@ namespace AppService.Infrastructure.Repositories
 
         }
 
-        public void Update(AppDetailQuotes entity)
+        public Task Update(AppDetailQuotes entity)
         {
-            FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
+            /*var detailQuotes = await _context.AppDetailQuotes.FirstOrDefaultAsync(x => x.Id == entity.Id);
+            if (detailQuotes != null)
+            {
+                
+          
+                if (detailQuotes is { Orden: > 0 })
+                {
+                    return;
+                }
+                
+                if (detailQuotes.IdEstatus<5)
+                {
+                    FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
 
-            var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+                    var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+                    _context.AppDetailQuotes.Update(entity);
+                }
+            }*/
+            
+            //FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
+
+            //var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
             _context.AppDetailQuotes.Update(entity);
-
+            return Task.CompletedTask;
         }
+
+
+
+
+
+        public async Task AppActualizaPapelesDetailQuotes(int id,string cotizacion)
+        {
+            
+                try
+                {
+                      FormattableString xqueryDiario = $"EXEC AppActualizaPapelesDetailQuotes {id},{cotizacion}";
+
+                    var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+                }
+                catch (System.Exception e)
+                {
+                    
+                    Console.WriteLine(e);
+                }
+                  
+                
+        }
+
+
 
         public async Task Delete(int id)
         {
@@ -249,11 +361,19 @@ namespace AppService.Infrastructure.Repositories
           
 
             AppDetailQuotes entity = await GetById(id);
-            _context.AppDetailQuotes.Remove(entity);
+            if (entity != null)
+            {
+               
+                    _context.AppDetailQuotes.Remove(entity);
             
-            FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
+                    FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
 
-            var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+                    var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+                
+
+            }
+           
+          
 
         }
 

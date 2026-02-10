@@ -26,6 +26,7 @@ using static AppService.Core.DTOs.Odoo.Cotizaciones.Enviar.OdooCotizacionEnviar;
 using static AppService.Core.DTOs.Odoo.Cotizaciones.Enviar.OdooDetailCotizacionDelete;
 using static AppService.Core.DTOs.Odoo.Cotizaciones.Enviar.OdooGeneralCotizacionDelete;
 using ArgClass = AppService.Core.DTOs.Odoo.Cotizaciones.Enviar.OdooCotizacionEnviar.ArgClass;
+using AppService.Core.EntitiesEstadisticas;
 
 namespace AppService.Core.Services
 {
@@ -339,7 +340,7 @@ namespace AppService.Core.Services
                                     var solicitudAprobacion = await this._aprobacionesServices.GetByCotizacionRenglonPrpopuesta(renglon.Cotizacion, renglon.Renglon, 1);
                                     if (solicitudAprobacion == null)
                                     {
-                                        ApiResponse<Wsmy639> aprobacion = await this._aprobacionesServices.CreateAprobacion(item.Cotizacion, renglon.Renglon, 1, item.UserUpdate);
+                                        ApiResponse<Wsmy639> aprobacion = await this._aprobacionesServices.CreateAprobacion(item.Cotizacion, renglon.Renglon, 1, item.UserUpdate,item.MensajeSolicitarPrecio);
                                         if (aprobacion.Data != null)
                                         {
                                             await this.UpdateSolicitudPropuesta(renglon.Cotizacion, renglon.Renglon, 1, (int)aprobacion.Data.IdSolicitud);
@@ -413,7 +414,7 @@ namespace AppService.Core.Services
                                     var solicitudAprobacion = await this._aprobacionesServices.GetByCotizacionRenglonPrpopuesta(renglon.Cotizacion, renglon.Renglon, 1);
                                     if (solicitudAprobacion == null)
                                     {
-                                        ApiResponse<Wsmy639> aprobacion = await this._aprobacionesServices.CreateAprobacion(item.Cotizacion, renglon.Renglon, 1, item.UserUpdate);
+                                        ApiResponse<Wsmy639> aprobacion = await this._aprobacionesServices.CreateAprobacion(item.Cotizacion, renglon.Renglon, 1, item.UserUpdate,item.MensajeSolicitarPrecio);
                                         if (aprobacion.Data != null)
                                         {
                                             await this.UpdateSolicitudPropuesta(renglon.Cotizacion, renglon.Renglon, 1, (int)aprobacion.Data.IdSolicitud);
@@ -443,7 +444,7 @@ namespace AppService.Core.Services
         {
             try
             {
-     Wsmy501 cotizacion = await this._unitOfWork.CotizacionRepository.GetByCotizacion(generalQuotes.Cotizacion);
+            Wsmy501 cotizacion = await this._unitOfWork.CotizacionRepository.GetByCotizacion(generalQuotes.Cotizacion);
             MtrCliente cliente;
             if (cotizacion != null)
             {
@@ -453,6 +454,7 @@ namespace AppService.Core.Services
                 cotizacion.Prospecto = !(cotizacion.CodCliente == "000000") ? "" : "X";
                 cotizacion.FlagValidado = new bool?(true);
                 cotizacion.Fecha = new DateTime?(generalQuotes.Fecha);
+                cotizacion.FechaActualiza = generalQuotes.FechaActualiza;
                 cotizacion.Observaciones = generalQuotes.Observaciones;
                 DateTime fechaCaducidad = generalQuotes.FechaCaducidad;
                 cotizacion.FechaCaducidad = new DateTime?(generalQuotes.FechaCaducidad);
@@ -465,7 +467,7 @@ namespace AppService.Core.Services
                 cotizacion.ObservacionPostergar = generalQuotes.ObservacionPostergar;
                 cotizacion.UsuarioActualiza = generalQuotes.UsuarioActualiza;
                 //cotizacion.FechaActualiza = new DateTime?(generalQuotes.FechaActualiza);
-                cotizacion.FechaActualiza = DateTime.Now;
+               
                 cotizacion.IdContacto = new int?((int)generalQuotes.IdContacto);
                 MtrContactos byId1 = await this._unitOfWork.MtrContactosRepository.GetById((long)cotizacion.IdContacto.Value);
                 cotizacion.NombreContacto = byId1.Nombre;
@@ -534,7 +536,6 @@ namespace AppService.Core.Services
                 cotizacionNew.FechaCaducidad = new DateTime?(generalQuotes.FechaCaducidad);
                 cotizacionNew.FechaPostergada = generalQuotes.FechaPostergada;
                 cotizacionNew.Estatus = new int?(generalQuotes.IdEstatus);
-                cotizacionNew.Observaciones = generalQuotes.Observaciones;
                 cliente = this._unitOfWork.MtrClienteRepository.GetById(generalQuotes.IdCliente);
                 cliente.EMailClient ??= "";
                 cotizacionNew.EmailCliente = cliente.EMailClient.Trim();
@@ -733,7 +734,7 @@ namespace AppService.Core.Services
                 await this.UpdatePropuestaCotizacion(appDetailQuotes, renglonNew.Renglon);
                 if (appDetailQuotes.SolicitarPrecio.Value && this._aprobacionesServices.GetByCotizacionRenglonPrpopuesta(renglonNew.Cotizacion, renglonNew.Renglon, 1) == null)
                 {
-                    if ((await this._aprobacionesServices.CreateAprobacion(renglonNew.Cotizacion, renglonNew.Renglon, 1, appDetailQuotes.UserCreate)).Meta.IsValid)
+                    if ((await this._aprobacionesServices.CreateAprobacion(renglonNew.Cotizacion, renglonNew.Renglon, 1, appDetailQuotes.UserCreate,appDetailQuotes.MensajeSolicitarPrecio)).Meta.IsValid)
                     {
                         ApiResponse<Wsmy647> apiResponse = await this._aprobacionesServices.ActivarWORKFLOW(renglonNew.Cotizacion, renglonNew.Renglon, 1, appDetailQuotes.UserCreate, appDetailQuotes);
                     }
@@ -858,8 +859,8 @@ namespace AppService.Core.Services
 
                 propuesta.CotizacionRenglonPropuesta = propuesta.Cotizacion + propuesta.Renglon.ToString() + propuesta.Propuesta.ToString();
 
-                var flete = (appDetailQuotes.UnitPriceBaseProduction * porcFlete) /100;
-                var fleteMaximo = (appDetailQuotes.UnitPriceBaseProductionMaximo  * porcFlete) /100;
+                var flete = (appDetailQuotes.UnitPriceBaseProduction * appDetailQuotes.PorcFlete) /100;
+                var fleteMaximo = (appDetailQuotes.UnitPriceBaseProductionMaximo  * appDetailQuotes.PorcFlete) /100;
                 
                 propuesta.UsdListaCpj = appDetailQuotes.UnitPriceBaseProductionMaximo + fleteMaximo;
                 propuesta.UsdListaCpjminimo = appDetailQuotes.UnitPriceBaseProduction + flete;
@@ -926,6 +927,7 @@ namespace AppService.Core.Services
                     if (appDetailQuotes.OrdenAnterior > 0 && tipoOrden==1)
                     {
                         await CopiarDatosOrdenAnterior((long)appDetailQuotes.OrdenAnterior, propuesta.Cotizacion, propuesta.Renglon, propuesta.Propuesta, appDetailQuotes);
+                       // await this.UpdateWpry240(appDetailQuotes, propuesta.Renglon);
                     }
                     else
                     {
@@ -947,19 +949,23 @@ namespace AppService.Core.Services
                 else
                 {
 
-                    //Eliminamos el detalle de productos en Ceos
-                    await this._unitOfWork.DatosProductosRepository.DeleteByCotizacion(appDetailQuotes.Cotizacion);
-                    await this._unitOfWork.SaveChangesAsync();
-
-                    var details = await _unitOfWork.AppDetailQuotesRepository.GetByAppGeneralQuotesId(appDetailQuotes.AppGeneralQuotesId);
-                    if (details != null)
+                    if (prod.Inventariable)
                     {
-                        foreach (var item in details.Where(x => x.IdEstatus == 5).ToList())
+                           //Eliminamos el detalle de productos en Ceos
+                        await this._unitOfWork.DatosProductosRepository.DeleteByCotizacion(appDetailQuotes.Cotizacion);
+                        await this._unitOfWork.SaveChangesAsync();
+
+                        var details = await _unitOfWork.AppDetailQuotesRepository.GetByAppGeneralQuotesId(appDetailQuotes.AppGeneralQuotesId);
+                        if (details != null)
                         {
-                            var prodDetail = await _unitOfWork.AppProductsRepository.GetById(item.IdProducto);
-                            await this.PasarDatosACeos(item.Cotizacion, prodDetail.ExternalCode.Trim());
+                            foreach (var item in details.Where(x => x.IdEstatus == 5).ToList())
+                            {
+                                var prodDetail = await _unitOfWork.AppProductsRepository.GetById(item.IdProducto);
+                                await this.PasarDatosACeos(item.Cotizacion, prodDetail.ExternalCode.Trim());
+                            }
                         }
                     }
+                 
 
                     valoresCotizacion = (ValoresCotizacionDto)null;
                     propuesta = (Wsmy515)null;
@@ -1084,6 +1090,7 @@ namespace AppService.Core.Services
                     if (appDetailQuotes.OrdenAnterior > 0 && tipoOrden==1)
                     {
                         await CopiarDatosOrdenAnterior((long)appDetailQuotes.OrdenAnterior, propuestaNew.Cotizacion, propuestaNew.Renglon, propuestaNew.Propuesta, appDetailQuotes);
+                        //await this.UpdateWpry240(appDetailQuotes, propuestaNew.Renglon);
                     }
                     else
                     {
@@ -1319,14 +1326,11 @@ namespace AppService.Core.Services
             return medidaString;
                 
         }  
-        public async Task UpdateWpry240(AppDetailQuotes appDetailQuotes, int renglon)
-        {
 
-            var papelesActuales = await _unitOfWork.Wpry240Repository.GetByCotizacion(appDetailQuotes.Cotizacion);
-            if (papelesActuales != null && papelesActuales.Count()>0)
+            public async Task<List<Wpry240>> GetListWpry240(AppDetailQuotes appDetailQuotes, int renglon)
             {
-                return;
-            }
+
+            List<Wpry240> result = new List<Wpry240>();
             
             var prod = await _unitOfWork.AppProductsRepository.GetById(appDetailQuotes.IdProducto);
             double factorPulgada = 2.54;
@@ -1363,7 +1367,7 @@ namespace AppService.Core.Services
                             parte = int.Parse(variableParte.Valor);
                         }
                         await this._unitOfWork.Wpry240Repository.Delete(propuesta.Cotizacion, propuesta.Renglon, propuesta.Propuesta, parte);
-                        await this._unitOfWork.SaveChangesAsync();
+                        //await this._unitOfWork.SaveChangesAsync();
 
                         Wpry240 wpry240new = new Wpry240();
                         wpry240new.Cotizacion = propuesta.Cotizacion;
@@ -1443,9 +1447,7 @@ namespace AppService.Core.Services
                         
 
                          
-                            await this._unitOfWork.Wpry240Repository.Add(wpry240new);
-                            await this._unitOfWork.SaveChangesAsync();
-                            wpry240new = (Wpry240)null;
+                           result.Add(wpry240new);
                   
                    
                     }
@@ -1460,9 +1462,172 @@ namespace AppService.Core.Services
             if (detailFind != null)
             {
                 detailFind.Papeles = papeles;
-                _unitOfWork.AppDetailQuotesRepository.Update(detailFind);
+                await _unitOfWork.AppDetailQuotesRepository.Update(detailFind);
                 await this._unitOfWork.SaveChangesAsync();
             }
+
+            return result;
+
+        }
+
+
+        public async Task UpdateWpry240(AppDetailQuotes appDetailQuotes, int renglon)
+        {
+
+            /*var papelesActuales = await _unitOfWork.Wpry240Repository.GetByCotizacion(appDetailQuotes.Cotizacion);
+            if (papelesActuales != null && papelesActuales.Count()>0)
+            {
+                return;
+            }*/
+            
+            var prod = await _unitOfWork.AppProductsRepository.GetById(appDetailQuotes.IdProducto);
+            double factorPulgada = 2.54;
+            bool? requiereDatosEntrada = prod.RequiereDatosEntrada;
+            bool flag = false;
+            if (requiereDatosEntrada.GetValueOrDefault() == flag & requiereDatosEntrada.HasValue)
+                factorPulgada = 1.0;
+            Wsmy515 propuesta = await this._unitOfWork.PropuestaRepository.GetByCotizacionRenglonPropuesta(appDetailQuotes.Cotizacion, renglon, 1);
+            if (propuesta == null)
+            {
+                propuesta = (Wsmy515)null;
+            }
+            else
+            {
+                string code = "PAPEL";
+                List<AppRecipes> productIdVariableCode = await this._unitOfWork.AppRecipesRepository.GetListRecipesByProductIdVariableCode(appDetailQuotes.IdProducto, code);
+                if (productIdVariableCode == null)
+                {
+                    propuesta = (Wsmy515)null;
+                }
+                else
+                {
+                    foreach (AppRecipes itemReceta in productIdVariableCode)
+                    {
+                        IAppIngredientsRepository ingredientsRepository = this._unitOfWork.AppIngredientsRepository;
+                        int? nullable = itemReceta.AppIngredientsId;
+                        int id = nullable.Value;
+                        AppIngredients ingrediente = await ingredientsRepository.GetById(id);
+                        nullable = itemReceta.Secuencia;
+                        int parte = nullable.Value;
+                        var variableParte = await _unitOfWork.AppConfigAppRepository.GetByKey(itemReceta.Code);
+                        if (variableParte != null)
+                        {
+                            parte = int.Parse(variableParte.Valor);
+                        }
+                        var idPapel ="";
+                        var frasesMarginales="";
+                        var wpry240 = await this._unitOfWork.Wpry240Repository.GetByCotizacionRenglonPropuestaParte(propuesta.Cotizacion, propuesta.Renglon, propuesta.Propuesta, parte);
+                        if (wpry240 != null)
+                        {
+                            idPapel = wpry240.IdPapel;
+                            frasesMarginales = wpry240.FrasesMarginales;
+                        }else
+                        {
+                            idPapel= ingrediente.Code.ToString().Trim();
+                        }
+                        await this._unitOfWork.Wpry240Repository.Delete(propuesta.Cotizacion, propuesta.Renglon, propuesta.Propuesta, parte);
+                        //await this._unitOfWork.SaveChangesAsync();
+
+                        Wpry240 wpry240new = new Wpry240();
+                        wpry240new.Cotizacion = propuesta.Cotizacion;
+                        wpry240new.Renglon = propuesta.Renglon;
+                        wpry240new.Propuesta = propuesta.Propuesta;
+                        wpry240new.IdParte = parte;
+                        wpry240new.IdPapel = idPapel;
+                        wpry240new.Cantidad = (decimal)propuesta.Cantidad;
+                        wpry240new.FechaRegistro = DateTime.Now;
+                        wpry240new.TipoPapel = wpry240new.IdPapel.Substring(0, 3);
+                        wpry240new.Gramaje = wpry240new.IdPapel.Substring(3, 3);
+                        wpry240new.MedidaBasicaFraccionPulgada = appDetailQuotes.MedidaBasicaFraccionPulgada;
+                        wpry240new.MedidaOpuestaFraccionPulgada = appDetailQuotes.MedidaOpuestaFraccionPulgada;
+                        wpry240new.FrasesMarginales = frasesMarginales;
+
+                        string medidaString = String.Empty;
+                        decimal medidaDecimal = 0;
+                        string humanRepresentation = String.Empty;
+                            
+
+                           //var  medidaConvertida = ConvertirMedidas.ConvertirCmAPulgadas(basica);
+                            
+                            Fractional.Fractional medidaConvertida = new Fractional.Fractional(Math.Truncate(await this.GetMedida(appDetailQuotes, "MEDIDABASICA") / (Decimal)factorPulgada * 100M) / 100M, false);
+                          
+                            if (appDetailQuotes.MedidaBasica > 0)
+                            {
+                               var  medidaConvertidaCm = ConvertirMedidas.ConvertirCmAPulgadas((double)appDetailQuotes.MedidaBasica,true);
+                                medidaString = medidaConvertidaCm.ValueFormat;
+                                medidaDecimal = (decimal)medidaConvertidaCm.Value;
+                                humanRepresentation = medidaConvertidaCm.HumanRepresentation;
+                                wpry240new.MedidaBase = Convert.ToInt32(medidaString);
+                                wpry240new.MedidaBasicaFraccionPulgada = medidaString;
+                            }
+                            else
+                            {
+                                medidaString = await this.GetMedidaString(appDetailQuotes, "MEDIDABASICA");
+                                medidaDecimal = await this.GetMedidaDecimal(appDetailQuotes, "MEDIDABASICA");
+                                humanRepresentation = medidaString;
+                                var valorFormateado= ValueFormated(medidaString);
+                                wpry240new.MedidaBase =Convert.ToInt32(valorFormateado);
+                                wpry240new.MedidaBasicaFraccionPulgada = medidaString;
+                            }
+                            await UpdateWsmy582(prod.ExternalCode.Trim(),medidaString,humanRepresentation,medidaDecimal);
+                            medidaString = "";
+                            medidaDecimal = 0;
+                            humanRepresentation = "";
+                          
+                             if (appDetailQuotes.MedidaOpuesta > 0)
+                            {
+                                var  medidaConvertidaCm = ConvertirMedidas.ConvertirCmAPulgadas((double)appDetailQuotes.MedidaOpuesta,true);
+
+                                medidaString = medidaConvertidaCm.ValueFormat;
+                                medidaDecimal = (decimal)medidaConvertidaCm.Value;
+                                humanRepresentation = medidaConvertidaCm.HumanRepresentation;
+                                wpry240new.MedidaOpuesta = Convert.ToInt32(medidaString);
+                                wpry240new.MedidaOpuestaFraccionPulgada = medidaString;
+                            }
+                            else
+                            {
+                               // var medida = Math.Truncate(await this.GetMedida(appDetailQuotes, "MEDIDAOPUESTA") / (Decimal)factorPulgada * 100M) / 100M;
+
+                                medidaString = await this.GetMedidaString(appDetailQuotes, "MEDIDAOPUESTA");
+                                medidaDecimal = await this.GetMedidaDecimal(appDetailQuotes, "MEDIDAOPUESTA");
+                                humanRepresentation = medidaString;
+                                var valorFormateado= ValueFormated(medidaString);
+                                wpry240new.MedidaOpuesta =Convert.ToInt32(valorFormateado);
+                                wpry240new.MedidaOpuestaFraccionPulgada = medidaString;
+
+                            }
+                             
+                            await UpdateWsmy583(prod.ExternalCode.Trim(),medidaString,humanRepresentation,medidaDecimal);
+
+
+                            wpry240new.LargoCm = (decimal)wpry240new.MedidaBase;
+                            wpry240new.AnchoCm = (decimal)wpry240new.MedidaOpuesta;
+                            wpry240new.IdConstruccion = 3;
+                            
+                        
+
+                         
+                            await this._unitOfWork.Wpry240Repository.Add(wpry240new);
+                            await this._unitOfWork.SaveChangesAsync();
+                            wpry240new = (Wpry240)null;
+                  
+                   
+                    }
+                    propuesta = (Wsmy515)null;
+                }
+            }
+
+
+   
+            await _unitOfWork.AppDetailQuotesRepository.AppActualizaPapelesDetailQuotes(appDetailQuotes.Id,appDetailQuotes.Cotizacion);
+            /*var papeles = await _unitOfWork.Wpry240Repository.GetPapeles(appDetailQuotes.Cotizacion);
+            var detailFind = await _unitOfWork.AppDetailQuotesRepository.GetById(appDetailQuotes.Id);
+            if (detailFind != null)
+            {
+                detailFind.Papeles = papeles;
+                _unitOfWork.AppDetailQuotesRepository.Update(detailFind);
+                await this._unitOfWork.SaveChangesAsync();
+            }*/
 
 
 
@@ -1627,7 +1792,7 @@ namespace AppService.Core.Services
             result.CantMill = (float)((decimal)result.Cantidad / (decimal)unidadCosteo);
 
 
-            var formasEnCalculo = await _unitOfWork.AppRecipesByAppDetailQuotesRepository.GetListRecipesByProductCodeVariableCodeHistorico((int)appDetailQuotes.CalculoId, prod.Code, "TOTALFORMAS");
+            var formasEnCalculo = await _unitOfWork.AppRecipesByAppDetailQuotesRepository.GetListRecipesByProductCodeVariableCodeHistorico((int)appDetailQuotes.CalculoId, appDetailQuotes.IdProducto, "TOTALFORMAS");
             if (formasEnCalculo != null && formasEnCalculo.Count > 0)
             {
                 result.CantFormas = formasEnCalculo.FirstOrDefault().Quantity;
@@ -2022,6 +2187,33 @@ namespace AppService.Core.Services
         }
 
 
+        public async Task UpdateMedidasCsmy021PorOrden(AppDetailQuotes appDetailQuotes,long orden,List<Wpry240> listWpry240)
+        {
+               var cpry012 = await this._unitOfWork.Cpry012Repository.GetByOrdenAsync(orden);
+               foreach (var item in listWpry240)
+               {
+                   var csmy021 = await _unitOfWork.Csmy021Repository.GetByOrdenParteAsync(orden, item.IdParte);
+                   if (csmy021!= null)
+                   {
+
+                            
+                                csmy021.CodPapel= item.IdPapel ;
+                                csmy021.MedidaPapel =(int)item.LargoCm;
+                                csmy021.MedidaPapel =(int)item.MedidaOpuesta;
+                                csmy021.PesoPapel = short.Parse(item.Gramaje); 
+                                await _unitOfWork.Csmy021Repository.UpdateMedidasPapel(csmy021);
+                             
+
+                                cpry012.MedidaBase =item.MedidaBase;
+                                await this._unitOfWork.Cpry012Repository.UpdateMedidas(cpry012);
+                  
+                   }
+               }
+
+              
+        }
+
+
         public async Task CopiarDatosOrdenAnterior(long orden, string cotizacion, int renglon, int propuesta, AppDetailQuotes appDetailQuotes)
         {
             short defaultTipoOrden = 1;
@@ -2031,7 +2223,8 @@ namespace AppService.Core.Services
                 defaultTipoOrden = short.Parse(tipoOrden.Valor);
             }
 
-
+            var listWpry240 = await GetListWpry240(appDetailQuotes, renglon);
+            await  UpdateMedidasCsmy021PorOrden(appDetailQuotes, orden,listWpry240);
             var cpry012 = await _unitOfWork.Cpry012Repository.GetByOrdenAsync(orden);
             if (cpry012 != null)
             {
@@ -2052,14 +2245,14 @@ namespace AppService.Core.Services
                 {
                     Wpry229 wpry229New = new Wpry229();
                     wpry229New.IdTipoProducto = aplicacion.CodAplicacion;
-                    wpry229New.DescripcionSolicitud = cpry012.NombreProducto.Trim();
+                    wpry229New.DescripcionSolicitud = appDetailQuotes.NombreComercialProducto.Trim();
                     wpry229New.Cotizacion = cotizacion;
                     wpry229New.Renglon = renglon;
                     wpry229New.Propuesta = propuesta;
                     wpry229New.CantidadProducto = appDetailQuotes.Cantidad;
                     wpry229New.IdTipoCantidad = 1;
-                    wpry229New.ValorVenta = (decimal)valoresCotizacion.PrecioUnitario;
-                    wpry229New.ValorVentaUsd = valoresCotizacion.PrecioUnitarioUsd;
+                    wpry229New.ValorVenta = (decimal)appDetailQuotes.Precio;
+                    wpry229New.ValorVentaUsd = appDetailQuotes.PrecioUsd;
                     wpry229New.Observaciones = appDetailQuotes.Observaciones;
                     if(cpry012.InstFacturar==null) cpry012.InstFacturar= "";
                     wpry229New.Instrucciones = cpry012.InstFacturar.Trim();
@@ -3163,21 +3356,6 @@ namespace AppService.Core.Services
                 }
 
 
-
-               /* var appPriceGetDto = await _appRecipesByAppDetailQuotesService.GetPrice(price);
-                if (resultItem.cantidadConvertida == 0 || resultItem.cantidadConvertida == null)
-                {
-                    if (appPriceGetDto.Data == null)
-                    {
-                        resultItem.cantidadConvertida = (int)item.CantidadSolicitada;
-                    }
-                    else
-                    {
-                        resultItem.cantidadConvertida = (decimal)appPriceGetDto.Data.CantidadConvertida;
-
-                    }
-
-                }*/
 
                 resultItem.cantidadConvertida = Convert.ToDecimal(string.Format("{0:F4}", item.Cantidad));
 

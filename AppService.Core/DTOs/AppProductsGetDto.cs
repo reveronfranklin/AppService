@@ -55,6 +55,7 @@ namespace AppService.Core.DTOs
 
         public int TipoCalculo { get; set; }
         public bool? RequiereEstimacion { get; set; }
+         public Decimal PorcFlete { get; set; }
 
         public AppUnitsGetDto AppUnitsGetDto { get; set; }
 
@@ -65,7 +66,7 @@ namespace AppService.Core.DTOs
         public MtrTipoMonedaDto SecundaryMtrMonedaGetDto { get; set; }
 
         public AppSubCategoryGetDto AppSubCategoryGetDto { get; set; }
-        public Decimal PorcFlete { get; set; }
+       
 
         public List<AppService.Core.DTOs.AppPriceDto> AppPriceDto { get; set; }
 

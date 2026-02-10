@@ -19,10 +19,18 @@
         public string FechaDesde { get; set; }
 
         public string FechaHasta { get; set; }
-        public string EstatusPlanta {
+        public string EstatusPlanta
+        {
             get;
             set;
         }
+        
+        public string? Cliente
+        {
+            get;
+            set;
+        }
+        public int? StatusId { get; set; }
 
 
     }

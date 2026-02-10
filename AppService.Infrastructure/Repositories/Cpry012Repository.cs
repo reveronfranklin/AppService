@@ -42,5 +42,26 @@ namespace AppService.Infrastructure.Repositories
          
 
         }
+
+          public async Task UpdateMedidas(Core.EntitiesPlanta.Cpry012 cpry012)
+        {
+            FormattableString xqueryDiario = $"";
+    
+            xqueryDiario =
+                $"update cpry012 set MEDIDA_BASE={cpry012.MedidaBase} where Orden={cpry012.Orden}";
+
+
+            try
+            {
+
+                _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Console.WriteLine(xqueryDiario);
+                throw;
+            }
+        }
     }
 }

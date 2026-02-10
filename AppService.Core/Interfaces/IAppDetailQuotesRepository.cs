@@ -7,8 +7,8 @@ namespace AppService.Core.Interfaces
     public interface IAppDetailQuotesRepository
     {
 
-        void UpdatePrecios(int appDetailsId, decimal precioMinimo, decimal precioMaximo, int calculoId, int solicitarPrecio);
-       
+        Task UpdatePrecios(int appDetailsId, decimal precioMinimo, decimal precioMaximo, int calculoId,
+            int solicitarPrecio);
         void UpdateCondicionPago(int appGeneralQuotesId, short condicionPago);
         Task UpdatePrecioMinimo(int appDetailQuotesId, decimal precioMinimo, decimal precioMaximo, int calculoId);
         Task<List<AppDetailQuotes>> GetAll();
@@ -19,10 +19,11 @@ namespace AppService.Core.Interfaces
 
         Task Add(AppDetailQuotes entity);
 
-        void Update(AppDetailQuotes entity);
+       
+        Task Update(AppDetailQuotes entity);
         Task Delete(int id);
         Task<AppDetailQuotes> GetByQuetesProduct(string cotizacion, int idProduct);
-
+        Task AppEvaluarRequiereSolicitarPrecio(int appDetailQuotesId, decimal cantidad);
 
         Task<bool> ExisteEnEspera(int appGeneralQuotesId);
 
@@ -35,5 +36,9 @@ namespace AppService.Core.Interfaces
         Task<List<AppDetailQuotes>> GetBySubCategopry(int subCategory);
         Task UpdateFlete(int appDetailQuotesId, decimal porcFlete, decimal flete);
         Task<List<AppDetailQuotes>> GetByYearMonth(int year, int month);
+
+        Task<bool> EsDigital(string cotizacion);
+        Task AppActualizaPapelesDetailQuotes(int id,string cotizacion);
+       
     }
 }

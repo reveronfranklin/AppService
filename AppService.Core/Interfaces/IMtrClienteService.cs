@@ -18,6 +18,7 @@ namespace AppService.Core.Interfaces
         Task<ApiResponse<OdooClienteTipoSectorRamo>> UpdateTipoSectorRamoPorCliente(OdooClienteTipoSectorRamo dto);
         Task OdooActualizarClientes();
         Task<List<MtrClienteDireccionDto>> ListDireccionesPorUsuario(MtrClienteQueryFilter filter);
+        Task<List<MtrClienteDireccionDto>> ListDirecciones(MtrClienteQueryFilter filter);
         Task<List<MtrSectorDto>> ListSectores();
         Task<ApiResponse<bool>> UpdateDireccionCliente(MtrClienteDireccionUpdateDto dto);
         Task<ApiResponse<bool>> CreateDireccionCliente(MtrClienteDireccionUpdateDto dto);

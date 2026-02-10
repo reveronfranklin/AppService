@@ -67,7 +67,7 @@ namespace AppService.Core.Services
 
                 }
 
-                var pagedResult = PagedList<CobEstadoDeCuenta>.Create(listEstadoCuenta, filters.PageNumber, filters.PageSize);
+                var pagedResult = PagedList<CobEstadoDeCuenta>.Create(listEstadoCuenta, filters.PageNumber, filters.PageSize,listEstadoCuenta.Count);
 
                 return pagedResult;
             }
@@ -149,7 +149,7 @@ namespace AppService.Core.Services
 
 
 
-                var pagedResult = PagedList<CobEstadoCuentaMultiMoneda>.Create(estadCta, filters.PageNumber, filters.PageSize);
+                var pagedResult = PagedList<CobEstadoCuentaMultiMoneda>.Create(estadCta, filters.PageNumber, filters.PageSize,estadCta.Count);
 
                 return pagedResult;
             }

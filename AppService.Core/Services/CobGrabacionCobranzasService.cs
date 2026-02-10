@@ -33,7 +33,7 @@ namespace AppService.Core.Services
 
             
 
-            var pagedResult = PagedList<CobGrabacionCobranzas>.Create(grabacionCobranzas, filters.PageNumber, filters.PageSize);
+            var pagedResult = PagedList<CobGrabacionCobranzas>.Create(grabacionCobranzas, filters.PageNumber, filters.PageSize,grabacionCobranzas.Count);
 
             return pagedResult;
         }

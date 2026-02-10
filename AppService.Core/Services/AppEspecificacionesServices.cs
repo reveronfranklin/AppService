@@ -481,7 +481,10 @@ namespace AppService.Core.Services
                             await _unitOfWork.SaveChangesAsync();
                         }
 
-
+                        if (item.TintasFrenteNew.IsNullOrEmpty())
+                        {
+                            item.TintasFrenteNew = "S/IMP";
+                        }
                         if (!item.TintasFrenteNew.IsNullOrEmpty())
                         {
 
@@ -494,7 +497,13 @@ namespace AppService.Core.Services
                                 wpry241Insert.Propuesta = item.Propuesta;
                                 wpry241Insert.IdParte = item.IdParte;
                                 wpry241Insert.IdUbicacion = 1;
-                                wpry241Insert.IdTinta = itemTintaFrente;
+                                var esDigital = await _unitOfWork.AppDetailQuotesRepository.EsDigital(item.Cotizacion);
+                                var tintaFrente = itemTintaFrente;
+                                if (itemTintaFrente == "S/IMP" && esDigital)
+                                {
+                                    tintaFrente = "CMYK";
+                                }
+                                wpry241Insert.IdTinta = tintaFrente;
                                 wpry241Insert.FechaRegistro = DateTime.Now;
                                 await _unitOfWork.Wpry241Repository.Add(wpry241Insert);
                                 await _unitOfWork.SaveChangesAsync();

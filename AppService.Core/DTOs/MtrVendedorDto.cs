@@ -12,4 +12,7 @@ namespace AppService.Core.DTOs
         public short Oficina { get; set; }
     
     }
+       
 }
+
+

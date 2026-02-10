@@ -19,6 +19,33 @@ namespace AppService.Infrastructure.Repositories
 
     public AppRecipesByAppDetailQuotesRepository(RRDContext context) => this._context = context;
 
+
+    public async Task UpdateCotizacioEnHitorico(string cotizacion, int calculoId)
+    {
+      
+        
+        try
+        {
+
+            if (calculoId > 0)
+            {
+                FormattableString xqueryDiario = $"UPDATE AppRecipesByAppDetailQuotesHistory SET Cotizacion={cotizacion} WHERE CalculoId={calculoId}";
+
+                var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+
+            }
+          
+             
+              
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+
+        
+    }
+    
     public async Task<List<AppRecipesByAppDetailQuotes>> GetAll() => await this._context.AppRecipesByAppDetailQuotes.ToListAsync<AppRecipesByAppDetailQuotes>();
 
     public async Task<List<AppRecipesByAppDetailQuotes>> GetAllByCalculoId(
@@ -86,6 +113,21 @@ namespace AppService.Infrastructure.Repositories
                 var msg = ex.Message;
                 return null;
             }
+    
+    }
+        
+    public async Task<List<AppRecipesByAppDetailQuotesHistory>> GetListRecipesByProductCodeVariableCodeHistorico(int calculoId, int productId, string code)
+    {
+        try
+        {
+            var result = await this._context.AppRecipesByAppDetailQuotesHistory.Where(x => x.CalculoId == calculoId && x.Code.Trim() == code.Trim()).ToListAsync();
+            return result;
+        }
+        catch (Exception ex)
+        {
+            var msg = ex.Message;
+            return null;
+        }
     
     }
 

@@ -52,7 +52,7 @@ namespace AppService.Infrastructure.Repositories
 
         private readonly IPowerBiOrdenesRepository _powerBiOrdenesRepository;
 
-        private readonly IAppGeneralQuotesActionSheetRepository _appGeneralQuotesActionSheetRepository;
+       private readonly IAppGeneralQuotesActionSheetRepository _appGeneralQuotesActionSheetRepository;
         
         private readonly IAppCalculadoraRepository _appCalculadoraRepository;
         private readonly IAppQuotesPaginateRepository _appQuotesPaginateRepository;
@@ -578,9 +578,7 @@ namespace AppService.Infrastructure.Repositories
       
         public ITasaConsolidadoRepository TasaConsolidadoRepository => _tasaConsolidadoRepository ?? new TasaConsolidadoRepository(_mooreveContext);
 
-        
-
-
+      
         public void Dispose()
         {
             if (_context == null)

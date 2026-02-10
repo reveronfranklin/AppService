@@ -8,5 +8,6 @@ namespace AppService.Core.Interfaces
         Task<Cpry012> GetByOrdenAsync(long orden);
         void Update(Core.EntitiesPlanta.Cpry012 entity);
         void UpdateProductoEnOrden(Core.EntitiesPlanta.Cpry012 entity);
+        Task UpdateMedidas(Core.EntitiesPlanta.Cpry012 cpry012);
     }
 }

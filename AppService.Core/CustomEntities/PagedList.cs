@@ -38,13 +38,13 @@ namespace AppService.Core.CustomEntities
         }
 
 
-        public  static PagedList<T> Create(IEnumerable<T> source,int pageNumber,int pageSize)
+        public  static PagedList<T> Create(IEnumerable<T> source,int pageNumber,int pageSize,int count=0)
         {
-            var count = source.Count();
+            //var count = source.Count();
 
-            var items = source.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
-
-            return new PagedList<T>(items, count, pageNumber, pageSize);
+            var items = source.ToList();
+            var result = new PagedList<T>(items, count, pageNumber, pageSize);
+            return result ;
         }
 
     }

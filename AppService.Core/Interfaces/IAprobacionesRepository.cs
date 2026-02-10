@@ -21,8 +21,13 @@ namespace AppService.Core.Interfaces
         void Update(Wsmy639 entity);
 
         Task Delete(long id);
+         Task DeleteWorkFlow(long id);
+        Task<Wsmy639> GetByCotizacionProducto(string cotizacion, string producto);
 
-        Task<Wsmy639> CreaAprobacion(string cotizacion, int renglon, int propuesta, string usuarioConectado);
+       
+
+        Task<Wsmy639> CreaAprobacion(string cotizacion, int renglon, int propuesta, string usuarioConectado,
+            string mensajeSolicitarPrecio);
         Task<Wsmy639> CreaAprobacionAprobada(string cotizacion, int renglon, int propuesta, string usuarioConectado);
 
     }

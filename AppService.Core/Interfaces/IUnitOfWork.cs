@@ -242,6 +242,7 @@ namespace AppService.Core.Interfaces
         //Estadisticas
         IVentasRepository VentasRepository { get; }
 
+     
 
         bool SaveChanges();
 

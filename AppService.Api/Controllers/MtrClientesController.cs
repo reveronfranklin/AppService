@@ -119,7 +119,7 @@ namespace AppService.Api.Controllers
             }
 
 
-            var pagedclientes = PagedList<MtrClienteDto>.Create(clientesDtos, filters.PageNumber, filters.PageSize);
+            var pagedclientes = PagedList<MtrClienteDto>.Create(clientesDtos, filters.PageNumber, filters.PageSize,clientesDtos.Count());
 
             ApiResponse<IEnumerable<MtrClienteDto>> response = new ApiResponse<IEnumerable<MtrClienteDto>>(clientesDtos);
 
@@ -167,6 +167,30 @@ namespace AppService.Api.Controllers
 
 
         }
+        
+        [HttpPost]
+        [Route("[action]")]
+        public async Task<IActionResult> ListDireccionesClientes(MtrClienteQueryFilter filters)
+        {
+          
+                
+            var clientes = await _mtrClienteService.ListDirecciones(filters);
+
+            clientes = clientes.Where(x=>x.Codigo!="000000").OrderBy(x => x.Codigo).
+                ThenBy(x => x.ClaseCss).ToList();
+
+
+            var pagedclientes = PagedList<MtrClienteDireccionDto>.Create(clientes, filters.PageNumber, filters.PageSize,clientes.Count());
+
+            ApiResponse<IEnumerable<MtrClienteDireccionDto>> response = new ApiResponse<IEnumerable<MtrClienteDireccionDto>>(pagedclientes);
+
+
+            return Ok(response);
+
+
+        }
+        
+        
         [HttpPost]
         [Route("[action]")]
         public async Task<IActionResult> UpdateDireccionCliente(MtrClienteDireccionUpdateDto dto)

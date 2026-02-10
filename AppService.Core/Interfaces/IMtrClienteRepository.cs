@@ -9,6 +9,7 @@ namespace AppService.Core.Interfaces
     {
         IEnumerable<MtrCliente> GetAll(string usuario);
         Task<IEnumerable<MtrCliente>> ListClientesPorUsuario(MtrClienteQueryFilter filter);
+        Task<IEnumerable<MtrCliente>> ListClientes(MtrClienteQueryFilter filter);
 
         MtrCliente GetById(string id);
         Task<MtrCliente> GetByIdAsync(string id);

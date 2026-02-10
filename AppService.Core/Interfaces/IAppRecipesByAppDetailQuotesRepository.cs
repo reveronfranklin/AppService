@@ -7,11 +7,13 @@ namespace AppService.Core.Interfaces
 {
     public interface IAppRecipesByAppDetailQuotesRepository
     {
+
+        Task UpdateCotizacioEnHitorico(string cotizacion, int calculoId);
         Task<AppRecipesByAppDetailQuotesHistory> GetByCalculoIdCode(int calculoId, string code);
         Task<List<AppRecipesByAppDetailQuotes>> GetAll();
 
         Task<List<AppRecipesByAppDetailQuotes>> GetAllByCalculoId(
-          int calculoId);
+            int calculoId);
 
         Task<AppRecipesByAppDetailQuotes> GetById(int id);
 
@@ -26,9 +28,9 @@ namespace AppService.Core.Interfaces
         Task<int> NextId();
 
         Task<List<AppRecipesByAppDetailQuotes>> GetListRecipesByProductCodeVariableCode(
-          int calculoId,
-          string codeProduct,
-          string code);
+            int calculoId,
+            string codeProduct,
+            string code);
 
         Task AddRange(List<AppRecipesByAppDetailQuotes> entity);
 
@@ -36,6 +38,9 @@ namespace AppService.Core.Interfaces
 
         Task AddRangeHistory(List<AppRecipesByAppDetailQuotesHistory> entity);
         Task<List<AppRecipesByAppDetailQuotesHistory>> GetListRecipesByProductCodeVariableCodeHistorico(int calculoId, string codeProduct, string code);
+
+        Task<List<AppRecipesByAppDetailQuotesHistory>> GetListRecipesByProductCodeVariableCodeHistorico(int calculoId,
+            int productId, string code);
         Task<List<AppRecipesByAppDetailQuotesHistory>> GetListRecipesByIdCalculoCodeHistorico(int calculoId);
     }
 }

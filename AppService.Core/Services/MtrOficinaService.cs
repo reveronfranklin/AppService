@@ -5,6 +5,7 @@ using AppService.Core.QueryFilters;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -30,7 +31,7 @@ namespace AppService.Core.Services
 
             var oficinas = await _unitOfWork.MtrOficinaRepository.ListOficinasPorUsuario(filter);
 
-            var pagedOficinas = PagedList<MtrOficina>.Create(oficinas, filter.PageNumber, filter.PageSize);
+            var pagedOficinas = PagedList<MtrOficina>.Create(oficinas, filter.PageNumber, filter.PageSize,oficinas.Count());
 
             return pagedOficinas;
         }

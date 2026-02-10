@@ -326,11 +326,16 @@ namespace AppService.Api
             });
 
 
-            services.AddCors(o => o.AddPolicy("charppolicy", builder =>
+            
+
+           services.AddCors(o => o.AddPolicy("charppolicy", builder =>
             {
                 builder
-                    .AllowAnyOrigin()
+                   
+                    //.AllowAnyOrigin()
+                    .WithOrigins("https://mooreapps.com.ve:10443","https://mooreapps.com.ve:14443","http://localhost:3000","http://localhost:8100","https://mooreapps.com.ve:3000")
                     .AllowAnyMethod()
+                    .AllowCredentials()
                     .AllowAnyHeader();
             }));
 
@@ -389,16 +394,6 @@ namespace AppService.Api
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
 
 
-            //**GENERAADOR DE EXPRESIONES
-            //https://www.freeformatter.com/cron-expression-generator-quartz.html
-            //**
-
-            //var cotizacionServices = serviceProvider.GetService<ICotizacionService>();
-            // recurringJobManager.AddOrUpdate("Integrar_cotizaciones_odoo", () => cotizacionServices.UpdateCotizacionesToOdoo(), "*/30 * * * * *");
-
-
-            // var cobEstadoCuentaService = serviceProvider.GetService<ICobEstadoCuentaService>();
-            // recurringJobManager.AddOrUpdate("ActualizarEstadoCuentaMultimonedas", () => cobEstadoCuentaService.GenerateEstadoCuentaMultimoneda(), Cron.Daily());
-        }
+                  }
     }
 }

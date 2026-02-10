@@ -41,7 +41,7 @@ namespace Automata.Workers
                 await Task.Delay(millisecondsDelay);*/
 
 
-                /*Console.WriteLine("Ejecutando worker cada 7 minuto");
+                Console.WriteLine("Ejecutando worker cada 7 minuto");
                 var mensaje = "Iniciando envio de Documentos Fiscales a oficina Digital: " + DateTime.Now;
 
                 Console.WriteLine(mensaje);
@@ -49,7 +49,7 @@ namespace Automata.Workers
 
                 var response = await _service.ReadLineByLineTextPdf(src);
                 Console.WriteLine("Culminado envio de documentos fiscales a oficina digital: " + DateTime.Now);
-                await Task.Delay(420000);*/
+                await Task.Delay(420000);
 
 
                 
@@ -86,7 +86,7 @@ namespace Automata.Workers
                await Task.Delay(600000);*/
 
 
-                int delayIntegacionCotizacion = 10000;
+                /*int delayIntegacionCotizacion = 10000;
                 var config = await _unitOfWork.AppConfigAppRepository.GetByKey("delay_integrar_cotizacion");
                 if (config != null)
                 {
@@ -103,7 +103,7 @@ namespace Automata.Workers
         
                await _cotizacionService.IntegrarCotizaciones();
                Console.WriteLine("Culminado integracion de cotizaciones: " + DateTime.Now); 
-               await Task.Delay(delayIntegacionCotizacion);
+               await Task.Delay(delayIntegacionCotizacion);*/
                
 
 

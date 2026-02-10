@@ -30,8 +30,7 @@ namespace AppService.Core.Interfaces
         Task<bool> CotizacionTieneOrden(string cotizacion);
 
 
-        Task<bool> UpdateListaCotizacion(string cotizacion, decimal monto, decimal flete);
-
+        Task<bool> UpdateListaCotizacion(string cotizacion, string producto, decimal monto, decimal flete);
 
 
     }

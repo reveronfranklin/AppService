@@ -42,9 +42,12 @@ namespace AppService.Infrastructure.Repositories
         {
             return await _context.Wsmy639.Where(x => x.Cotizacion == cotizacion && x.Renglon == renglon && x.Propuesta == propuesta).FirstOrDefaultAsync();
         }
-
-
-        public async Task<Wsmy639> CreaAprobacion(string cotizacion, int renglon, int propuesta, string usuarioConectado)
+        public async Task<Wsmy639> GetByCotizacionProducto(string cotizacion, string producto)
+        {
+            return await _context.Wsmy639.Where(x => x.Cotizacion == cotizacion && x.IdProducto == producto ).FirstOrDefaultAsync();
+        }
+        
+        public async Task<Wsmy639> CreaAprobacion(string cotizacion, int renglon, int propuesta, string usuarioConectado,string mensajeSolicitarPrecio)
         {
 
             if (usuarioConectado == null)
@@ -70,7 +73,7 @@ namespace AppService.Infrastructure.Repositories
                 //return aprobacion;
                 
                 
-                FormattableString xqueryDiario = $"exec AppCreaWsmy639 {cotizacion},{renglon},{propuesta},{usuarioConectado}";
+                FormattableString xqueryDiario = $"exec AppCreaWsmy639 {cotizacion},{renglon},{propuesta},{usuarioConectado},{mensajeSolicitarPrecio}";
                 var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
 
                 var result = await _context.Wsmy639
@@ -159,6 +162,23 @@ namespace AppService.Infrastructure.Repositories
         {
             Wsmy639 entity = await GetById(id);
             _context.Wsmy639.Remove(entity);
+
+        }
+        public async Task DeleteWorkFlow(long id)
+        {
+            try
+            {
+                   FormattableString xqueryDiario = $"DELETE FROM WSMY647 WHERE IdCalculo = {id}";
+                var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+            }
+            catch (System.Exception e)
+            {
+                
+               Console.WriteLine(e.Message);
+            }
+
+         
+
 
         }
 

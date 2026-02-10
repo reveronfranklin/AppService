@@ -59,16 +59,30 @@ namespace AppService.Core.Services
 
         public string[] GetFicheros( string ruta )
         {
-
-            AppRutasDocumentosFiscalesDto rutas = new AppRutasDocumentosFiscalesDto(_env);
+           try
+            {
+            
+             AppRutasDocumentosFiscalesDto rutas = new AppRutasDocumentosFiscalesDto(_env);
 
             //string ruta = _paginationOptions.FolderFiscales ;
-           // string ruta = rutas.FolderFiscales;
+            // string ruta = rutas.FolderFiscales;
             string directorio = ruta;
             //string directorio = @"/Users/freveron/Documents/Moore/Facturacion/enProceso/";
+            
+
             string[] ficheros = Directory.GetFiles(directorio);
             string[] sorted = ficheros.OrderByDescending(o => o).ToArray();
             return sorted;
+
+           }
+           catch (System.Exception e)
+           {
+                Console.WriteLine(e);
+                string[] sorted = new string[0];
+                return sorted;
+           }
+
+           
         }
 
         public void Convert(string srcFile, string outFileName, string control, string anulado = "")

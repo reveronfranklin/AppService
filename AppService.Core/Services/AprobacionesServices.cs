@@ -34,9 +34,13 @@ namespace AppService.Core.Services
             return await _unitOfWork.AprobacionesRepository.GetByCotizacionRenglonPropuesta(cotizacion, renglon, propuesta);
         }
 
+        public async Task<Wsmy639> GetByCotizacionProducto(string cotizacion, string producto)
+        {
+            return await _unitOfWork.AprobacionesRepository.GetByCotizacionProducto(cotizacion, producto);
+        }
 
 
-        public async Task<ApiResponse<Wsmy639>> CreateAprobacion(string cotizacion, int renglon, int propuesta, string usuarioConectado)
+        public async Task<ApiResponse<Wsmy639>> CreateAprobacion(string cotizacion, int renglon, int propuesta, string usuarioConectado,string mensajeSolicitarPrecio)
         {
 
             Wsmy639 resultDto = new Wsmy639();
@@ -58,7 +62,7 @@ namespace AppService.Core.Services
                 var propuestaObject = await _unitOfWork.PropuestaRepository.GetByCotizacionRenglonPropuesta(cotizacion, renglon, propuesta);
 
 
-                var inserted = await _unitOfWork.AprobacionesRepository.CreaAprobacion(cotizacion, renglon, propuesta, usuarioConectado);
+                var inserted = await _unitOfWork.AprobacionesRepository.CreaAprobacion(cotizacion, renglon, propuesta, usuarioConectado,mensajeSolicitarPrecio);
 
 
 

@@ -14,7 +14,7 @@
         {
             get { if (this.FlagModificar == "X") { return true; } else { return false; } }
 
-        }
+        }           
 
         public string FlagEnEspera { get; set; }
 

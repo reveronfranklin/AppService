@@ -40,7 +40,7 @@ namespace AppService.Core.Services
 
 
 
-            PagedList<CobAdjuntosCobranza> pagedResult = PagedList<CobAdjuntosCobranza>.Create(result, filters.PageNumber, filters.PageSize);
+            PagedList<CobAdjuntosCobranza> pagedResult = PagedList<CobAdjuntosCobranza>.Create(result, filters.PageNumber, filters.PageSize,result.Count);
 
             return pagedResult;
 

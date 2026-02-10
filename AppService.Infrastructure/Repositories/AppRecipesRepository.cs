@@ -101,9 +101,7 @@ namespace AppService.Infrastructure.Repositories
         //    return await _context.AppRecipes.Where(x => x.AppproductsId == idProduct && x.Code == code).ToListAsync();
 
         //}
-        public async Task<List<AppRecipes>> GetListRecipesByProductIdVariableCode(
-  int idProduct,
-  string code)
+        public async Task<List<AppRecipes>> GetListRecipesByProductIdVariableCode(int idProduct,string code)
         {
             "PAPELCUARTAPARTE".Substring(0, code.Length);
             return await this._context.AppRecipes.Where<AppRecipes>((Expression<Func<AppRecipes, bool>>)(x => x.AppproductsId == (int?)idProduct && x.Code.Substring(0, code.Length) == code)).ToListAsync<AppRecipes>();

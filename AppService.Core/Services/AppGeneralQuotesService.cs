@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http.Authentication;
+using Microsoft.IdentityModel.Tokens;
 
 namespace AppService.Core.Services
 {
@@ -183,6 +184,24 @@ namespace AppService.Core.Services
 
         }
 
+
+
+        public async Task ReplicarPrecioLista(int generalQuotedId)
+        {
+
+         var detail = await  _unitOfWork.AppDetailQuotesRepository.GetByAppGeneralQuotesId(generalQuotedId);
+         if (detail != null)
+         {
+             foreach (var item in detail)
+             {
+                 _unitOfWork.CotizacionRepository.ActuaclizaPrecio(  item.Cotizacion,item.CodigoProducto);
+
+             }
+           
+         }
+         
+          
+        }
         
             public async Task<PagedList<AppGeneralQuotesGetDto>> GetAllAppGeneralQuotes(AppGeneralQuotesQueryFilter filters)
         {
@@ -190,19 +209,27 @@ namespace AppService.Core.Services
 
             filters.PageNumber = filters.PageNumber == 0 ? _paginationOptions.DefaultPageNumber : filters.PageNumber;
             filters.PageSize = filters.PageSize == 0 ? _paginationOptions.DefaultPageSize : filters.PageSize;
+            if (filters.Cliente.IsNullOrEmpty())
+            {
+                filters.Cliente = "";
+            }
+
+            if (filters.StatusId==null)
+            {
+               filters.StatusId=0;
+            }
 
 
-
-            List<AppGeneralQuotes> quotes = await _unitOfWork.AppGeneralQuotesRepository.GetAll(filters);
-            if (quotes.Count > 0)
+            var quotes = await _unitOfWork.AppGeneralQuotesRepository.GetAll(filters);
+            if (quotes.Data.Count > 0)
             {
                 
                 // 3. Pre-fetch related data to avoid N+1 queries
                 // Collect all unique IDs for bulk fetching
-                var direccionEntregarIds = quotes.Select(q => q.IdDireccionEntregar).Where(id => id != null).Distinct().ToList();
-                var direccionFacturarIds = quotes.Select(q => q.IdDireccionFacturar).Where(id => id != null).Distinct().ToList();
-                var condicionPagoIds = quotes.Select(q => q.IdCondPago).Where(id => id != null).Distinct().ToList();
-                var municipioIds = quotes.Where(q =>  q.IdMunicipio.HasValue).Select(q => q.IdMunicipio.Value).Distinct().ToList();
+                var direccionEntregarIds = quotes.Data.Select(q => q.IdDireccionEntregar).Where(id => id != null).Distinct().ToList();
+                var direccionFacturarIds = quotes.Data.Select(q => q.IdDireccionFacturar).Where(id => id != null).Distinct().ToList();
+                var condicionPagoIds = quotes.Data.Select(q => q.IdCondPago).Where(id => id != null).Distinct().ToList();
+                var municipioIds = quotes.Data.Where(q =>  q.IdMunicipio.HasValue).Select(q => q.IdMunicipio.Value).Distinct().ToList();
 
                 // Fetch all related entities in a single batch for each type
                 var direccionesEntregarDict = await _unitOfWork.MtrDireccionesRepository.GetByIds(direccionEntregarIds);
@@ -219,8 +246,9 @@ namespace AppService.Core.Services
                 List<AppGeneralQuotesGetDto> appGeneralQuotesGetDto = new List<AppGeneralQuotesGetDto>();
                 try
                 {
-                    foreach (var item in quotes)
+                    foreach (var item in quotes.Data)
                     {
+
                       
                         AppGeneralQuotesGetDto itemAppGeneralQuotesGetDto = _mapper.Map<AppGeneralQuotesGetDto>(item);
 
@@ -390,7 +418,8 @@ namespace AppService.Core.Services
                         
                         itemAppGeneralQuotesGetDto.AppGeneralQuotesActionSheetDto = await GetAppGeneralQuotesActionSheetDto(item.Id, item.IdEstatusNavigation, item.Cotizacion,item);
 
-
+                        itemAppGeneralQuotesGetDto.MensajeSolicitarPrecio = "";
+                         //await ReplicarPrecioLista(item.Id);
                         ApiResponse<List<AppDetailQuotesGetDto>> listDetail = await _appDetailQuotesService.GetListAppDetailQuoteByAppGeneralQuotesId(item.Id);
                         if (listDetail != null)
                         {
@@ -399,27 +428,48 @@ namespace AppService.Core.Services
                             foreach (var itemDetail in listDetail.Data)
                             {
                                 itemAppGeneralQuotesGetDto.OrdenAnterior = itemDetail.OrdenAnterior;
+                                if (itemDetail.Estimada == true)
+                                {
+                                    itemDetail.Flete = 0;
+                                    itemDetail.PorcFlete = 0;
+                                }
                              
                                 
                                 itemAppGeneralQuotesGetDto.ProductosCotizados = itemAppGeneralQuotesGetDto.ProductosCotizados + "" + itemDetail.NombreComercialProducto;
                             }
                             itemAppGeneralQuotesGetDto.AppDetailQuotesGetDto = listDetail.Data;
+                            itemAppGeneralQuotesGetDto.MensajeSolicitarPrecio = "";
+                            var mensajesSolicitarPrecio = itemAppGeneralQuotesGetDto.AppDetailQuotesGetDto
+                                .Where(x => !string.IsNullOrEmpty(x.MensajeSolicitarPrecio))
+                                .Select(x => x.MensajeSolicitarPrecio)
+                                .FirstOrDefault();
+                            if (!string.IsNullOrEmpty(mensajesSolicitarPrecio))
+                            {
+                                itemAppGeneralQuotesGetDto.MensajeSolicitarPrecio =mensajesSolicitarPrecio;
+                            }
+                            
                         }
 
                         itemAppGeneralQuotesGetDto.FechaString = item.Fecha.ToString("dd/MM/yyyy");
 
+                        
+                        
+                        
                         appGeneralQuotesGetDto.Add(itemAppGeneralQuotesGetDto);
-
+                       
                     }
-                    PagedList<AppGeneralQuotesGetDto> pagedResult = PagedList<AppGeneralQuotesGetDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize);
+                     PagedList<AppGeneralQuotesGetDto> pagedResult = PagedList<AppGeneralQuotesGetDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize,quotes.TotalCount);
 
+                    pagedResult.TotalCount = quotes.TotalCount;
+                    pagedResult.TotalPage = (int)Math.Ceiling(quotes.TotalCount / (Double)filters.PageSize);
+                  
                     return pagedResult;
 
                 }
                 catch (Exception ex)
                 {
                     var msg = ex.Message;
-                    PagedList<AppGeneralQuotesGetDto> pagedResult = PagedList<AppGeneralQuotesGetDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize);
+                    PagedList<AppGeneralQuotesGetDto> pagedResult = PagedList<AppGeneralQuotesGetDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize,0);
 
                     return pagedResult;
                 }
@@ -453,13 +503,13 @@ namespace AppService.Core.Services
 
 
 
-            List<AppGeneralQuotes> quotes = await _unitOfWork.AppGeneralQuotesRepository.GetAll(filters);
-            if (quotes.Count > 0)
+           var quotes = await _unitOfWork.AppGeneralQuotesRepository.GetAll(filters);
+            if (quotes.Data.Count > 0)
             {
                 List<AppGeneralQuotesGetDto> appGeneralQuotesGetDto = new List<AppGeneralQuotesGetDto>();
                 try
                 {
-                    foreach (var item in quotes)
+                    foreach (var item in quotes.Data)
                     {
                       
                         AppGeneralQuotesGetDto itemAppGeneralQuotesGetDto = _mapper.Map<AppGeneralQuotesGetDto>(item);
@@ -641,15 +691,15 @@ namespace AppService.Core.Services
                         appGeneralQuotesGetDto.Add(itemAppGeneralQuotesGetDto);
 
                     }
-                    PagedList<AppGeneralQuotesGetDto> pagedResult = PagedList<AppGeneralQuotesGetDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize);
-
+                    PagedList<AppGeneralQuotesGetDto> pagedResult = PagedList<AppGeneralQuotesGetDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize,quotes.TotalCount);
+                    pagedResult.TotalCount = quotes.TotalCount;
                     return pagedResult;
 
                 }
                 catch (Exception ex)
                 {
                     var msg = ex.Message;
-                    PagedList<AppGeneralQuotesGetDto> pagedResult = PagedList<AppGeneralQuotesGetDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize);
+                    PagedList<AppGeneralQuotesGetDto> pagedResult = PagedList<AppGeneralQuotesGetDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize,0);
 
                     return pagedResult;
                 }
@@ -678,13 +728,13 @@ namespace AppService.Core.Services
             filters.PageSize = filters.PageSize == 0 ? _paginationOptions.DefaultPageSize : filters.PageSize;
 
           
-            List<AppGeneralQuotes> quotes = await _unitOfWork.AppGeneralQuotesRepository.GetAll(filters);
-            if (quotes.Count > 0)
+            var quotes = await _unitOfWork.AppGeneralQuotesRepository.GetAll(filters);
+            if (quotes.Data.Count > 0)
             {
-                List<AppGeneralQuotesGetDto> appGeneralQuotesGetDto = _mapper.Map<List<AppGeneralQuotesGetDto>>(quotes);
+                List<AppGeneralQuotesGetDto> appGeneralQuotesGetDto = _mapper.Map<List<AppGeneralQuotesGetDto>>(quotes.Data);
                 foreach (AppGeneralQuotesGetDto item in appGeneralQuotesGetDto)
                 {
-                    var quote = quotes.Where(q => q.Id == item.Id).FirstOrDefault();
+                    var quote = quotes.Data.Where(q => q.Id == item.Id).FirstOrDefault();
 
                     MtrVendedor mtrVendedor = _unitOfWork.MtrVendedorRepository.GetById(item.IdVendedor);
                     if (mtrVendedor != null)
@@ -829,11 +879,11 @@ namespace AppService.Core.Services
             filters.PageSize = filters.PageSize == 0 ? _paginationOptions.DefaultPageSize : filters.PageSize;
 
 
-            List<AppGeneralQuotes> quotes = await _unitOfWork.AppGeneralQuotesRepository.GetAll(filters);
-            if (quotes.Count > 0)
+            var quotes = await _unitOfWork.AppGeneralQuotesRepository.GetAll(filters);
+            if (quotes.Data.Count > 0)
             {
                 List<CotizacionResponseDtoDto> appGeneralQuotesGetDto = new List<CotizacionResponseDtoDto>();
-                foreach (AppGeneralQuotes item in quotes)
+                foreach (AppGeneralQuotes item in quotes.Data)
                 {
                     CotizacionResponseDtoDto cotizacion = new CotizacionResponseDtoDto();
 
@@ -876,8 +926,8 @@ namespace AppService.Core.Services
                      appGeneralQuotesGetDto.Add(cotizacion);
                 }
 
-                PagedList<CotizacionResponseDtoDto> pagedResult = PagedList<CotizacionResponseDtoDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize);
-
+                PagedList<CotizacionResponseDtoDto> pagedResult = PagedList<CotizacionResponseDtoDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize,quotes.TotalCount);
+                pagedResult.TotalCount = quotes.TotalCount;
                 return pagedResult;
             }
             else
@@ -906,8 +956,8 @@ namespace AppService.Core.Services
             filters.PageSize = filters.PageSize == 0 ? _paginationOptions.DefaultPageSize : filters.PageSize;
 
 
-            List<AppGeneralQuotes> quotes = await _unitOfWork.AppGeneralQuotesRepository.GetAll(filters);
-            if (quotes.Count > 0)
+            var quotes = await _unitOfWork.AppGeneralQuotesRepository.GetAll(filters);
+            if (quotes.Data.Count > 0)
             {
                 List<AppGeneralQuotesGetDto> appGeneralQuotesGetDto = _mapper.Map<List<AppGeneralQuotesGetDto>>(quotes);
                 foreach (AppGeneralQuotesGetDto item in appGeneralQuotesGetDto)
@@ -940,9 +990,9 @@ namespace AppService.Core.Services
                     item.FechaString = item.Fecha.ToString("dd/MM/yyyy");
                 }
 
-                PagedList<AppGeneralQuotesGetDto> pagedResult = PagedList<AppGeneralQuotesGetDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize);
+                PagedList<AppGeneralQuotesGetDto> pagedResult = PagedList<AppGeneralQuotesGetDto>.Create(appGeneralQuotesGetDto, filters.PageNumber, filters.PageSize,quotes.TotalCount);
 
-
+                pagedResult.TotalCount = quotes.TotalCount;
 
                 return pagedResult;
             }
@@ -964,6 +1014,8 @@ namespace AppService.Core.Services
                 await _unitOfWork.AppGeneralQuotesRepository.Add(appGeneralQuotes);
 
                 await _unitOfWork.SaveChangesAsync();
+                var actionSheetEntity= await _unitOfWork.AppGeneralQuotesActionSheetRepository.Create(appGeneralQuotes.Cotizacion);
+             
                 return appGeneralQuotes;
             }
             catch (Exception ex)
@@ -996,6 +1048,27 @@ namespace AppService.Core.Services
                     response.Data = resultDto;
                     return response;
                 }
+
+
+                var MtrCondicionPago = await this._unitOfWork.MtrCondicionPagoRepository.GetById(appGeneralQuotesCreateDto.IdCondPago);
+                if (MtrCondicionPago == null)
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = "Condicion de Pago No Existe!!! " + appGeneralQuotesCreateDto.IdCondPago;
+                    response.Meta = metadata;
+                    response.Data = resultDto;
+                    return response;
+                }
+                 if (MtrCondicionPago.Inactivo == "X")
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = "Condicion de Pago Esta Inactiva!!! " + appGeneralQuotesCreateDto.IdCondPago;
+                    response.Meta = metadata;
+                    response.Data = resultDto;
+                    return response;
+                }
+
+
                 MtrDirecciones direccionEntregarValidate = await this._unitOfWork.MtrDireccionesRepository.GetById(appGeneralQuotesCreateDto.IdDireccionEntregar);
                 if (direccionEntregarValidate == null && appGeneralQuotesCreateDto.IdCliente != "000000")
                 {
@@ -1223,6 +1296,9 @@ namespace AppService.Core.Services
                 await _unitOfWork.AppGeneralQuotesRepository.AppDeleteSolcitudCreditoCotizacion(appGeneralQuotes
                     .Cotizacion);
                 
+                _unitOfWork.AppGeneralQuotesRepository.EliminarCotizacionRetornar(appGeneralQuotes.Cotizacion);
+                
+                
                 //TODO PRUEBA INTEGRAR COTIZACION POR LOTE 
                 await this._cotizacionService.IntegrarCotizacion(appGeneralQuotes.Id, true);
                 AppStatusQuote byId = await this._unitOfWork.AppStatusQuoteRepository.GetById(appGeneralQuotes.IdEstatus);
@@ -1271,23 +1347,25 @@ namespace AppService.Core.Services
                     IdVendedor = appGeneralQuotes.IdVendedor,
                     IdCliente = appGeneralQuotes.IdCliente.Trim(),
                     Fecha = DateTime.Now,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now,
+                    FechaActualiza = DateTime.Now,
                     Observaciones = appGeneralQuotes.Observaciones,
                     DiasVigencia = 1,
                     FechaCaducidad = DateTime.Now.AddDays(1.0),
                     FechaPostergada = appGeneralQuotes.FechaPostergada,
                     IdEstatus = 1,
-                    IdCondPago = appGeneralQuotes.IdCondPago,
+                    IdCondPago = 40,
                     IdContacto = appGeneralQuotes.IdContacto,
                     ObservacionPostergar = appGeneralQuotes.ObservacionPostergar,
                     IdDireccionFacturar = appGeneralQuotes.IdDireccionFacturar,
                     IdDireccionEntregar = appGeneralQuotes.IdDireccionEntregar,
                     OrdenCompra = appGeneralQuotes.OrdenCompra,
                     UsuarioActualiza = appGeneralQuotes.UsuarioActualiza,
-                    FechaActualiza = appGeneralQuotes.FechaActualiza,
+                    
                     UserCreate = dto.UsuarioActualiza,
                     UserUpdate = dto.UsuarioActualiza,
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now,
+                   
                     Cotizacion = cotizacion,
                     SearchText = "",
                     Proximo = 0,
@@ -1336,6 +1414,7 @@ namespace AppService.Core.Services
                         appDetailQuotesNew.UserUpdate = dto.UsuarioActualiza;
                         appDetailQuotesNew.IdEstatus = 1;
                         appDetailQuotesNew.CalculoId = 0;
+                        appDetailQuotesNew.IdCondPago = 40;
                         await this._unitOfWork.AppDetailQuotesRepository.Add(appDetailQuotesNew);
                         await this._unitOfWork.SaveChangesAsync();
                         AppDetailQuotes newDetail = await this._unitOfWork.AppDetailQuotesRepository.GetByQuetesProduct(cotizacion, appDetailQuotesNew.IdProducto);
@@ -1396,6 +1475,27 @@ namespace AppService.Core.Services
                     response.Data = resultDto;
                     return response;
                 }
+
+                var MtrCondicionPago = await this._unitOfWork.MtrCondicionPagoRepository.GetById(appGeneralQuotesUpdateDto.IdCondPago);
+                if (MtrCondicionPago == null)
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = "Condicion de Pago No Existe!!! " + appGeneralQuotesUpdateDto.IdCondPago;
+                    response.Meta = metadata;
+                    response.Data = resultDto;
+                    return response;
+                }
+                 if (MtrCondicionPago.Inactivo == "X")
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = "Condicion de Pago Esta Inactiva!!! " + appGeneralQuotesUpdateDto.IdCondPago;
+                    response.Meta = metadata;
+                    response.Data = resultDto;
+                    return response;
+                }
+
+
+
 
                 if ((appGeneralQuotesUpdateDto.IdCondPago != appGeneralQuotes.IdCondPago) || (appGeneralQuotesUpdateDto.IdMunicipio!=appGeneralQuotes.IdMunicipio))
                 {
@@ -1517,7 +1617,9 @@ namespace AppService.Core.Services
                 appGeneralQuotes.IdDireccionFacturar = cliente.IdDireccion.Value;
                 appGeneralQuotes.IdDireccionEntregar = appGeneralQuotesUpdateDto.IdDireccionEntregar;
                 appGeneralQuotes.OrdenCompra = appGeneralQuotesUpdateDto.OrdenCompra;
-                appGeneralQuotes.UsuarioActualiza = appGeneralQuotesUpdateDto.UsuarioActualiza;
+               
+                appGeneralQuotes.UsuarioActualiza = appGeneralQuotesUpdateDto.UsuarioActualiza
+;
                 appGeneralQuotes.FechaActualiza = DateTime.Now;
                 appGeneralQuotes.Proximo = new int?(0);
                 appGeneralQuotes.IdMtrTipoMoneda = new long?(appGeneralQuotesUpdateDto.IdMtrTipoMoneda);
@@ -1672,6 +1774,8 @@ namespace AppService.Core.Services
             //appGeneralQuotes.IntegrarCotizacion = true;
             _unitOfWork.AppGeneralQuotesRepository.Update(appGeneralQuotes);
             await _unitOfWork.SaveChangesAsync();
+             var actionSheetEntity= await _unitOfWork.AppGeneralQuotesActionSheetRepository.Create(appGeneralQuotes.Cotizacion);
+             
             return await GetById(appGeneralQuotes.Id);
 
         }
@@ -1719,6 +1823,24 @@ namespace AppService.Core.Services
                 {
                     metadata.IsValid = false;
                     metadata.Message = "Cotizacion No esta en grabacion!!! ";
+                    response.Meta = metadata;
+                    response.Data = resultDto;
+                    return response;
+                }
+
+                var MtrCondicionPago = await this._unitOfWork.MtrCondicionPagoRepository.GetById(appGeneralQuotes.IdCondPago);
+                if (MtrCondicionPago == null)
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = "Condicion de Pago No Existe!!! " + appGeneralQuotes.IdCondPago;
+                    response.Meta = metadata;
+                    response.Data = resultDto;
+                    return response;
+                }
+                if (MtrCondicionPago.Inactivo == "X")
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = "Condicion de Pago Esta Inactiva!!! " + appGeneralQuotes.IdCondPago;
                     response.Meta = metadata;
                     response.Data = resultDto;
                     return response;
@@ -1861,6 +1983,10 @@ namespace AppService.Core.Services
             }
         }
 
+
+
+
+
         public async Task<AppGeneralQuotesActionSheetDto> GetAppGeneralQuotesActionSheetDto(
           int AppGeneralQuotesId,
           AppStatusQuote appStatusQuote,
@@ -1868,12 +1994,28 @@ namespace AppService.Core.Services
           AppGeneralQuotes generalQuotes
           )
         {
+
+           
+
             AppGeneralQuotesActionSheetDto resultDto = new AppGeneralQuotesActionSheetDto()
             {
                 Cancel = true
             };
+             AppGeneralQuotesActionSheet actionSheetEntity = new AppGeneralQuotesActionSheet();
+             actionSheetEntity= await _unitOfWork.AppGeneralQuotesActionSheetRepository.Create(cotizacion);
+             //actionSheetEntity= await _unitOfWork.AppGeneralQuotesActionSheetRepository.GetByCotizacion(cotizacion);
+            resultDto.Adapter(actionSheetEntity);
+            var recalcularAction = false;
+            var evaluarActionSheet= await _unitOfWork.AppConfigAppRepository.GetByKey("EvaluarActionSheet");
+            if (evaluarActionSheet != null)
+            {
+                if (evaluarActionSheet != null && evaluarActionSheet.Valor == "1")
+                {
+                    recalcularAction = true;
+                }
+            }
             //AppGeneralQuotes generalQuotes = await this.GetById(AppGeneralQuotesId);
-            if (generalQuotes != null)
+            if (generalQuotes != null && recalcularAction==true)
             {
                 
                 resultDto.ExistQuotes=true;
@@ -1899,98 +2041,7 @@ namespace AppService.Core.Services
                 }
                 
                 
-                /*var actionSheet = await _unitOfWork.AppGeneralQuotesActionSheetRepository.GetByCotizacion(generalQuotes.Cotizacion);
-                if (actionSheet != null)
-                {
-                    resultDto.ExistQuotes=actionSheet.ExistQuotes;
-                    resultDto.RetornarAGrabacion =actionSheet.RetornarAGrabacion;
-                    resultDto.Actualizar=actionSheet.Actualizar;
-                    resultDto.Cancel=actionSheet.Cancel;
-                    resultDto.Eliminar=actionSheet.Eliminar;
-                    resultDto.EnviarAlCliente=actionSheet.EnviarAlCliente;
-                    resultDto.Imprimir=actionSheet.Imprimir;
-                    resultDto.GanarPerder=actionSheet.GanarPerder;
-                    resultDto.Imprimir=actionSheet.Imprimir;
-                    resultDto.EnviarAprobacionPrecio=false;
-                    var requiereAprobacion = await this._appDetailQuotesService.RequiereAprobacionAppGeneralQuotesId(AppGeneralQuotesId,generalQuotes);
-                    if (requiereAprobacion)
-                    {
-                        resultDto.EnviarAlCliente = false;
-                        resultDto.GanarPerder = false;
-                        resultDto.Imprimir = false;
-                    }
-                }*/
-                
-                
-                /*resultDto.ExistQuotes = true;
-                resultDto.RetornarAGrabacion = false;
-                if (appStatusQuote.PrimeraEstacion != "X" && !generalQuotes.TieneOrden)
-                    resultDto.RetornarAGrabacion = true;
-                if (appStatusQuote.FlagModificar == "X")
-                {
-                    resultDto.Actualizar = true;
-                    resultDto.Eliminar = true;
-                }
-                else
-                {
-                    resultDto.Actualizar = false;
-                    resultDto.Eliminar = false;
-                }
-                if (appStatusQuote.PrimeraEstacion == "X")
-                {
-                    var requiereAprobacion = await this._appDetailQuotesService.RequiereAprobacionAppGeneralQuotesId(AppGeneralQuotesId,generalQuotes);
-                    if (requiereAprobacion)
-                    {
-                        resultDto.EnviarAlCliente = false;
-                        resultDto.GanarPerder = false;
-                    }
-                    else
-                    {
-                        resultDto.EnviarAlCliente = true;
-                       
-                        resultDto.GanarPerder = false;
-                    }
-                    resultDto.Imprimir = false;
-
-                }
-                else
-                {
-                    var requiereAprobacion = await this._appDetailQuotesService.RequiereAprobacionAppGeneralQuotesId(AppGeneralQuotesId,generalQuotes);
-                    if (requiereAprobacion)
-                    {
-                        resultDto.EnviarAlCliente = false;
-                        resultDto.Imprimir = false;
-                        resultDto.GanarPerder = false;
-                    }
-                    else
-                    {
-                    
-                        resultDto.EnviarAlCliente = false;
-                        resultDto.Imprimir = true;
-                        resultDto.GanarPerder = true;
-                    }
-             
-                    resultDto.RetornarAGrabacion = true;
-                }
-
-                if (appStatusQuote.FlagEnEspera == "X")
-                {
-                    resultDto.EnviarAlCliente = false;
-                }
-                if (appStatusQuote.FlagGanada == "X")
-                {
-                    resultDto.EnviarAlCliente = false;
-                    resultDto.GanarPerder = false;
-                }
-                resultDto.EnviarAprobacionPrecio = false;
-           
-             
-
-                var cotizacionTieneOrden = await _unitOfWork.PropuestaRepository.CotizacionTieneOrden(generalQuotes.Cotizacion);
-                if (cotizacionTieneOrden)
-                {
-                    resultDto.RetornarAGrabacion = false;
-                }*/
+              
               
             }
             else

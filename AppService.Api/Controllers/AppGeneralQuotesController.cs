@@ -21,12 +21,14 @@ namespace AppService.Api.Controllers
     {
         private readonly IAppGeneralQuotesService _appGeneralQuotesService;
         private readonly ICotizacionService _cotizacionService;
+        private readonly IUnitOfWork _unitOfWork;
 
         public AppGeneralQuotesController(IAppGeneralQuotesService appGeneralQuotesService,
-                                           ICotizacionService cotizacionService)
+                                           ICotizacionService cotizacionService,IUnitOfWork unitOfWork)
         {
             _appGeneralQuotesService = appGeneralQuotesService;
             _cotizacionService = cotizacionService;
+            _unitOfWork = unitOfWork;
         }
 
 
@@ -171,15 +173,36 @@ namespace AppService.Api.Controllers
             {
 
 
-                //_cotizacionService.IntegrarCotizaciones();
+               
+                var config =await _unitOfWork.AppConfigAppRepository.GetByKey("DetenerCotizador");
+                if (config != null)
+                {
+                    if (config.Valor == "1")
+                    {
+                        metadata.IsValid = false;
+                        metadata.Message = "Cotizador Detenido Temporalmente";
+                        metadata.TotalCount = 0;
+                        metadata.PageSize = filters.PageSize;
+                        metadata.CurrentPage = 0;
+                        metadata.TotalPage = filters.PageNumber;
+                        metadata.HasNextPage = false;
+                        metadata.HasPreviousPage = false;
+                        metadata.NextPageUrl = "";
+                        
+                        metadata.PreviousPageUrl = "";
 
-                // await _cotizacionService.IntegrarCotizacion(667, true);
+                        ApiResponse<List<AppGeneralQuotesGetDto>> response = new ApiResponse<List<AppGeneralQuotesGetDto>>(null)
+                        {
+                            Meta = metadata
+                        };
 
-
+                        return Ok(response);
+                    }
+                }
 
                 var generalQuotes = await _appGeneralQuotesService.GetAllAppGeneralQuotes(filters);
 
-
+                //await Task.Delay(5000);
 
                 if (generalQuotes != null)
                 {
@@ -212,6 +235,7 @@ namespace AppService.Api.Controllers
                     metadata.HasNextPage = false;
                     metadata.HasPreviousPage = false;
                     metadata.NextPageUrl = "";
+                    
                     metadata.PreviousPageUrl = "";
 
                     ApiResponse<List<AppGeneralQuotesGetDto>> response = new ApiResponse<List<AppGeneralQuotesGetDto>>(generalQuotes)
@@ -454,6 +478,23 @@ namespace AppService.Api.Controllers
             try
             {
 
+                var config =await _unitOfWork.AppConfigAppRepository.GetByKey("DetenerCotizador");
+                if (config != null)
+                {
+                    if (config.Valor == "1")
+                    {
+                         metadata.IsValid = false;
+                        metadata.Message = "Cotizador Detenido Temporalmente";
+                        var responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
+                        {
+                            Meta = metadata
+                        };
+
+
+                        return Ok(responseError);
+                    }
+                }
+
 
                 var generalQuotes = await _appGeneralQuotesService.InsertGeneralQuotes(appGeneralQuotesCreateDto);
 
@@ -571,9 +612,26 @@ namespace AppService.Api.Controllers
             try
             {
 
+                var config =await _unitOfWork.AppConfigAppRepository.GetByKey("DetenerCotizador");
+                if (config != null)
+                {
+                    if (config.Valor == "1")
+                    {
+                        metadata.IsValid = false;
+                        metadata.Message = "Cotizador Detenido Temporalmente";
+                        var responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
+                        {
+                            Meta = metadata
+                        };
+
+
+                        return Ok(responseError);
+                    }
+                }
+
 
                 var generalQuotes = await _appGeneralQuotesService.UpdateGeneralQuotes(appGeneralQuotesUpdateDto);
-
+               
                 return Ok(generalQuotes);
 
 
@@ -583,7 +641,8 @@ namespace AppService.Api.Controllers
             {
 
                 metadata.IsValid = false;
-                metadata.Message = e.InnerException.Message;
+              
+                 metadata.Message = e.InnerException?.Message ?? e.Message;
                 var responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
                 {
                     Meta = metadata

@@ -433,6 +433,7 @@ namespace AppService.Core.Services
 
             return result;
         }
+        
         public async Task<List<MtrClienteDireccionDto>> ListDireccionesPorUsuario(MtrClienteQueryFilter filter)
         {
 
@@ -658,7 +659,275 @@ namespace AppService.Core.Services
 
         }
         
+   public async Task<List<MtrClienteDireccionDto>> ListDirecciones(MtrClienteQueryFilter filter)
+        {
 
+            List<MtrClienteDireccionDto> result = new List<MtrClienteDireccionDto>();
+            filter.PageNumber = filter.PageNumber == 0 ? _paginationOptions.DefaultPageNumber : filter.PageNumber;
+            filter.PageSize = filter.PageSize == 0 ? _paginationOptions.DefaultPageSize : filter.PageSize;
+            bool usuarioEsVendedor = false;
+            var vendedor = await _unitOfWork.MtrVendedorRepository.GetByIdAsync(filter.Usuario);
+            if (vendedor != null)
+            {
+                usuarioEsVendedor = true;
+            }
+
+            var clientes = await _unitOfWork.MtrClienteRepository.ListClientes(filter);
+            if (clientes.Count() > 0)
+            {
+                foreach (var item in clientes)
+                {
+
+                    var cliente = item.Codigo.Trim();
+                    string nombreOficina = "";
+                   
+                    try
+                    { 
+                        
+                        var vendedorCliente = await _unitOfWork.MtrVendedorRepository.GetByIdAsync(item.Vendedor1);
+
+                        if (item.Segmento == null || item.Segmento.Trim()== ""  )
+                        {
+                            item.Segmento = "0";
+                                
+                        }
+                        if (item.SubSegmentoa == null || item.SubSegmentoa.Trim()== ""  )
+                        {
+                            item.SubSegmentoa = "0";
+                                
+                        }
+
+                        if (vendedorCliente != null)
+                        {
+                            var oficina = await _unitOfWork.MtrOficinaRepository.GetById(vendedorCliente.Oficina);
+                            if (oficina != null)
+                            {
+                                nombreOficina = oficina.NomOficina;
+                            }
+                        }
+                      
+                        
+                    MtrSectorDto sectorObj = new MtrSectorDto();
+                    var sectores = await ListSectores();
+                    if (sectores.Count > 0)
+                    {
+                        decimal sectorDecimal = decimal.Parse(item.Segmento);
+                        sectorObj = sectores.Where(x => x.Sector ==sectorDecimal).FirstOrDefault();
+                        
+                    }
+
+                    
+                    var status = "";
+                    if (item.FlagAtendido == null)
+                    {
+                        item.FlagAtendido = "";
+                    }
+                    if (item.FlagAtendido == "X")
+                    {
+                        status = "ACTIVO";
+                    }
+                    else
+                    {
+                        status = "INACTIVO";
+                        
+                    }
+                   
+
+
+                    MtrDirecciones direccionClienteObj = await _unitOfWork.MtrDireccionesRepository.GetById((decimal)item.IdDireccion);
+                  
+                    
+                    var direcciones = await GetDireccionestDtoByCodigo(item.Codigo);
+                    if (direcciones.Count() > 0)
+                    {
+                        foreach (var itemDireccion in direcciones)
+                        {
+                            MtrClienteDireccionDto resultItem = new MtrClienteDireccionDto();
+                            resultItem.Editable = false;
+                            if (item.Vendedor1.Trim().ToUpper() == filter.Usuario.Trim().ToUpper() || !usuarioEsVendedor)
+                            {
+                                resultItem.Editable = true;
+                            }
+                            resultItem.Vendedor = item.Vendedor1;
+                            resultItem.NombreVendedor = "";
+                            if (vendedorCliente != null)
+                            {
+                                resultItem.NombreVendedor=vendedorCliente.Nombre;
+                            }
+                            resultItem.NombreOficina = nombreOficina;
+                            resultItem.Id = (decimal)itemDireccion.Id;
+                            resultItem.IdDireccionCliente = (decimal)item.IdDireccion;
+                            if (direccionClienteObj != null)
+                            {
+                                MtrDireccionesDto direccionClienteObjDto = _mapper.Map<MtrDireccionesDto>(direccionClienteObj);
+                                resultItem.DireccionClienteObj = direccionClienteObjDto;
+
+                            }
+                            MtrDirecciones direccionObj = await _unitOfWork.MtrDireccionesRepository.GetById((decimal)itemDireccion.Id);
+                            if (direccionObj != null)
+                            {
+                                MtrDireccionesDto direccionObjDto = _mapper.Map<MtrDireccionesDto>(direccionObj);
+                                resultItem.DireccionObj = direccionObjDto;
+
+                            }
+                            
+                            resultItem.Codigo = item.Codigo.Trim();
+                            resultItem.NombreCliente = item.Nombre.Trim();
+                            resultItem.Status = status;
+                            if (itemDireccion.Estado == null) itemDireccion.Estado = "";
+                            if (itemDireccion.Municipio == null) itemDireccion.Municipio = "";
+                            resultItem.Estado = itemDireccion.Estado.Trim();
+                            resultItem.Municipio = itemDireccion.Municipio.Trim();
+                            resultItem.NombreEstado = "";
+                            resultItem.NombreMunicipio = "";
+                            if (itemDireccion.Direccion == null) itemDireccion.Direccion = "";
+                            if (itemDireccion.Direccion1 == null) itemDireccion.Direccion1 = "";
+                            if (itemDireccion.Direccion2 == null) itemDireccion.Direccion2 = "";
+                            resultItem.Direccion = itemDireccion.Direccion.Trim();
+                            resultItem.Direccion1 = itemDireccion.Direccion1.Trim();
+                            resultItem.Direccion1 = itemDireccion.Direccion1.Trim();  
+                            resultItem.RifCliente = item.NoRegTribut;
+                            resultItem.RifDireccion = itemDireccion.Rif;
+                            if (item.Segmento.Trim()== "" || item.Segmento == null)
+                            {
+                                item.Segmento = "0";
+                                
+                            }
+                            resultItem.Sector = item.Segmento.Trim();
+                            resultItem.DescripcionSector = "";
+                            resultItem.PuntoReferencia = "";
+                            var wsmy264 = await _unitOfWork.Wsmy264Repository.GetById(itemDireccion.Id);
+                            if (wsmy264 != null)
+                            {
+                                resultItem.PuntoReferencia = wsmy264.PuntoReferencia;
+                            }
+                          
+                            decimal sectorDecimal = decimal.Parse(resultItem.Sector);
+                            var sector = await _unitOfWork.Wsmy065Repository.GetSectorBySector(sectorDecimal);
+                            if (sector != null)
+                            {
+                                if (sector.FlagInactiva == false)
+                                {
+                                    resultItem.DescripcionSector = sector.NombreSector;
+                                }
+                                else
+                                {
+                                    resultItem.Sector = "";
+                                    resultItem.DescripcionSector = "";
+                                }
+                               
+                            }
+                            
+                            resultItem.Ramo = item.SubSegmentoa.Trim();
+                            resultItem.DescripcionRamo = "";
+                            if (resultItem.Ramo == "" || resultItem.Ramo == null)
+                            {
+                                resultItem.Ramo = "0";
+                                
+                            }
+                            decimal ramoDecimal = decimal.Parse(resultItem.Ramo);
+                            var ramo = await _unitOfWork.Wsmy065Repository.GetByRamo(ramoDecimal);
+                            if (ramo != null)
+                            {
+                                if (ramo.FlagInactiva == false)
+                                {
+                                    resultItem.DescripcionRamo = ramo.NombreRamo;
+                                }
+                                else
+                                {
+                                    resultItem.Ramo = "";
+                                    resultItem.DescripcionRamo = "";
+                                    
+                                }
+                                
+                            }
+
+                            resultItem.IdTipoNegocio = item.TipoNegocio.Trim();
+                            if (resultItem.IdTipoNegocio ==  "1")
+                            {
+                                resultItem.DescripcionTipoNegocio = "PRIVADO";
+                            }else{
+                                resultItem.DescripcionTipoNegocio = "GOBIERNO";
+                            }
+                            
+                            var municipio =  await _unitOfWork.Winy243Repository.GetByEstadoMunicipio(resultItem.Estado,resultItem.Municipio );
+                            if (municipio != null)
+                            {
+                                resultItem.DescripcionMunicipio =municipio.CapitalMcpo + " " + municipio.DescMunicipio;
+                                resultItem.DescripcionEstado = municipio.NombreEstado.Trim();
+                            }
+                          
+                            resultItem.SectorObj = sectorObj;
+                            result.Add(resultItem);
+                        }
+                      
+                    } else
+                    {
+                        MtrClienteDireccionDto resultItem = new MtrClienteDireccionDto();
+                        resultItem.Editable = false;
+                        if (item.Vendedor1 == filter.Usuario || !usuarioEsVendedor)
+                        {
+                            resultItem.Editable = true;
+                        }
+                        resultItem.Vendedor = item.Vendedor1;
+                        resultItem.NombreVendedor = "";
+                        if (vendedorCliente != null)
+                        {
+                            resultItem.NombreVendedor=vendedorCliente.Nombre;
+                        }
+                        resultItem.NombreOficina = nombreOficina;
+                        resultItem.Id = (decimal)item.IdDireccion;
+                        resultItem.IdDireccionCliente = (decimal)item.IdDireccion;
+                        resultItem.Codigo = item.Codigo;
+                        resultItem.NombreCliente = item.Nombre;
+                        resultItem.Status = status;
+                        resultItem.Estado = item.Estado;
+                        resultItem.Municipio = item.Municipio;
+                        resultItem.NombreEstado = "";
+                        resultItem.NombreMunicipio = "";
+                        var direccionCliente = direcciones.Where(x => x.Id == item.IdDireccion).FirstOrDefault();
+                        if (direccionCliente != null)
+                        {
+                            if (direccionCliente.Direccion == null) direccionCliente.Direccion = "";
+                            if (direccionCliente.Direccion1 == null) direccionCliente.Direccion1 = "";
+                            if (direccionCliente.Direccion2 == null) direccionCliente.Direccion2 = "";
+
+                            resultItem.Direccion = direccionCliente.Direccion;
+                            resultItem.Direccion1 = direccionCliente.Direccion1;
+                            resultItem.Direccion1 = direccionCliente.Direccion1;
+                        }
+                      
+                        resultItem.RifCliente = item.NoRegTribut;
+                        resultItem.RifDireccion = item.NoRegTribut;
+                        resultItem.SectorObj = sectorObj;
+                        
+                        resultItem.PuntoReferencia = "";
+                        var wsmy264 = await _unitOfWork.Wsmy264Repository.GetById( resultItem.IdDireccionCliente);
+                        if (wsmy264 != null)
+                        {
+                            resultItem.PuntoReferencia = wsmy264.PuntoReferencia;
+                        }
+                        result.Add(resultItem);
+                    }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        var msg = cliente;
+                        throw;
+                    }
+
+                    
+                    
+
+                }
+            }
+
+
+            return result;
+
+        }
+      
         public async Task<ApiResponse<OdooClienteTipoSectorRamo>> UpdateTipoSectorRamoPorCliente(OdooClienteTipoSectorRamo dto)
         {
 

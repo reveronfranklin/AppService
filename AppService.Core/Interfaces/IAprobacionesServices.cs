@@ -12,11 +12,12 @@ namespace AppService.Core.Interfaces
     {
         Task<Wsmy639> GetByCotizacionRenglonPrpopuesta(string cotizacion, int renglon, int propuesta);
 
-        Task<ApiResponse<Wsmy639>> CreateAprobacion(string cotizacion, int renglon, int propuesta, string UsuarioConectado);
+        Task<ApiResponse<Wsmy639>> CreateAprobacion(string cotizacion, int renglon, int propuesta,
+            string usuarioConectado, string mensajeSolicitarPrecio);
 
         Task<ApiResponse<Wsmy647>> ActivarWORKFLOW(string cotizacion, int renglon, int propuesta, string usuarioConectado, AppDetailQuotes appDetailQuotes);
 
         Task<ApiResponse<Wsmy639>> CreateAprobacionAprobada(string cotizacion, int renglon, int propuesta, string UsuarioConectado);
-
+        Task<Wsmy639> GetByCotizacionProducto(string cotizacion, string producto);
     }
 }

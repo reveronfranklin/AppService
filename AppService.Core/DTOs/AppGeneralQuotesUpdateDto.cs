@@ -17,7 +17,7 @@ namespace AppService.Core.DTOs
         public string OrdenCompra { get; set; }
         public string Observaciones { get; set; }
         public string UsuarioActualiza { get; set; }
-
+      
         public bool FijarPrecioBs { get; set; }
         public string Rif { get; set; }
         public string RazonSocial { get; set; }

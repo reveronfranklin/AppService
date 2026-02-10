@@ -317,6 +317,9 @@ namespace AppService.Api.Controllers
                 HttpOnly = true,
                 Expires = newRefreshToken.Expires
             };
+            //Se agrega configuracion de dominio
+            //Response.Cookies.Append("X-Refresh-Token", newRefreshToken.Refresh_Token, cookieOptions);
+            
             Response.Cookies.Append("X-Refresh-Token", newRefreshToken.Refresh_Token, cookieOptions);
             Response.Cookies.Append("X-Auth-Token", newRefreshToken.Token, cookieOptions);
             var sisUsuario = await _service.GetUsuario(newRefreshToken.Login);

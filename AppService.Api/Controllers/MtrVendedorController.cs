@@ -32,6 +32,7 @@ namespace AppService.Api.Controllers
 
         [HttpPost]
         [Route("[action]")]
+  
         public async Task<IActionResult> ListVendedoresPorUsuario(MtrVendedorQueryFilter filters)
         {
 

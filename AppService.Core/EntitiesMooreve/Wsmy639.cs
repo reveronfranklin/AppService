@@ -77,5 +77,8 @@ namespace AppService.Core.EntitiesMooreve
         public decimal? RtotalBsListaCpj { get; set; }
         public decimal? RvalorVentaAprobar { get; set; }
         public bool? Estimada { get; set; }
+        public string? MensajeSolicitudEstimada { get; set; }
+        
+        
     }
 }

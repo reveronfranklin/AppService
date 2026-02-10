@@ -58,6 +58,7 @@ namespace AppService.Core.DTOs
         public List<AppDetailQuotesGetDto> AppDetailQuotesGetDto { get; set; }
         public AppGeneralQuotesActionSheetDto AppGeneralQuotesActionSheetDto { get; set; }
 
+        public string? MensajeSolicitarPrecio { get; set; }=string.Empty;
 
     }
     

@@ -911,8 +911,14 @@ namespace AppService.Core.Services
 
 
                             SapRetenciones sapRetenciones = _sapRetencionesService.GetByTranzaccionPorcentaje(itemretenciones.IdTransaccion, (double)itemretenciones.Porcentaje);
-
-                            itemRetencionesCobranzas.IndRetencion = sapRetenciones.IndicadordeRetencion;
+                            if (sapRetenciones != null)
+                            {
+                                   itemRetencionesCobranzas.IndRetencion = sapRetenciones.IndicadordeRetencion;
+                            }else
+                            {
+                                itemRetencionesCobranzas.IndRetencion = "0";
+                            }
+                         
 
 
                             if (itemretenciones.TxOrigen == "06")

@@ -11,7 +11,7 @@ namespace AppService.Core.Entities
 {
   public class AppGeneralQuotes
   {
-    public AppGeneralQuotes() => this.AppDetailQuotes = (ICollection<AppService.Core.Entities.AppDetailQuotes>) new HashSet<AppService.Core.Entities.AppDetailQuotes>();
+    public AppGeneralQuotes() => this.AppDetailQuotes = (ICollection<AppService.Core.Entities.AppDetailQuotes>)new HashSet<AppService.Core.Entities.AppDetailQuotes>();
 
     public int Id { get; set; }
 
@@ -116,4 +116,5 @@ namespace AppService.Core.Entities
 
     public virtual ICollection<AppService.Core.Entities.AppDetailQuotes> AppDetailQuotes { get; set; }
   }
+
 }

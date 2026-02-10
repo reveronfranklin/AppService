@@ -218,8 +218,7 @@ namespace AppService.Api.Controllers
 
         }
 
-
-        /// <summary>
+       /// <summary>
         /// Elimina AppDetailQuotes
         ///  
         /// 

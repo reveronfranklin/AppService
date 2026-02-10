@@ -49,6 +49,7 @@ namespace AppService.Core.Entities
     public bool? EsVariableDeEntrada { get; set; }
      public bool? RetornarElMayor { get; set; }
         public bool? RetornarElMenor { get; set; }
+        public string Cotizacion { get; set; }
 
   }
 }

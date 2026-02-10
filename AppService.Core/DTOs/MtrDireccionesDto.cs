@@ -24,6 +24,9 @@ namespace AppService.Core.DTOs
     {
         public decimal Id { get; set; }
         public string Codigo { get; set; }
+        public string Vendedor { get; set; }
+        public string NombreVendedor { get; set; }
+        public string NombreOficina { get; set; }
         public string RifCliente { get; set; }
         public string RifDireccion { get; set; }
         public string Direccion { get; set; }
@@ -54,6 +57,8 @@ namespace AppService.Core.DTOs
         public MtrSectorDto SectorObj { get; set; }
         public MtrDireccionesDto DireccionClienteObj { get; set; }
         public MtrDireccionesDto DireccionObj { get; set; }
+        
+        public bool Editable { get; set; }
         
         public string GetClaseCss(decimal Id, decimal IdDireccionCliente)
         {

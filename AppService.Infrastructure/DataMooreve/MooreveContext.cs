@@ -22799,6 +22799,7 @@ namespace AppService.Infrastructure.DataMooreve
                 entity.HasOne(d => d.Wpry240)
                     .WithMany(p => p.Wpry241)
                     .HasForeignKey(d => new { d.Cotizacion, d.Renglon, d.Propuesta, d.IdParte })
+                   
                     .HasConstraintName("FK_WPRY241_WPRY240");
             });
 

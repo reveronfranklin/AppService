@@ -144,7 +144,7 @@ namespace AppService.Core.Services
                         appProductConversionFilter.AppProductsId = appProductsDto.Id;
                         var conversiones = _appProductConversionService.GetAllByProduct(appProductConversionFilter);
                         appProductsDto.Conversiones = conversiones.Data;
-
+                        AppProductConversionGetDto conversion = new AppProductConversionGetDto();
                         List<AppPrice> allByAppProduct = await this._unitOfWork.AppPriceRepository.GetAllByAppProduct(appProductsDto.Id);
                         if (allByAppProduct != null && allByAppProduct.Count > 0)
                         {

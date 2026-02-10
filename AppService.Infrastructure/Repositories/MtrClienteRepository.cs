@@ -206,6 +206,41 @@ namespace AppService.Infrastructure.Repositories
         }
 
 
+           public async Task<IEnumerable<MtrCliente>> ListClientes(MtrClienteQueryFilter filter)
+        {
+            List<MtrCliente> result = new List<MtrCliente>();
+            string usuario = filter.Usuario;
+            int pageSize = filter.PageSize;
+
+            
+            if (filter.Codigo != null && filter.Codigo.Length > 0)
+            {
+                result = await _context.MtrCliente.Where(x =>  x.FlagInactivo != "X" && ((x.Codigo.Trim().ToLower().Contains(filter.Codigo.Trim().ToLower())) || (x.NoRegTribut.Trim().ToLower().Contains(filter.Codigo.Trim().ToLower())) || (x.Nombre.Trim().ToLower().Contains(filter.Codigo.Trim().ToLower())))).OrderBy(x => x.Nombre).Skip((filter.PageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+            }
+            else if (filter.SearchText != null && filter.SearchText.Length > 0)
+            {
+                result = await _context.MtrCliente.Where(x => x.FlagInactivo != "X" && ((x.Codigo.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower())) || (x.NoRegTribut.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower())) || (x.Nombre.Trim().ToLower().Contains(filter.SearchText.Trim().ToLower())))).OrderBy(x => x.Nombre).Skip((filter.PageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+            }else
+            {
+                result = await _context.MtrCliente.Where(x =>x.FlagInactivo != "X").OrderBy(x => x.Nombre).Skip((filter.PageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+
+            }
+            
+       
+      
+
+
+      
+            var clieProspectoNew = await _context.MtrCliente.Where(x => x.Codigo == "000000").ToListAsync();
+            result.AddRange(clieProspectoNew);
+
+            return result;
+
+        }
+
+        
         public async Task<List<MtrCliente>> ListCliente(MtrClienteQueryFilter filter)
         {
             List<MtrCliente> result = new List<MtrCliente>();
