@@ -79,6 +79,7 @@ namespace AppService.Api.Controllers
             }
             if (subcategoria == 9)
             {
+                await _appDetailQuotesService.ArmaDataReportEtiquetasPrime(cotizacion);
                 myreport = "Ventas/Cotizador Plus/AppReporteCotizacionEtiquetasPrime ";
             }
 

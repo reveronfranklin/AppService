@@ -16,6 +16,7 @@ namespace AppService.Core.Interfaces
         Task<List<AppDetailQuotes>> GetByAppGeneralQuotesId(int appGeneralQuotesId);
 
         Task<AppDetailQuotes> GetById(int id);
+        Task<AppDetailQuotes> GetByIdSimple(int id);
 
         Task Add(AppDetailQuotes entity);
 

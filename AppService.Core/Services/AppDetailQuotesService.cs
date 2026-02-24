@@ -433,6 +433,23 @@ namespace AppService.Core.Services
             }
         }
 
+        public async Task<AppDetailQuotes> GetByIdSimple(int id)
+        {
+            
+            AppDetailQuotes appDetailQuotes;
+            try
+            {
+                appDetailQuotes =  await this._unitOfWork.AppDetailQuotesRepository.GetById(id);
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+
+
+            return appDetailQuotes;
+        }
+
         public async Task<AppDetailQuotes> GetById(int id)
         {
             
@@ -747,10 +764,10 @@ namespace AppService.Core.Services
                 await this._cotizacionService.IntegrarCotizacion(appDetailQuotesInserted.AppGeneralQuotesId, true);
                     if (appDetailQuotesInserted != null)
                 {
-                    if (appDetailQuotesInserted.IdProductoNavigation.AppSubCategoryId == 9)
+                    /*if (appDetailQuotesInserted.IdProductoNavigation.AppSubCategoryId == 9)
                     {
                         await ArmaDataReportEtiquetasPrime(appDetailQuotesInserted.Cotizacion);
-                    }
+                    }*/
                    
                     resultDto = this._mapper.Map<AppDetailQuotesGetDto>((object)appDetailQuotesInserted);
                     AppProducts byId1 = await this._appProductsService.GetById(appDetailQuotesInserted.IdProducto);

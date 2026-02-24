@@ -89,6 +89,96 @@ namespace AppService.Infrastructure.Repositories
             return detail;
 
         }
+        public async Task<AppDetailQuotes> GetByIdSimple(int id)
+{
+    try
+    {
+        var detail = await _context.AppDetailQuotes
+            .AsNoTracking()
+            .Where(x => x.Id == id)
+            .Select(x => new AppDetailQuotes
+            {
+                // Propiedades Principales e IDs
+                Id = x.Id,
+                AppGeneralQuotesId = x.AppGeneralQuotesId,
+                Cotizacion = x.Cotizacion,
+                Producto = x.Producto,
+                IdProducto = x.IdProducto,
+                NombreComercialProducto = x.NombreComercialProducto,
+                IdEstatus = x.IdEstatus,
+                IdUnidad = x.IdUnidad,
+                IdCondPago = x.IdCondPago,
+
+                // Valores Numéricos y Moneda
+                Cantidad = x.Cantidad,
+                Precio = x.Precio,
+                Total = x.Total,
+                PrecioUsd = x.PrecioUsd,
+                TotalUsd = x.TotalUsd,
+                ValorConvertido = x.ValorConvertido,
+                UnitPriceBaseProduction = x.UnitPriceBaseProduction,
+                UnitPriceConverted = x.UnitPriceConverted,
+                UnitPriceBaseProductionMaximo = x.UnitPriceBaseProductionMaximo,
+                Rprecio = x.Rprecio,
+                Rtotal = x.Rtotal,
+                CantidadSolicitada = x.CantidadSolicitada,
+                CantidadPorUnidadProduccion = x.CantidadPorUnidadProduccion,
+                MedidaBasica = x.MedidaBasica,
+                MedidaOpuesta = x.MedidaOpuesta,
+                PorcFlete = x.PorcFlete,
+                Flete = x.Flete,
+
+                // Textos y Observaciones
+                Observaciones = x.Observaciones,
+                ObsSolicitud = x.ObsSolicitud,
+                Papeles = x.Papeles,
+                TipoPapeles = x.TipoPapeles,
+                Tintas = x.Tintas,
+                Medidas = x.Medidas,
+                Forma = x.Forma,
+                Salida = x.Salida,
+                Presentacion = x.Presentacion,
+                MedidaBasicaFraccionPulgada = x.MedidaBasicaFraccionPulgada,
+                MedidaOpuestaFraccionPulgada = x.MedidaOpuestaFraccionPulgada,
+                MensajeSolicitarPrecio = x.MensajeSolicitarPrecio,
+                CodigoProducto = x.CodigoProducto,
+
+                // Enteros y Flags
+                DiasEntrega = x.DiasEntrega,
+                RazonGanadaPerdida = x.RazonGanadaPerdida,
+                Competidor = x.Competidor,
+                QuantityPerPackage = x.QuantityPerPackage,
+                CalculoId = x.CalculoId,
+                OdooId = x.OdooId,
+                CantPartes = x.CantPartes,
+                CantTintas = x.CantTintas,
+                OrdenAnterior = x.OrdenAnterior,
+                Orden = x.Orden,
+                SolicitarPrecio = x.SolicitarPrecio,
+                Estimada = x.Estimada,
+
+                // Fechas y Auditoría
+                FechaRegistro = x.FechaRegistro,
+                CreatedAt = x.CreatedAt,
+                UpdatedAt = x.UpdatedAt,
+                UserCreate = x.UserCreate,
+                UserUpdate = x.UserUpdate
+                
+                // Nota: Las propiedades 'virtual' se dejan fuera para evitar el error de referencia nula, 
+                // ya que se cargan a demanda o mediante .Include() si el mapeo fuera correcto.
+            })
+            .FirstOrDefaultAsync();
+
+        return detail;
+    }
+    catch (Exception ex)
+    {
+        // Uso de GetBaseException para obtener el error raíz sin riesgo de NullReference en el catch
+        var message = ex.GetBaseException().Message;
+        // Aquí podrías loguear el error: _logger.LogError(message);
+        return null;
+    }
+}
 
         public async Task<List<AppDetailQuotes>> GetByQuotesCotizacion(string cotizacion)
         {

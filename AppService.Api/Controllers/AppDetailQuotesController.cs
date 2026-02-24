@@ -1,6 +1,7 @@
 ﻿using AppService.Api.Responses;
 using AppService.Core.CustomEntities;
 using AppService.Core.DTOs;
+using AppService.Core.Entities;
 using AppService.Core.Interfaces;
 using AppService.Core.QueryFilters;
 using Microsoft.AspNetCore.Mvc;
@@ -141,9 +142,12 @@ namespace AppService.Api.Controllers
                     appDetailQuotesUpdateDto.SolicitarPrecio = true;
                 }
 
+                AppGeneralQuotes appGeneralQuotes=new AppGeneralQuotes();
+
                 var appDetailQuotes = await _appDetailQuotesService.GetById(appDetailQuotesUpdateDto.Id);
                 if (appDetailQuotes != null)
                 {
+                    appGeneralQuotes = await _appGeneralQuotesService.GetById(appDetailQuotes.AppGeneralQuotesId);
                     // SI CAMBIA EL PRODUCTO DEL ITEM SE PROCEDE A ELIMININAR  Y CREAR CON EL NUEVO PRODUCTO
                     if (appDetailQuotes.IdProducto != appDetailQuotesUpdateDto.IdProducto)
                     {
@@ -186,9 +190,15 @@ namespace AppService.Api.Controllers
                 {
                     AppGeneralQuotesQueryFilter filterGeneral = new AppGeneralQuotesQueryFilter
                     {
-                        Cotizacion = detailQuotes.Data.Cotizacion
+                        Cotizacion = detailQuotes.Data.Cotizacion,
+                        FechaDesde = appGeneralQuotes.Fecha.ToShortDateString(),
+                        FechaHasta = DateTime.Now.ToShortDateString()
+
                     };
-                    PagedList<AppGeneralQuotesGetDto> generalQuotes = await _appGeneralQuotesService.GetAllAppGeneralQuotes(filterGeneral);
+
+                    var generalQuotes = await _appGeneralQuotesService.GetAllAppGeneralQuotes(filterGeneral);
+                    
+                    
                     ApiResponse<List<AppGeneralQuotesGetDto>> response = new ApiResponse<List<AppGeneralQuotesGetDto>>(generalQuotes)
                     {
                         Meta = detailQuotes.Meta

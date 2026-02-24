@@ -55,11 +55,11 @@ namespace AppService.Core.Services
             ApiResponse<Wsmy639> response = new ApiResponse<Wsmy639>(resultDto);
             try
             {
-                var cotizacionObject = await _unitOfWork.CotizacionRepository.GetByCotizacion(cotizacion);
+               // var cotizacionObject = await _unitOfWork.CotizacionRepository.GetByCotizacion(cotizacion);
 
-                var renglonObject = await _unitOfWork.RenglonRepository.GetByCotizacionRenglon(cotizacion, renglon);
+               // var renglonObject = await _unitOfWork.RenglonRepository.GetByCotizacionRenglon(cotizacion, renglon);
 
-                var propuestaObject = await _unitOfWork.PropuestaRepository.GetByCotizacionRenglonPropuesta(cotizacion, renglon, propuesta);
+                //var propuestaObject = await _unitOfWork.PropuestaRepository.GetByCotizacionRenglonPropuesta(cotizacion, renglon, propuesta);
 
 
                 var inserted = await _unitOfWork.AprobacionesRepository.CreaAprobacion(cotizacion, renglon, propuesta, usuarioConectado,mensajeSolicitarPrecio);
@@ -539,16 +539,7 @@ namespace AppService.Core.Services
             {
 
 
-                // HdId.Value IdSoicitud wsmy515, 
-
-
-
-                // HdRuta.Value
-                // HdRuta.Value = Wsmy649.BuscarRuta(HdSubCategoria.Value, HdIdOficina.Value)
-
-                //HdIdNextEst.Value
-                //Wsmy649.BuscarAprobador(HdRuta.Value, HdSubCategoria.Value, HdIdOficina.Value, PuntosPorcDebajo, PuntosPorcArriba)
-                //IdEstacion
+              
 
                 var cotizacionObject = await _unitOfWork.CotizacionRepository.GetByCotizacion(cotizacion);
                 usuarioConectado = cotizacionObject.CodVendedor;
@@ -556,7 +547,7 @@ namespace AppService.Core.Services
 
                 var propuestaObject = await _unitOfWork.PropuestaRepository.GetByCotizacionRenglonPropuesta(cotizacion, renglon, propuesta);
 
-                var cliente = _unitOfWork.MtrClienteRepository.GetById(cotizacionObject.CodCliente);
+                //var cliente = _unitOfWork.MtrClienteRepository.GetById(cotizacionObject.CodCliente);
 
                 var producto = await _unitOfWork.Csmy036Repository.GetByCode(renglonObject.CodProducto);
 

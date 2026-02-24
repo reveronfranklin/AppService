@@ -874,6 +874,23 @@ private async Task<int> ExecuteQueryCount(IQueryable<AppGeneralQuotes> query)
             bool esVendedor, bool esSupervisor, AppGeneralQuotesQueryFilter filter)
         {
             // Query base con includes optimizados
+            if (!string.IsNullOrWhiteSpace(filter.Cotizacion))
+            {
+                string cotizacionTrimmed = filter.Cotizacion.Trim();
+              
+                var queryCot = _context.AppGeneralQuotes
+                .AsNoTracking()
+                .Include(x => x.IdClienteNavigation)
+                .Include(x => x.IdVendedorNavigation)
+                .Include(x => x.IdEstatusNavigation) // Solo los includes necesarios
+                .Include(x => x.IdContactoNavigation)
+                .Include(x => x.IdMtrTipoMonedaNavigation)
+                .Where(x => x.Cotizacion == cotizacionTrimmed);
+
+                return queryCot;
+            }
+         
+
             var query = _context.AppGeneralQuotes
                 .AsNoTracking()
                 .Include(x => x.IdClienteNavigation)
@@ -882,10 +899,10 @@ private async Task<int> ExecuteQueryCount(IQueryable<AppGeneralQuotes> query)
                 .Include(x => x.IdContactoNavigation)
                 .Include(x => x.IdMtrTipoMonedaNavigation)
                 .Where(x => x.CreatedAt >= fechaDesde && x.CreatedAt <= fechaHasta);
-            if (filter.StatusId > 0)
-            {
-                  query = query.Where(x => x.IdEstatus == filter.StatusId);
-            }
+           
+           
+             query.Where(x => x.CreatedAt >= fechaDesde && x.CreatedAt <= fechaHasta) ;
+
             // Aplicar filtros de rol
             if (esSupervisor)
             {

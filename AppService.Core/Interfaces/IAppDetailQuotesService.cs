@@ -44,6 +44,7 @@ namespace AppService.Core.Interfaces
         Task UpdatePrecioListaEstimadas();
         Task<decimal> GetFlete(decimal idMunicipio, int idProducto);
         Task UpdateFlete(int year, int month);
+        Task ArmaDataReportEtiquetasPrime(string cotizacion);
 
     }
 }
