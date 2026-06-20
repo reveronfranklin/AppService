@@ -154,15 +154,45 @@ namespace AppService.Api.Controllers
                 
               var clientes = await _mtrClienteService.ListDireccionesPorUsuario(filters);
 
-            clientes = clientes.Where(x=>x.Codigo!="000000").OrderBy(x => x.Codigo).
-                                                                    ThenBy(x => x.ClaseCss).ToList();
+            //clientes = clientes.Where(x=>x.Codigo!="000000").OrderBy(x => x.Codigo). ThenBy(x => x.ClaseCss).ToList();
 
 
-            var pagedclientes = PagedList<MtrClienteDireccionDto>.Create(clientes, filters.PageNumber, filters.PageSize);
+            var pagedclientes = PagedList<MtrClienteDireccionDto>.Create(clientes.Items, filters.PageNumber, filters.PageSize);
 
             ApiResponse<IEnumerable<MtrClienteDireccionDto>> response = new ApiResponse<IEnumerable<MtrClienteDireccionDto>>(pagedclientes);
 
+            response.Meta.CurrentPage = filters.PageNumber;
+            response.Meta.PageSize = filters.PageSize;
+            response.Meta.TotalCount = clientes.TotalCount;
+            return Ok(response);
 
+
+        }
+
+         [HttpPost]
+        [Route("[action]")]
+        public async Task<IActionResult> ListDireccionesClientes(MtrClienteQueryFilter filters)
+        {
+          
+                
+            var clientes = await _mtrClienteService.ListDireccionesPorUsuario(filters);
+
+            //clientes = clientes.Items.Where(x=>x.Codigo!="000000").OrderBy(x => x.Codigo).ThenBy(x => x.ClaseCss).ToList();
+            var data = clientes.Items.Where(x => x.Codigo != "000000").ToList();
+
+            var pagedclientes = PagedList<MtrClienteDireccionDto>.Create(data, filters.PageNumber, filters.PageSize);
+
+            ApiResponse<IEnumerable<MtrClienteDireccionDto>> response = new ApiResponse<IEnumerable<MtrClienteDireccionDto>>(pagedclientes);
+          
+            Metadata metadata= new Metadata();
+            metadata.CurrentPage = filters.PageNumber;
+            metadata.PageSize = filters.PageSize;
+            metadata.TotalCount = clientes.Items.Count();
+            metadata.TotalPage = clientes.TotalPages;
+            metadata.IsValid = true;
+            metadata.Message = "OK";
+            metadata.success = true;
+            response.Meta=metadata;
             return Ok(response);
 
 

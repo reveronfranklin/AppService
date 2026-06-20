@@ -1174,6 +1174,60 @@ namespace AppService.Core.Services
             {
 
 
+              
+                AppGeneralQuotes appGeneralQuotes = await this.GetByIdForUpdate(dto.Id);
+                if (appGeneralQuotes == null)
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = "Cotizacion No Existe!!! ";
+                    response.Meta = metadata;
+                    response.Data = resultDto;
+                    return response;
+                }
+                var cotizacionTieneOrden = await _unitOfWork.PropuestaRepository.CotizacionTieneOrden(appGeneralQuotes.Cotizacion);
+                if (cotizacionTieneOrden)
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = "Cotizacion Tiene Orden!!! ";
+                    response.Meta = metadata;
+                    response.Data = resultDto;
+                    return response;
+                }
+
+             
+
+                await this._unitOfWork.AppGeneralQuotesRepository.RetornarAGrabacion(appGeneralQuotes.Cotizacion);
+
+                AppStatusQuote byId = await this._unitOfWork.AppStatusQuoteRepository.GetById(1);
+                AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotes.Id, byId, appGeneralQuotes.Cotizacion,appGeneralQuotes);
+                response.Meta = metadata;
+                response.Data = resultDto;
+                return response;
+            }
+            catch (Exception ex)
+            {
+                metadata.IsValid = false;
+                metadata.Message = ex.InnerException.Message;
+                response.Meta = metadata;
+                response.Data = resultDto;
+                return response;
+            }
+        }
+
+ public async Task<ApiResponse<AppGeneralQuotesGetDto>> RegresarAGrabacionCotizacionBk(
+          AppGeneralQuotesCopyDto dto)
+        {
+            AppGeneralQuotesGetDto resultDto = new AppGeneralQuotesGetDto();
+            Metadata metadata = new Metadata()
+            {
+                IsValid = true,
+                Message = ""
+            };
+            ApiResponse<AppGeneralQuotesGetDto> response = new ApiResponse<AppGeneralQuotesGetDto>(resultDto);
+            try
+            {
+
+
                 var cotizacion = await _unitOfWork.AppGeneralQuotesRepository.GetByCotizacions(dto.Cotizacion);
                 if (cotizacion != null)
                 {
@@ -1225,6 +1279,9 @@ namespace AppService.Core.Services
                 
                 //TODO PRUEBA INTEGRAR COTIZACION POR LOTE 
                 await this._cotizacionService.IntegrarCotizacion(appGeneralQuotes.Id, true);
+
+                await this._unitOfWork.AppGeneralQuotesRepository.RetornarAGrabacion(dto.Cotizacion);
+
                 AppStatusQuote byId = await this._unitOfWork.AppStatusQuoteRepository.GetById(appGeneralQuotes.IdEstatus);
                 AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotes.Id, byId, appGeneralQuotes.Cotizacion,appGeneralQuotes);
                 response.Meta = metadata;
@@ -1240,6 +1297,7 @@ namespace AppService.Core.Services
                 return response;
             }
         }
+
 
         public async Task<ApiResponse<AppGeneralQuotesGetDto>> CopiarGeneralQuotes(
           AppGeneralQuotesCopyDto dto)
@@ -1724,111 +1782,11 @@ namespace AppService.Core.Services
                     return response;
                 }
 
-
-                var porcflete = await GetFleteByIdMunicipo((decimal)appGeneralQuotes.IdMunicipio);
-
-
-
                 ApiResponse <List<AppDetailQuotesGetDto>> appGeneralQuotesId = await this._appDetailQuotesService.GetListAppDetailQuoteByAppGeneralQuotesId(dto.Id);
                 if (appGeneralQuotesId.Data.Count > 0)
                 {
-                    foreach (AppDetailQuotesGetDto detailQuotesGetDto in appGeneralQuotesId.Data)
-                    {
-                        try
-                        {
-                            decimal precioAprobado = 0;
-
-                            if (detailQuotesGetDto.StatusAprobacionDto != null)
-                            {
-                                precioAprobado = (decimal)detailQuotesGetDto.StatusAprobacionDto.ValorVentaAprobarUsd;
-                            }
-
-                            var renglonObject = await _unitOfWork.RenglonRepository.GetByCotizacionProducto(
-                                detailQuotesGetDto.Cotizacion, detailQuotesGetDto.AppProductsGetDto.ExternalCode);
-                            if (renglonObject != null)
-                            {
-                                var aprobacion =
-                                    await _aprobacionesServices.GetByCotizacionRenglonPrpopuesta(
-                                        detailQuotesGetDto.Cotizacion, renglonObject.Renglon, 1);
-                                if (aprobacion != null)
-                                {
-                                    var preciousd = detailQuotesGetDto.PrecioUsd;
-                                    var aprobado = aprobacion.ValorVentaAprobarUsd;
-                                    if (preciousd<aprobado) 
-                                    {
-                                        metadata.IsValid = false;
-                                        metadata.Message = $"Precio no puede ser menor a el aprobado!!! {aprobacion.ValorVentaAprobarUsd}";
-                                        response.Meta = metadata;
-                                        response.Data = null;
-                                        return response;
-                                    } 
-                                } else
-                                {
-                                    var preciousd = detailQuotesGetDto.PrecioUsd;
-
-                                    var producto =
-                                        await _unitOfWork.AppProductsRepository.GetById(detailQuotesGetDto.IdProducto);
-                                    if (producto != null)
-                                    {
-                                        if (producto.PorcFlete > 0)
-                                        {
-                                            porcflete=producto.PorcFlete;
-                                        }
-                                    }
-                                    
-                                    decimal unitPriceBaseProduction = (decimal)detailQuotesGetDto.UnitPriceConverted;
-                                    var flete = (unitPriceBaseProduction* porcflete) / 100;
-                                   
-                                    flete = Math.Truncate(flete * 100) / 100;
-                                    
-                                    decimal lista = Math.Round(unitPriceBaseProduction+flete, 2);
-                                    
-                                    if (preciousd<lista)
-                                    {
-                                      
-                                        metadata.IsValid = false;
-                                        metadata.Message = $"Precio no puede ser menor a  la lista!!! {lista}, cotizacion enviada a Grabacion";
-                                        response.Meta = metadata;
-                                        response.Data = null;
-                                        return response;
-                                    }
-                                }
-                            }
-                            
-
-                            var entity = await this._appDetailQuotesService.GetById(detailQuotesGetDto.Id);
-                            if (entity != null)
-                            {
-
-
-                                entity.IdEstatus = 2;
-                                this._unitOfWork.AppDetailQuotesRepository.Update(entity);
-                                await this._unitOfWork.SaveChangesAsync();
-
-
-
-                            }
-                        }
-                        catch (System.Exception ex)
-                        {
-
-                            metadata.IsValid = false;
-                            metadata.Message = ex.InnerException.Message;
-                            response.Meta = metadata;
-                            response.Data = resultDto;
-                            return response;
-                        }
-
-
-
-
-                    }
-
-
-                    appGeneralQuotes.IdEstatus = 2;
-                    var res = await this.Update(appGeneralQuotes);
-                    //TODO PRUEBA INTEGRAR COTIZACION POR LOTE
-                    await this._cotizacionService.IntegrarCotizacion(appGeneralQuotes.Id, true);
+                   
+                    await _unitOfWork.AppGeneralQuotesRepository.EnviarAlCliente(appGeneralQuotes.Cotizacion);
                     AppStatusQuote byId1 = await this._unitOfWork.AppStatusQuoteRepository.GetById(appGeneralQuotes.IdEstatus);
                     AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotes.Id, byId1, appGeneralQuotes.Cotizacion,appGeneralQuotes);
                     resultDto = await this.GetAppGeneralQuotes(new AppGeneralQuotesQueryFilter()

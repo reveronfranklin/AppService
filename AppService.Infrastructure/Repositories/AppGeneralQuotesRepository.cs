@@ -69,6 +69,15 @@ namespace AppService.Infrastructure.Repositories
         
         }
         
+          public async Task<bool> EnviarAlCliente(string cotizacion)
+        {
+           var mensaje="";
+            FormattableString xqueryDiario = $"exec sp_AppAppGeneralQuote_EnviarAlCliente {cotizacion},{mensaje}";
+
+            var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+
+            return true;
+        }
         
         public void UpdatSearchTextById(int id)
         {
@@ -696,11 +705,31 @@ namespace AppService.Infrastructure.Repositories
          
         }
 
-        public async Task<bool> AppDeleteSolcitudCreditoCotizacion
-            (string cotizacion )
+        public async Task<bool> RetornarAGrabacion(string cotizacion )
         {
           
+            try
+            {
+                FormattableString xqueryDiarioPasePlanta = $"exec sp_AppGeneralQuotes_Retornar_A_Grabacion {cotizacion}";
+                var resultPasePlanta = _context.Database.ExecuteSqlInterpolated(xqueryDiarioPasePlanta);
+         
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                    var a = e.Message;
+                return false;
+            }
 
+        
+
+        
+          
+        }
+
+        public async Task<bool> AppDeleteSolcitudCreditoCotizacion(string cotizacion )
+        {
+          
             FormattableString xqueryDiarioPasePlanta = $"exec AppDeleteSolcitudCreditoCotizacion {cotizacion}";
             var resultPasePlanta = _context.Database.ExecuteSqlInterpolated(xqueryDiarioPasePlanta);
          
@@ -709,6 +738,7 @@ namespace AppService.Infrastructure.Repositories
         
             return true;
         }
+
         public async Task<int> VerificarStatus(int idGeneralQuote)
         {
 

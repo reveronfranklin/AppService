@@ -64,12 +64,12 @@ namespace AppService.Infrastructure.Repositories
             return flag;
         }
             
-        public async Task<bool> UpdateListaCotizacion(string cotizacion,decimal monto,decimal flete)
+        public async Task<bool> UpdateListaCotizacion(string cotizacion,decimal monto,decimal flete,string producto)
         {
             bool flag = false;
             string montoString = monto.ToString(CultureInfo.InvariantCulture);
             string fleteString = flete.ToString(CultureInfo.InvariantCulture);
-            FormattableString xqueryDiario = $"exec AppUpdateListaCotizacion {cotizacion},{montoString},{fleteString}";
+            FormattableString xqueryDiario = $"exec AppUpdateListaCotizacion {cotizacion},{producto},{montoString},{fleteString}";
 
             var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
 

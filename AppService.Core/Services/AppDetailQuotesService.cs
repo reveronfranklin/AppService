@@ -2429,7 +2429,7 @@ namespace AppService.Core.Services
                                 result.ValorVentaAprobar = wsmy639Response.ValorVentaAprobar;
                                 result.ValorVentaAprobarUsd = wsmy639Response.ValorVentaAprobarUsd;
                                 await _unitOfWork.PropuestaRepository.UpdateListaCotizacion(
-                                    cotizacionProducto.Cotizacion, (decimal)wsmy639Response.ValorVentaAprobarUsd, flete);
+                                    cotizacionProducto.Cotizacion, (decimal)wsmy639Response.ValorVentaAprobarUsd, flete,cotizacionProducto.CodProducto);
                             }
                         }
                         

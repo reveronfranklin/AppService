@@ -94,12 +94,12 @@ namespace AppService.Core.Services
 
             ApiResponse<ListaRepeticiones> response = new ApiResponse<ListaRepeticiones>(resultDto);
 
-            var listRepeticiones=await GetRedis($"ListRepeticiones{filter.IdCliente}");
+            /*var listRepeticiones=await GetRedis($"ListRepeticiones{filter.IdCliente}");
             if (listRepeticiones != null)
             {
                 response = System.Text.Json.JsonSerializer.Deserialize<ApiResponse<ListaRepeticiones>> (listRepeticiones);
                 return response;
-            }
+            }*/
            
             
             

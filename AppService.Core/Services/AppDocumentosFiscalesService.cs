@@ -630,18 +630,25 @@ namespace AppService.Core.Services
             return result;
         }
 
-        public bool IsValidPdf(string fileName)
+      public bool IsValidPdf(string fileName)
+     {
+        try
         {
-            try
+            // El bloque using asegura que el Reader se cierre al terminar
+            using (var reader = new PdfReader(fileName))
             {
-                new PdfReader(fileName);
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
+                using (var pdfDoc = new PdfDocument(reader))
+                {
+                    return true;
+                }
             }
         }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
 
 
 

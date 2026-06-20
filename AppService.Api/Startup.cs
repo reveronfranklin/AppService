@@ -43,7 +43,9 @@ using AppService.Core.Interfaces.Comisiones;
 using AppService.Core.Interfaces.Cotizaciones;
 using AppService.Core.Interfaces.PowerBi;
 using AppService.Core.Interfaces.Ventas;
+using AppService.Core.Features.Especificaciones.GetAllFilter;
 using AppService.Core.Services.PowerBi;
+using AppService.Infrastructure.Features.Especificaciones.GetAllFilter;
 using AppService.Infrastructure.DataPowerBI;
 using StackExchange.Redis;
 
@@ -248,6 +250,8 @@ namespace AppService.Api
 
             services.AddTransient<IMunicipioServices, MunicipioServices>();
 
+            services.AddTransient<IGetAllFilterReadRepository, GetAllFilterReadRepository>();
+            services.AddTransient<GetAllFilterHandler>();
             services.AddTransient<IAppEspecificacionesServices, AppEspecificacionesServices>();
             services.AddTransient<IPeriodosService, PeriodosService>();
             services.AddTransient<IAppCalculadoraService, AppCalculadoraService>();

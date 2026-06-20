@@ -21,7 +21,7 @@ Scaffold-DbContext "Server=.;Database=Clientes;User Id=userweb;Password=userweb2
 Scaffold-DbContext "Server=172.28.107.19\\FSVEMCYN03D;Database=Facturacion;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true" Microsoft.EntityFrameworkCore.SqlServer -OutputDir DataFacturacion
 Scaffold-DbContext "Server=.;Database=Facturacion;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true" Microsoft.EntityFrameworkCore.SqlServer -OutputDir DataFacturacion
 
-
+UserApp2026*
 
 dotnet ef dbcontext scaffold "Server=172.28.107.19\\FSVEMCYN03D;Database=Mooreve;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true" Microsoft.EntityFrameworkCore.SqlServer -OutputDir DataTmp
 

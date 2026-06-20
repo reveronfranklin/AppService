@@ -16,6 +16,9 @@ using System.Threading.Tasks;
 
 namespace AppService.Core.Services
 {
+
+   
+
     public class MtrClienteService : IMtrClienteService
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -42,7 +45,7 @@ namespace AppService.Core.Services
 
 
 
-            return clientes;
+            return clientes.Items;
 
         }
 
@@ -433,17 +436,20 @@ namespace AppService.Core.Services
 
             return result;
         }
-        public async Task<List<MtrClienteDireccionDto>> ListDireccionesPorUsuario(MtrClienteQueryFilter filter)
+        public async Task<PagedResult<MtrClienteDireccionDto>>  ListDireccionesPorUsuario(MtrClienteQueryFilter filter)
         {
 
-            List<MtrClienteDireccionDto> result = new List<MtrClienteDireccionDto>();
+
+            var pagedResult = new PagedResult<MtrClienteDireccionDto>();
+            var result = new List<MtrClienteDireccionDto>();
+
             filter.PageNumber = filter.PageNumber == 0 ? _paginationOptions.DefaultPageNumber : filter.PageNumber;
             filter.PageSize = filter.PageSize == 0 ? _paginationOptions.DefaultPageSize : filter.PageSize;
 
             var clientes = await _unitOfWork.MtrClienteRepository.ListClientesPorUsuario(filter);
-            if (clientes.Count() > 0)
+            if (clientes.Items.Count() > 0)
             {
-                foreach (var item in clientes)
+                foreach (var item in clientes.Items)
                 {
                    
                     
@@ -471,26 +477,43 @@ namespace AppService.Core.Services
                     }
 
                     
-                    var status = "";
-                    if (item.FlagAtendido == null)
+                    var status = "ACTIVO";
+                    var editable = true;
+                  
+                    /*if (item.FlagAtendido == null)
                     {
                         item.FlagAtendido = "";
                     }
                     if (item.FlagAtendido == "X")
                     {
                         status = "ACTIVO";
+                        editable = true;
                     }
                     else
                     {
                         status = "INACTIVO";
+                        editable= false;
                         
-                    }
+                    }*/
                    
 
 
                     MtrDirecciones direccionClienteObj = await _unitOfWork.MtrDireccionesRepository.GetById((decimal)item.IdDireccion);
                   
-                    
+                    var nombreVendedor="";
+                    var nombreOficina = "";
+                    var vendedor =  _unitOfWork.MtrVendedorRepository.GetById(item.Vendedor1);
+                    if (vendedor != null)
+                    {
+                        nombreVendedor = vendedor.Nombre;
+                         var oficina= await _unitOfWork.MtrOficinaRepository.GetById(vendedor.Oficina);
+                        if (oficina != null)
+                        {
+                            nombreOficina = oficina.NomOficina;
+                        }
+                    }
+                 
+                   
                     var direcciones = await GetDireccionestDtoByCodigo(item.Codigo);
                     if (direcciones.Count() > 0)
                     {
@@ -512,10 +535,12 @@ namespace AppService.Core.Services
                                 resultItem.DireccionObj = direccionObjDto;
 
                             }
-                            
+                            resultItem.NombreVendedor = nombreVendedor;
+                            resultItem.NombreOficina = nombreOficina;
                             resultItem.Codigo = item.Codigo.Trim();
                             resultItem.NombreCliente = item.Nombre.Trim();
                             resultItem.Status = status;
+                            resultItem.Editable = editable;
                             if (itemDireccion.Estado == null) itemDireccion.Estado = "";
                             if (itemDireccion.Municipio == null) itemDireccion.Municipio = "";
                             resultItem.Estado = itemDireccion.Estado.Trim();
@@ -598,8 +623,9 @@ namespace AppService.Core.Services
                                 resultItem.DescripcionMunicipio =municipio.CapitalMcpo + " " + municipio.DescMunicipio;
                                 resultItem.DescripcionEstado = municipio.NombreEstado.Trim();
                             }
-                          
+
                             resultItem.SectorObj = sectorObj;
+                            
                             result.Add(resultItem);
                         }
                       
@@ -611,10 +637,13 @@ namespace AppService.Core.Services
                         resultItem.Codigo = item.Codigo;
                         resultItem.NombreCliente = item.Nombre;
                         resultItem.Status = status;
+                        resultItem.Editable = editable;
                         resultItem.Estado = item.Estado;
                         resultItem.Municipio = item.Municipio;
                         resultItem.NombreEstado = "";
                         resultItem.NombreMunicipio = "";
+                        resultItem.NombreVendedor = nombreVendedor;
+                        resultItem.NombreOficina = nombreOficina;
                         var direccionCliente = direcciones.Where(x => x.Id == item.IdDireccion).FirstOrDefault();
                         if (direccionCliente != null)
                         {
@@ -653,8 +682,14 @@ namespace AppService.Core.Services
                 }
             }
 
-
-            return result;
+           // Asignar resultados al objeto paginado
+            
+            pagedResult.Items = result;
+            pagedResult.TotalCount = clientes.TotalCount; // Mantener el total original
+            pagedResult.PageNumber = filter.PageNumber;
+            pagedResult.PageSize = filter.PageSize;
+            
+            return pagedResult;
 
         }
         

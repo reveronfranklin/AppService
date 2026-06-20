@@ -11,13 +11,16 @@ namespace AppService.Core.Interfaces
     public interface IMtrClienteService
     {
         Task<IEnumerable<MtrCliente>> ListClientesPorUsuario(MtrClienteQueryFilter filter);
+
+        Task<PagedResult<MtrClienteDireccionDto>>  ListDireccionesPorUsuario(MtrClienteQueryFilter filter);
+        //Task<List<MtrClienteDireccionDto>> ListDireccionesPorUsuario(MtrClienteQueryFilter filter);
         MtrCliente GetById(string id);
         Task<MtrCliente> GetByIdAsync(string id);
         Task<List<MtrDireccionesDto>> GetDireccionestDtoByCodigo(string codigo);
         Task<MtrDireccionesDto> GetDireccionestDtoById(decimal id);
         Task<ApiResponse<OdooClienteTipoSectorRamo>> UpdateTipoSectorRamoPorCliente(OdooClienteTipoSectorRamo dto);
         Task OdooActualizarClientes();
-        Task<List<MtrClienteDireccionDto>> ListDireccionesPorUsuario(MtrClienteQueryFilter filter);
+    
         Task<List<MtrSectorDto>> ListSectores();
         Task<ApiResponse<bool>> UpdateDireccionCliente(MtrClienteDireccionUpdateDto dto);
         Task<ApiResponse<bool>> CreateDireccionCliente(MtrClienteDireccionUpdateDto dto);

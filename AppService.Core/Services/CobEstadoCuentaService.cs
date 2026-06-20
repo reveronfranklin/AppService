@@ -199,7 +199,10 @@ namespace AppService.Core.Services
             foreach (var item in resultSapEstadoCuenta.d.results)
             {
                 EstadoCuentaSap itemEstadoCuentaSap = new EstadoCuentaSap();
-
+                if (item.DocumentoSAP == "2200754151")
+                {
+                    var a = 1;
+                }
                 itemEstadoCuentaSap.DocumentoSAP = item.DocumentoSAP;
                 itemEstadoCuentaSap.DocumentoExterno = item.DocumentoExterno;
                 itemEstadoCuentaSap.ClaseDoc = item.ClaseDoc;

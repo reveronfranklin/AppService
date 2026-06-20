@@ -2,6 +2,7 @@
 using AppService.Core.DTOs.Especificaciones;
 using AppService.Core.Entities;
 using AppService.Core.EntitiesMooreve;
+using AppService.Core.Features.Especificaciones.GetAllFilter;
 using AppService.Core.Interfaces;
 using AppService.Core.Responses;
 using AutoMapper;
@@ -20,20 +21,27 @@ namespace AppService.Core.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly PaginationOptions _paginationOptions;
         private readonly IMapper _mapper;
+        private readonly GetAllFilterHandler _getAllFilterHandler;
 
 
         public AppEspecificacionesServices(IUnitOfWork unitOfWork,
                                      IOptions<PaginationOptions> options,
-                                     IMapper mapper)
+                                     IMapper mapper,
+                                     GetAllFilterHandler getAllFilterHandler)
         {
             _unitOfWork = unitOfWork;
             _paginationOptions = options.Value;
             _mapper = mapper;
+            _getAllFilterHandler = getAllFilterHandler;
 
         }
 
         public async Task<ApiResponse<EspecificacionesGetDto>> GetAllFilter(PartesFilter filter)
         {
+            if (_getAllFilterHandler != null)
+            {
+                return await _getAllFilterHandler.Handle(new GetAllFilterQuery(filter));
+            }
 
 
             EspecificacionesGetDto resultDto = new EspecificacionesGetDto();
@@ -354,6 +362,7 @@ namespace AppService.Core.Services
                 metadata.IsValid = false;
                 //metadata.Message = ex.InnerException.Message;
                 response.Data = null;
+                metadata.Message = ex.Message;
                 response.Meta = metadata;
                 return response;
             }
@@ -432,6 +441,15 @@ namespace AppService.Core.Services
                 foreach (var item in dto.partesGetDto)
                 {
 
+                    if (item.TintasFrenteNew.IsNullOrEmpty() && !item.TintasFrente.IsNullOrEmpty())
+                    {
+                        item.TintasFrenteNew=item.TintasFrente;
+                    }
+                       if (item.TintasRespaldoNew.IsNullOrEmpty() && !item.TintasRespaldo.IsNullOrEmpty())
+                    {
+                        item.TintasRespaldoNew=item.TintasRespaldo;
+                    }
+
 
                     //*********ACTUALIZAMOS LAS CARACTERISTICAS POR PARTE***********
                     foreach (var itemVariables in item.AppVariablesEspecificacionesPartesGetDto)
@@ -467,7 +485,10 @@ namespace AppService.Core.Services
                     var parte = await _unitOfWork.Wpry240Repository.GetByCotizacionRenglonPropuestaParte(item.Cotizacion, item.Renglon, item.Propuesta, item.IdParte);
                     if (parte != null)
                     {
-
+                        if (item.IdPapelNew.IsNullOrEmpty() )
+                        {
+                           item.IdPapelNew= parte.IdPapel ;
+                        }
                         parte.IdPapel = item.IdPapelNew;
                         parte.FrasesMarginales = item.FrasesMarginales;
                         _unitOfWork.Wpry240Repository.Update(parte);

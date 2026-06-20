@@ -1895,9 +1895,9 @@ namespace AppService.Core.Services
                     entity.CotizacionOriginal = cotizacion;
                     entity.CotizacionGeneral = cotizacion;
                     AppService.Core.DataContratosStock.DatosCliente datosCliente3 = entity;
-                    nullable1 = Wsmy501.Condicion;
-                    Decimal? nullable3 = nullable1.HasValue ? new Decimal?((Decimal)nullable1.GetValueOrDefault()) : new Decimal?();
-                    datosCliente3.DescTipoPago = nullable3;
+                 
+                    entity.DescTipoPago = Wsmy501.Condicion;
+                    
                     entity.Estado = "V";
                     entity.ObservCliente = Wsmy501.Observaciones;
                     entity.Email = Wsmy501.EmailCliente.Trim();
@@ -1920,6 +1920,7 @@ namespace AppService.Core.Services
                     datosCliente.EstadoEntregar = Wsmy501.EstadoEntregar;
                     datosCliente.MunicipioEntregar = Wsmy501.MunicipioEntregar;
                     datosCliente.MunicipioFacturar = Wsmy501.MunicipioFacturar;
+                    datosCliente.DescTipoPago = Wsmy501.Condicion;
                     if (Wsmy501.CodCliente == "000000")
                     {
                         datosCliente.ClienteNuevo = "X";

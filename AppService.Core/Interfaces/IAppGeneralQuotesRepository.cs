@@ -10,6 +10,8 @@ namespace AppService.Core.Interfaces
         Task<List<AppGeneralQuotes>> GetListCotizacionesUltimoMes();
         Task<List<AppGeneralQuotes>> GetAll(AppGeneralQuotesQueryFilter filter);
 
+        Task<bool> RetornarAGrabacion(string cotizacion );
+
         Task<AppGeneralQuotes> GetById(int id);
 
         Task<bool> AppDeleteSolcitudCreditoCotizacion
@@ -33,6 +35,7 @@ namespace AppService.Core.Interfaces
         Task<List<AppGeneralQuotes>> GetByCotizacionesPendientesIntegrar();
 
         Task<List<string>> GetListCotizaciones();
+        Task<bool> EnviarAlCliente(string cotizacion);
 
     }
 }
