@@ -25,6 +25,16 @@ namespace AppService.Core.Services
 {
     public class AppDetailQuotesService : IAppDetailQuotesService
     {
+        private static decimal TruncateCommercialLimit(decimal value)
+        {
+            return decimal.Truncate(value * 100m) / 100m;
+        }
+
+        private static decimal RoundFreight(decimal value)
+        {
+            return decimal.Round(value, 2, MidpointRounding.AwayFromZero);
+        }
+
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IAppProductsService _appProductsService;
@@ -157,7 +167,7 @@ namespace AppService.Core.Services
                     if (item.PorcFlete == 0)
                     {
                         item.PorcFlete= flete;
-                        item.Flete = (item.UnitPriceBaseProduction * flete) / 100;
+                        item.Flete = RoundFreight((item.UnitPriceBaseProduction * flete) / 100);
                     }
 
                     if (item.UnitPriceConverted == 0)
@@ -245,9 +255,8 @@ namespace AppService.Core.Services
                     {
                         var porcFlete = await GetFlete((decimal)general.IdMunicipio, item.IdProducto);
                         
-                        var flete = (item.UnitPriceBaseProduction * porcFlete)/100;
-                   
-                        flete = (decimal?)(Math.Truncate((double)(flete * 100)) / 100);
+                        var flete = RoundFreight(
+                            ((item.UnitPriceBaseProduction ?? 0m) * porcFlete) / 100);
                         
                         _unitOfWork.AppDetailQuotesRepository.UpdateFlete(item.Id,porcFlete,(decimal)flete);
                     }
@@ -658,7 +667,8 @@ namespace AppService.Core.Services
 
                 var porcFlete = await GetFlete((decimal)appGeneralQuotesFind.IdMunicipio, appDetailQuotes.IdProducto);
                 appDetailQuotes.PorcFlete = porcFlete;
-                appDetailQuotes.Flete = ((decimal)appDetailQuotes.UnitPriceBaseProduction * porcFlete) / 100;
+                appDetailQuotes.Flete = RoundFreight(
+                    ((decimal)appDetailQuotes.UnitPriceBaseProduction * porcFlete) / 100);
                 
                 appDetailQuotesInserted = await this.Insert(appDetailQuotes);
                 await this._unitOfWork.SaveChangesAsync();
@@ -770,7 +780,7 @@ namespace AppService.Core.Services
                     var preciousd = precio;
                     var aprobado = aprobacionObj.ValorVentaAprobarUsd;
                   
-                    if (preciousd <aprobado)
+                    if (preciousd < TruncateCommercialLimit(aprobado ?? 0m))
                     {
                         await RegresarAGrabacionCotizacion(appDetailQuotes.AppGeneralQuotesId);
                         metadata.IsValid = false;
@@ -785,8 +795,8 @@ namespace AppService.Core.Services
                     
                     var preciousd = precio;
                     decimal unitPriceBaseProduction = lista;
-                    var flete = (unitPriceBaseProduction* porcflete) / 100;
-                    decimal precioLista = Math.Round(unitPriceBaseProduction+flete, 2);
+                    var flete = RoundFreight((unitPriceBaseProduction * porcflete) / 100);
+                    decimal precioLista = TruncateCommercialLimit(unitPriceBaseProduction + flete);
                     if (precioLista>preciousd) 
                     {
                         
@@ -1143,8 +1153,8 @@ namespace AppService.Core.Services
 
                 var porcFlete = await GetFlete((decimal)generalQuotes.IdMunicipio, appDetailQuotes.IdProducto);
                 appDetailQuotes.PorcFlete = porcFlete;
-                appDetailQuotes.Flete = ((decimal)appDetailQuotes.UnitPriceBaseProduction * porcFlete) / 100;
-                appDetailQuotes.Flete  = (decimal?)(Math.Truncate((double)( appDetailQuotes.Flete * 100)) / 100);
+                appDetailQuotes.Flete = RoundFreight(
+                    ((decimal)appDetailQuotes.UnitPriceBaseProduction * porcFlete) / 100);
                 
                 if (appDetailQuotes.IdCondPago == 0)
                 {
@@ -1765,7 +1775,7 @@ namespace AppService.Core.Services
             catch (Exception ex)
             {
                 metadata.IsValid = false;
-                metadata.Message = ex.InnerException.Message;
+                metadata.Message = ex.InnerException?.Message ?? ex.Message;
                 response.Meta = metadata;
                 response.Data = resultDto;
                 return response;
@@ -1782,7 +1792,7 @@ namespace AppService.Core.Services
             }
             catch (Exception ex)
             {
-                string message = ex.InnerException.Message;
+                string message = ex.InnerException?.Message ?? ex.Message;
                 return false;
             }
         }
@@ -1799,7 +1809,7 @@ namespace AppService.Core.Services
             }
             catch (Exception ex)
             {
-                string message = ex.InnerException.Message;
+                string message = ex.InnerException?.Message ?? ex.Message;
                 throw;
             }
         }
@@ -2093,6 +2103,21 @@ namespace AppService.Core.Services
                 Message = ""
             };
             ApiResponse<bool> response = new ApiResponse<bool>(data);
+            if (appGanarPerderDto.CondicionId == 1)
+            {
+                string canWinMessage = await this._unitOfWork.AppDetailQuotesRepository
+                    .ValidateCanWin(appGanarPerderDto.AppDetailQuotesId);
+
+                if (!string.IsNullOrEmpty(canWinMessage))
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = canWinMessage;
+                    response.Meta = metadata;
+                    response.Data = false;
+                    return response;
+                }
+            }
+
             AppStatusQuote statusGanada = await this._appStatusQuoteService.GetStatusGanada();
             AppStatusQuote statusPerdida = await this._appStatusQuoteService.GetStatusPerdida();
             AppDetailQuotes appDetailQuotesUpdated = await this.GetById(appGanarPerderDto.AppDetailQuotesId);
@@ -2184,10 +2209,8 @@ namespace AppService.Core.Services
                  
                  
                     decimal unitPriceBaseProduction = (decimal)appDetailQuotes.UnitPriceBaseProduction;
-                    var flete = (unitPriceBaseProduction* porcflete) / 100;
-                    
-                    flete = Math.Truncate(flete * 100) / 100;
-                    decimal precioLista = Math.Round(unitPriceBaseProduction+flete, 2);
+                    var flete = RoundFreight((unitPriceBaseProduction * porcflete) / 100);
+                    decimal precioLista = TruncateCommercialLimit(unitPriceBaseProduction + flete);
                     
 
                     if (precioLista>preciousd && aprobado==0)
@@ -2213,10 +2236,8 @@ namespace AppService.Core.Services
                     
                     var preciousd = appDetailQuotes.PrecioUsd;
                     decimal unitPriceBaseProduction = (decimal)appDetailQuotes.UnitPriceConverted;
-                    var flete = (unitPriceBaseProduction* porcflete) / 100;
-                    
-                    flete = Math.Truncate(flete * 100) / 100;
-                    decimal precioLista = Math.Round(unitPriceBaseProduction+flete, 2);
+                    var flete = RoundFreight((unitPriceBaseProduction * porcflete) / 100);
+                    decimal precioLista = TruncateCommercialLimit(unitPriceBaseProduction + flete);
                     if (precioLista>preciousd) 
                     {
                        // await RegresarAGrabacionCotizacion(appDetailQuotes.AppGeneralQuotesId);
@@ -2375,9 +2396,8 @@ namespace AppService.Core.Services
                         return result;
                     }
                     decimal unitPriceBaseProduction = (decimal)appDetailQuotes.UnitPriceBaseProduction;
-                    var flete = (unitPriceBaseProduction* porcflete) / 100;
-                    flete = Math.Truncate(100 * flete) / 100;
-                    decimal lista = Math.Round(unitPriceBaseProduction+flete, 2);
+                    var flete = RoundFreight((unitPriceBaseProduction * porcflete) / 100);
+                    decimal lista = TruncateCommercialLimit(unitPriceBaseProduction + flete);
                     if (lista > 0 && appDetailQuotes.PrecioUsd >=  lista)
                     {
                         result.Aprobado = true;
@@ -2397,6 +2417,21 @@ namespace AppService.Core.Services
                     }
                     if (wsmy639Response.IdEstatus == "APRO")
                     {
+                        decimal precioAprobadoUsd = (decimal)(wsmy639Response.ValorVentaAprobarUsd ?? 0);
+                        decimal precioActualUsd = appDetailQuotes.PrecioUsd;
+                        decimal precioAprobadoComercialUsd = TruncateCommercialLimit(precioAprobadoUsd);
+                        if (precioAprobadoUsd <= 0 || precioActualUsd < precioAprobadoComercialUsd)
+                        {
+                            result.Aprobado = false;
+                            result.Color = "danger";
+                            result.StatusString = precioAprobadoUsd <= 0
+                                ? "APROBACION SIN PRECIO APROBADO VALIDO"
+                                : $"PRECIO ACTUAL INFERIOR AL APROBADO. Precio actual: {precioActualUsd:N2}. Precio aprobado: {precioAprobadoComercialUsd:N2}";
+                            result.ValorVentaAprobar = wsmy639Response.ValorVentaAprobar;
+                            result.ValorVentaAprobarUsd = wsmy639Response.ValorVentaAprobarUsd;
+                            return result;
+                        }
+
                         result.Aprobado = true;
                         result.Color = "prymary";
                         result.StatusString = "APROBADO";
@@ -2459,9 +2494,8 @@ namespace AppService.Core.Services
 
                     appDetailQuotes.UnitPriceConverted ??= 0;
                     decimal unitPriceBaseProduction = (decimal)appDetailQuotes.UnitPriceConverted;
-                    var flete = (unitPriceBaseProduction* porcflete) / 100;
-                    flete = Math.Truncate(100 * flete) / 100;
-                    decimal lista = Math.Round(unitPriceBaseProduction+(decimal)flete, 2);
+                    var flete = RoundFreight((unitPriceBaseProduction * porcflete) / 100);
+                    decimal lista = TruncateCommercialLimit(unitPriceBaseProduction + (decimal)flete);
                     if (appDetailQuotes.PrecioUsd >=  lista)
                     {
                         result.Aprobado = true;
@@ -2500,8 +2534,9 @@ namespace AppService.Core.Services
             {
                 result.ValorVentaAprobar = 0;
                 result.ValorVentaAprobarUsd = 0;
-                var flete = (appDetailQuotes.UnitPriceBaseProduction * porcflete) / 100;
-                if (appDetailQuotes.PrecioUsd >=  appDetailQuotes.UnitPriceBaseProduction+flete)
+                decimal unitPriceBaseProduction = appDetailQuotes.UnitPriceBaseProduction ?? 0m;
+                decimal flete = RoundFreight((unitPriceBaseProduction * porcflete) / 100);
+                if (appDetailQuotes.PrecioUsd >= TruncateCommercialLimit(unitPriceBaseProduction + flete))
                 {
                     result.Aprobado = true;
                     result.Color = "prymary";

@@ -35,5 +35,6 @@ namespace AppService.Core.Interfaces
         Task<List<AppDetailQuotes>> GetBySubCategopry(int subCategory);
         Task UpdateFlete(int appDetailQuotesId, decimal porcFlete, decimal flete);
         Task<List<AppDetailQuotes>> GetByYearMonth(int year, int month);
+        Task<string> ValidateCanWin(int appDetailQuotesId);
     }
 }

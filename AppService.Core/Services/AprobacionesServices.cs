@@ -304,7 +304,30 @@ namespace AppService.Core.Services
 
                 var inserted = await _unitOfWork.AprobacionesRepository.CreaAprobacionAprobada(cotizacion, renglon, propuesta, usuarioConectado);
 
+                if (inserted == null)
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = "No se pudo crear la solicitud aprobada.";
+                    response.Data = null;
+                    response.Meta = metadata;
+                    return response;
+                }
 
+                inserted.FlagAprobado = true;
+                inserted.FlagEnviado = true;
+                inserted.FlagCerrado = true;
+                inserted.IdEstatus = "APRO";
+                inserted.ValorVentaAprobar =
+                    propuestaObject.PrecioUnitarioExterno.GetValueOrDefault() > 0
+                        ? propuestaObject.PrecioUnitarioExterno
+                        : propuestaObject.PrecioUnitario;
+                inserted.ValorVentaAprobarUsd =
+                    propuestaObject.PrecioUnitarioUsdExterno.GetValueOrDefault() > 0
+                        ? propuestaObject.PrecioUnitarioUsdExterno
+                        : propuestaObject.PrecioUnitarioUsd;
+
+                _unitOfWork.AprobacionesRepository.Update(inserted);
+                await _unitOfWork.SaveChangesAsync();
 
                 metadata.IsValid = true;
                 metadata.Message = "Solicitud Creada !!";

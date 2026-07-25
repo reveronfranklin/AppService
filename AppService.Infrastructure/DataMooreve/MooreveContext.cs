@@ -32065,9 +32065,15 @@ namespace AppService.Infrastructure.DataMooreve
                     .HasMaxLength(80)
                     .IsUnicode(false);
 
-                entity.Property(e => e.NumCliDesde).HasColumnName("NUM_CLI_DESDE");
+                entity.Property(e => e.NumCliDesde)
+                    .HasColumnName("NUM_CLI_DESDE")
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
 
-                entity.Property(e => e.NumCliHasta).HasColumnName("NUM_CLI_HASTA");
+                entity.Property(e => e.NumCliHasta)
+                    .HasColumnName("NUM_CLI_HASTA")
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.NumClieDEnt).HasColumnName("NUM_CLIE_D_ENT");
 
@@ -32081,13 +32087,19 @@ namespace AppService.Infrastructure.DataMooreve
 
                 entity.Property(e => e.NumContDFact).HasColumnName("NUM_CONT_D_FACT");
 
-                entity.Property(e => e.NumContDesde).HasColumnName("NUM_CONT_DESDE");
+                entity.Property(e => e.NumContDesde)
+                    .HasColumnName("NUM_CONT_DESDE")
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.NumContHEnt).HasColumnName("NUM_CONT_H_ENT");
 
                 entity.Property(e => e.NumContHFact).HasColumnName("NUM_CONT_H_FACT");
 
-                entity.Property(e => e.NumContHasta).HasColumnName("NUM_CONT_HASTA");
+                entity.Property(e => e.NumContHasta)
+                    .HasColumnName("NUM_CONT_HASTA")
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.NumJob).HasColumnName("NUM_JOB");
 

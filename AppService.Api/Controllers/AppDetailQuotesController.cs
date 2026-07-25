@@ -269,7 +269,7 @@ namespace AppService.Api.Controllers
             {
 
                 metadata.IsValid = false;
-                metadata.Message = e.InnerException.Message;
+                metadata.Message = e.InnerException?.Message ?? e.Message;
                 ApiResponse<AppGeneralQuotesGetDto> responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
                 {
                     Meta = metadata

@@ -65,6 +65,20 @@ namespace AppService.Infrastructure.Repositories
 
         }
 
+        public async Task<MtrCliente> GetByRifAndDifferentVendedorAsync(string rif, string vendedor)
+        {
+            var rifNormalizado = (rif ?? string.Empty).Trim().ToUpper();
+            var vendedorNormalizado = (vendedor ?? string.Empty).Trim().ToUpper();
+
+            return await _context.MtrCliente
+                .Where(x =>
+                    x.NoRegTribut != null &&
+                    x.NoRegTribut.Trim().ToUpper() == rifNormalizado &&
+                    x.Codigo.Trim() != "000000" &&
+                    (x.Vendedor1 ?? string.Empty).Trim().ToUpper() != vendedorNormalizado)
+                .FirstOrDefaultAsync();
+        }
+
         public MtrCliente GetById(string id)
         {
             try

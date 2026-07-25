@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Data;
+using System.Data.Common;
 
 namespace AppService.Infrastructure.Repositories
 {
@@ -24,6 +26,64 @@ namespace AppService.Infrastructure.Repositories
 
             return await _context.AppDetailQuotes.ToListAsync();
 
+        }
+
+        public async Task<string> ValidateCanWin(int appDetailQuotesId)
+        {
+            DbConnection connection = _context.Database.GetDbConnection();
+            bool closeConnection = connection.State != ConnectionState.Open;
+
+            try
+            {
+                if (closeConnection)
+                {
+                    await connection.OpenAsync();
+                }
+
+                using (DbCommand command = connection.CreateCommand())
+                {
+                    command.CommandText = "dbo.AppDetailQuotes_ValidateCanWin";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    DbParameter detailId = command.CreateParameter();
+                    detailId.ParameterName = "@AppDetailQuotesId";
+                    detailId.DbType = DbType.Int32;
+                    detailId.Value = appDetailQuotesId;
+                    command.Parameters.Add(detailId);
+
+                    DbParameter canWin = command.CreateParameter();
+                    canWin.ParameterName = "@CanWin";
+                    canWin.DbType = DbType.Boolean;
+                    canWin.Direction = ParameterDirection.Output;
+                    command.Parameters.Add(canWin);
+
+                    DbParameter blockReason = command.CreateParameter();
+                    blockReason.ParameterName = "@BlockReason";
+                    blockReason.DbType = DbType.String;
+                    blockReason.Size = 30;
+                    blockReason.Direction = ParameterDirection.Output;
+                    command.Parameters.Add(blockReason);
+
+                    DbParameter message = command.CreateParameter();
+                    message.ParameterName = "@Message";
+                    message.DbType = DbType.String;
+                    message.Size = 4000;
+                    message.Direction = ParameterDirection.Output;
+                    command.Parameters.Add(message);
+
+                    await command.ExecuteNonQueryAsync();
+
+                    bool isValid = canWin.Value != DBNull.Value && Convert.ToBoolean(canWin.Value);
+                    return isValid ? string.Empty : Convert.ToString(message.Value);
+                }
+            }
+            finally
+            {
+                if (closeConnection)
+                {
+                    connection.Close();
+                }
+            }
         }
         
         public async Task<List<AppDetailQuotes>> GetByYearMonth(int year, int month)

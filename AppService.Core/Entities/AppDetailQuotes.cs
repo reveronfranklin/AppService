@@ -117,6 +117,7 @@ namespace AppService.Core.Entities
         public short IdCondPago { get; set; }
         public decimal? PorcFlete { get; set; }
         public decimal? Flete { get; set; }
+        public decimal? PorcMaximoSobrePrecio { get; set; }
 
         public virtual ICollection<AppService.Core.Entities.AppDetailQuotesConversionUnit> AppDetailQuotesConversionUnit { get; set; }
     }

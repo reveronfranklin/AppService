@@ -1897,6 +1897,7 @@ namespace AppService.Core.Services
                     AppService.Core.DataContratosStock.DatosCliente datosCliente3 = entity;
                  
                     entity.DescTipoPago = Wsmy501.Condicion;
+                    entity.OrdCompra = Wsmy501.OrdenCompra;
                     
                     entity.Estado = "V";
                     entity.ObservCliente = Wsmy501.Observaciones;
@@ -1921,6 +1922,7 @@ namespace AppService.Core.Services
                     datosCliente.MunicipioEntregar = Wsmy501.MunicipioEntregar;
                     datosCliente.MunicipioFacturar = Wsmy501.MunicipioFacturar;
                     datosCliente.DescTipoPago = Wsmy501.Condicion;
+                    datosCliente.OrdCompra = Wsmy501.OrdenCompra;
                     if (Wsmy501.CodCliente == "000000")
                     {
                         datosCliente.ClienteNuevo = "X";

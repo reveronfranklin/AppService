@@ -58,6 +58,7 @@ namespace AppService.Core.DTOs
         public int CalculoId { get; set; }
         public decimal PorcFlete { get; set; }
         public decimal Flete { get; set; }
+        public decimal PorcMaximoSobrePrecio { get; set; }
         
 
 

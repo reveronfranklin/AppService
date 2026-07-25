@@ -18,10 +18,10 @@ namespace AppService.Core.EntitiesMooreve
         public string PrefContHasta { get; set; }
         public string PrefCliDesde { get; set; }
         public string PrefCliHasta { get; set; }
-        public int NumContDesde { get; set; }
-        public int NumContHasta { get; set; }
-        public int NumCliDesde { get; set; }
-        public int NumCliHasta { get; set; }
+        public string NumContDesde { get; set; }
+        public string NumContHasta { get; set; }
+        public string NumCliDesde { get; set; }
+        public string NumCliHasta { get; set; }
         public string NombFacturar { get; set; }
         public string DireccFacturar { get; set; }
         public string NombEntregar { get; set; }

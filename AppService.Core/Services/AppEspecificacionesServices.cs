@@ -387,6 +387,63 @@ namespace AppService.Core.Services
             ApiResponse<EspecificacionesGetDto> response = new ApiResponse<EspecificacionesGetDto>(resultDto);
             try
             {
+                if (dto.PartesFilter.Propuesta != 1)
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = "La propuesta del producto debe ser igual a 1";
+                    response.Data = null;
+                    response.Meta = metadata;
+                    return response;
+                }
+
+                // Validar todas las partes antes de realizar escrituras. La familia permitida
+                // permanece en WPRY240.TipoPapel/Gramaje; el usuario solo puede variar IdPapel.
+                foreach (var item in dto.partesGetDto)
+                {
+                    if (!string.Equals(item.Cotizacion?.Trim(), dto.PartesFilter.Cotizacion?.Trim(), StringComparison.OrdinalIgnoreCase)
+                        || item.Renglon != dto.PartesFilter.Renglon
+                        || item.Propuesta != dto.PartesFilter.Propuesta)
+                    {
+                        metadata.IsValid = false;
+                        metadata.Message = "La parte no pertenece al renglón y propuesta seleccionados";
+                        response.Data = null;
+                        response.Meta = metadata;
+                        return response;
+                    }
+
+                    var partePersistida = await _unitOfWork.Wpry240Repository
+                        .GetByCotizacionRenglonPropuestaParte(
+                            dto.PartesFilter.Cotizacion,
+                            dto.PartesFilter.Renglon,
+                            dto.PartesFilter.Propuesta,
+                            item.IdParte);
+
+                    if (partePersistida == null)
+                    {
+                        metadata.IsValid = false;
+                        metadata.Message = "No existe la parte " + item.IdParte.ToString() + " para el producto seleccionado";
+                        response.Data = null;
+                        response.Meta = metadata;
+                        return response;
+                    }
+
+                    var codigoPapel = item.IdPapelNew.IsNullOrEmpty()
+                        ? partePersistida.IdPapel
+                        : item.IdPapelNew.Trim();
+                    var papelSeleccionado = await _unitOfWork.Wimy001Repository.GettByCode(codigoPapel);
+
+                    if (papelSeleccionado == null
+                        || !string.Equals(papelSeleccionado.TipoPapel?.Trim(), partePersistida.TipoPapel?.Trim(), StringComparison.OrdinalIgnoreCase)
+                        || !string.Equals(papelSeleccionado.Gramaje?.Trim(), partePersistida.Gramaje?.Trim(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        metadata.IsValid = false;
+                        metadata.Message = "El papel " + codigoPapel + " no tiene el mismo tipo y gramaje permitido para la parte " + item.IdParte.ToString();
+                        response.Data = null;
+                        response.Meta = metadata;
+                        return response;
+                    }
+                }
+
                 var wpry229 = await _unitOfWork.Wpry229Repository.GetByCotizacionRenglonPropuesta(dto.PartesFilter.Cotizacion, dto.PartesFilter.Renglon, dto.PartesFilter.Propuesta);
                 if (wpry229 != null)
                 {

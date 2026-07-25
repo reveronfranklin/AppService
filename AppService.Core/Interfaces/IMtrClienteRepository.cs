@@ -14,6 +14,7 @@ namespace AppService.Core.Interfaces
 
         MtrCliente GetById(string id);
         Task<MtrCliente> GetByIdAsync(string id);
+        Task<MtrCliente> GetByRifAndDifferentVendedorAsync(string rif, string vendedor);
         Task<List<MtrCliente>> GetAllActive(string region);
 
         Task AddMtrClienteEnvioOdooLog(MtrClienteEnvioOdooLog entity);

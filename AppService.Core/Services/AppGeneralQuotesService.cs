@@ -975,6 +975,32 @@ namespace AppService.Core.Services
 
         }
 
+        private async Task<string> ValidateProspectoVendedorAsync(string idCliente, string usuarioActualiza, string rif)
+        {
+            var cliente = (idCliente ?? string.Empty).Trim();
+            var usuario = (usuarioActualiza ?? string.Empty).Trim().ToUpper();
+            var rifNormalizado = (rif ?? string.Empty).Trim();
+
+            if (cliente != "000000" || string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(rifNormalizado))
+            {
+                return string.Empty;
+            }
+
+            var vendedor = _unitOfWork.MtrVendedorRepository.GetById(usuario);
+            if (vendedor == null)
+            {
+                return string.Empty;
+            }
+
+            var clienteConflictivo = await _unitOfWork.MtrClienteRepository.GetByRifAndDifferentVendedorAsync(rifNormalizado, usuario);
+            if (clienteConflictivo == null)
+            {
+                return string.Empty;
+            }
+
+            return "Error: El RIF ya existe como cliente asignado a otro vendedor.";
+        }
+
         public async Task<ApiResponse<AppGeneralQuotesGetDto>> InsertGeneralQuotes(
          AppGeneralQuotesCreateDto appGeneralQuotesCreateDto)
         {
@@ -987,6 +1013,20 @@ namespace AppService.Core.Services
             ApiResponse<AppGeneralQuotesGetDto> response = new ApiResponse<AppGeneralQuotesGetDto>(resultDto);
             try
             {
+                var prospectoVendedorMessage = await ValidateProspectoVendedorAsync(
+                    appGeneralQuotesCreateDto.IdCliente,
+                    appGeneralQuotesCreateDto.UsuarioActualiza,
+                    appGeneralQuotesCreateDto.Rif);
+
+                if (!string.IsNullOrEmpty(prospectoVendedorMessage))
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = prospectoVendedorMessage;
+                    response.Meta = metadata;
+                    response.Data = resultDto;
+                    return response;
+                }
+
                 MtrCliente cliente = await this._mtrClienteService.GetByIdAsync(appGeneralQuotesCreateDto.IdCliente);
                 if (cliente == null)
                 {
@@ -1444,6 +1484,20 @@ namespace AppService.Core.Services
             try
             {
                 bool recalcularPrecio = false;
+
+                var prospectoVendedorMessage = await ValidateProspectoVendedorAsync(
+                    appGeneralQuotesUpdateDto.IdCliente,
+                    appGeneralQuotesUpdateDto.UsuarioActualiza,
+                    appGeneralQuotesUpdateDto.Rif);
+
+                if (!string.IsNullOrEmpty(prospectoVendedorMessage))
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = prospectoVendedorMessage;
+                    response.Meta = metadata;
+                    response.Data = resultDto;
+                    return response;
+                }
                
                 AppGeneralQuotes appGeneralQuotes = await this.GetByIdForUpdate(appGeneralQuotesUpdateDto.Id);
                 if (appGeneralQuotes == null)
@@ -1785,7 +1839,24 @@ namespace AppService.Core.Services
                 ApiResponse <List<AppDetailQuotesGetDto>> appGeneralQuotesId = await this._appDetailQuotesService.GetListAppDetailQuoteByAppGeneralQuotesId(dto.Id);
                 if (appGeneralQuotesId.Data.Count > 0)
                 {
-                   
+                    var statusActual = await this._unitOfWork.AppStatusQuoteRepository
+                        .GetById(appGeneralQuotes.IdEstatus);
+                    var availability = await this.GetAppGeneralQuotesActionSheetDto(
+                        appGeneralQuotes.Id,
+                        statusActual,
+                        appGeneralQuotes.Cotizacion,
+                        appGeneralQuotes);
+
+                    if (!availability.EnviarAlCliente)
+                    {
+                        metadata.IsValid = false;
+                        metadata.Message =
+                            "La cotizacion no puede enviarse al cliente porque tiene una aprobacion de precio pendiente, rechazada o no vigente.";
+                        response.Meta = metadata;
+                        response.Data = resultDto;
+                        return response;
+                    }
+
                     await _unitOfWork.AppGeneralQuotesRepository.EnviarAlCliente(appGeneralQuotes.Cotizacion);
                     AppStatusQuote byId1 = await this._unitOfWork.AppStatusQuoteRepository.GetById(appGeneralQuotes.IdEstatus);
                     AppGeneralQuotesActionSheetDto quotesActionSheetDto = await this.GetAppGeneralQuotesActionSheetDto(appGeneralQuotes.Id, byId1, appGeneralQuotes.Cotizacion,appGeneralQuotes);
@@ -1812,7 +1883,7 @@ namespace AppService.Core.Services
             catch (Exception ex)
             {
                 metadata.IsValid = false;
-                metadata.Message = ex.InnerException.Message;
+                metadata.Message = ex.InnerException?.Message ?? ex.Message;
                 response.Meta = metadata;
                 response.Data = resultDto;
                 return response;
