@@ -4,6 +4,7 @@ using AppService.Core.Interfaces;
 using AppService.Core.QueryFilters;
 using Microsoft.Extensions.Options;
 using System.Collections.Generic;
+using System;
 using System.Threading.Tasks;
 
 namespace AppService.Core.Services
@@ -48,7 +49,12 @@ namespace AppService.Core.Services
         }
         public async Task<CobAdjuntosCobranza> Insert(CobAdjuntosCobranza cobAdjuntosCobranza)
         {
-
+            var recibo = await _unitOfWork.GeneralCobranzaRepository.GetGeneralCobranzaDocumento(cobAdjuntosCobranza.Documento);
+            var esPdfConsultado = (cobAdjuntosCobranza.NombreArchivo ?? "").EndsWith("_Consultado.pdf", StringComparison.OrdinalIgnoreCase);
+            if (recibo?.FlagAprobado == true && !esPdfConsultado)
+            {
+                throw new Exception("El recibo está aprobado y no puede modificarse.");
+            }
 
             await _unitOfWork.CobAdjuntosCobranzaRepository.Add(cobAdjuntosCobranza);
             await _unitOfWork.SaveChangesAsync();
@@ -73,7 +79,11 @@ namespace AppService.Core.Services
 
         public async Task DeleteByNameFile(long recibo, string nombreArchivo)
         {
-
+            var cobranza = await _unitOfWork.GeneralCobranzaRepository.GetGeneralCobranzaDocumento(recibo);
+            if (cobranza?.FlagAprobado == true)
+            {
+                throw new Exception("El recibo está aprobado y no puede modificarse.");
+            }
             await _unitOfWork.CobAdjuntosCobranzaRepository.DeleteByNameFile(recibo, nombreArchivo);
 
         }

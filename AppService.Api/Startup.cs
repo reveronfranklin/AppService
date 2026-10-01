@@ -47,7 +47,7 @@ using AppService.Core.Features.Especificaciones.GetAllFilter;
 using AppService.Core.Services.PowerBi;
 using AppService.Infrastructure.Features.Especificaciones.GetAllFilter;
 using AppService.Infrastructure.DataPowerBI;
-using StackExchange.Redis;
+using AppService.Infrastructure.Caching;
 
 namespace AppService.Api
 {
@@ -176,8 +176,7 @@ namespace AppService.Api
                     b => b.UseOracleSQLCompatibility("11")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
             );
 
-            services.AddSingleton<IConnectionMultiplexer>(_ =>
-                ConnectionMultiplexer.Connect(Configuration.GetConnectionString("redisConnection")));
+            services.AddAppCache(Configuration);
 
 
             services.AddTransient<IPowerBiOrdenesService, PowerBiOrdenesService>();

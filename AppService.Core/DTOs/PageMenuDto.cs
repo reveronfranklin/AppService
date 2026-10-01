@@ -13,6 +13,7 @@ namespace AppService.Core.DTOs
         public string Title { get; set; }
         public string Url { get; set; }
         public string Icon { get; set; }
+        public int Orden { get; set; }
 
         public List<Children> Children { get; set; }
         

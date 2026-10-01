@@ -56,6 +56,7 @@ namespace AppService.Core.Services
 
         public async Task<CobPagosRetenciones> Insert(CobPagosRetenciones cobPagosRetenciones)
         {
+            await EnsureReciboEditable(cobPagosRetenciones.IdCobranza);
 
             if (cobPagosRetenciones.DocumentoSap== null)
             {
@@ -94,6 +95,7 @@ namespace AppService.Core.Services
             {
                 throw new Exception("Banco No existe");
             }
+            await EnsureReciboEditable(retencion.IdCobranza);
 
             _unitOfWork.CobPagosRetencionesRepository.Update(cobPagosRetenciones);
             await _unitOfWork.SaveChangesAsync();
@@ -104,9 +106,29 @@ namespace AppService.Core.Services
 
         public async Task<bool> Delete(long id)
         {
+            var retencion = await GetById(id);
+            if (retencion == null)
+            {
+                throw new Exception("Retención no existe");
+            }
+            await EnsureReciboEditable(retencion.IdCobranza);
             await _unitOfWork.CobPagosRetencionesRepository.Delete(id);
             await _unitOfWork.SaveChangesAsync();
             return true;
+        }
+
+        private async Task EnsureReciboEditable(long idCobranza)
+        {
+            var aplicacion = await _unitOfWork.CobGrabacionCobranzasRepository.GetById(idCobranza);
+            if (aplicacion == null)
+            {
+                throw new Exception("Aplicación de cobranza no existe");
+            }
+            var recibo = await _unitOfWork.GeneralCobranzaRepository.GetGeneralCobranzaDocumento((long)aplicacion.Documento);
+            if (recibo?.FlagAprobado == true)
+            {
+                throw new Exception("El recibo está aprobado y no puede modificarse.");
+            }
         }
 
 

@@ -235,6 +235,13 @@ namespace AppService.Core.Services
                 IsValid = true,
                 Message = ""
             };
+            CobGeneralCobranza existente = await GetGeneralCobranzaPorDocumento(generalCobranza.Documento);
+            if (existente?.FlagAprobado == true)
+            {
+                metadata.IsValid = false;
+                metadata.Message = "El recibo está aprobado y no puede modificarse.";
+                return metadata;
+            }
             CobGrabacionCobranzas cambiaRcRu = await _unitOfWork.GeneralCobranzaRepository.RCRUYaTieneCobranzaGrabada(generalCobranza.Documento);
             if (cambiaRcRu != null && generalCobranza.IdTipoTransaccion == "RET")
             {
@@ -420,6 +427,11 @@ namespace AppService.Core.Services
             if (cobranza == null)
             {
                 throw new Exception("Documento No existe");
+            }
+
+            if (cobranza.FlagAprobado == true)
+            {
+                throw new Exception("El recibo está aprobado y no puede modificarse.");
             }
 
 

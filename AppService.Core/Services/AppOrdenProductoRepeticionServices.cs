@@ -1,4 +1,4 @@
-﻿using AppService.Core.CustomEntities;
+using AppService.Core.CustomEntities;
 using AppService.Core.DTOs;
 using AppService.Core.DTOs.Repeticiones;
 using AppService.Core.Entities;
@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using StackExchange.Redis;
+
 
 namespace AppService.Core.Services
 {
@@ -22,13 +22,13 @@ namespace AppService.Core.Services
         private readonly PaginationOptions _paginationOptions;
         private readonly IAppProductsService _appProductsService;
         private readonly IAppUnitsService _appUnitsService;
-        private readonly IConnectionMultiplexer _connectionMultiplexer;
+        private readonly IAppCache _cache;
         public AppOrdenProductoRepeticionServices(IUnitOfWork unitOfWork,
                                                  IMapper mapper,
                                                  IOptions<PaginationOptions> options,
                                                   IAppProductsService appProductsService,
                                                      IAppUnitsService appUnitsService,
-                                                 IConnectionMultiplexer connectionMultiplexer)
+                                                 IAppCache cache)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -36,7 +36,7 @@ namespace AppService.Core.Services
 
             this._appProductsService = appProductsService;
             this._appUnitsService = appUnitsService;
-            _connectionMultiplexer = connectionMultiplexer;
+            _cache = cache;
         }
 
         public async Task<AppOrdenProductoRepeticion> GetByOrden(long orden)
@@ -65,21 +65,17 @@ namespace AppService.Core.Services
 
         }
         
-        public async Task AddRedis(string key, string value)
+        public async Task SetCacheAsync(string key, string value)
         {
-            var db = _connectionMultiplexer.GetDatabase();
-            await db.StringSetAsync(key, value,TimeSpan.FromHours(2));
+            await _cache.SetAsync(key, value,TimeSpan.FromHours(2));
         }
-        public void DeleteRedis(string key)
+        public void RemoveCache(string key)
         {
-            var db = _connectionMultiplexer.GetDatabase();
-            db.KeyDelete(key);
+            _cache.Remove(key);
         }
-        public async Task<string> GetRedis(string key)
+        public async Task<string> GetCacheAsync(string key)
         {
-            var db = _connectionMultiplexer.GetDatabase();
-            //db.KeyDelete("ListProducts");
-            return await db.StringGetAsync(key);
+            return await _cache.GetAsync(key);
         }
 
         public async Task<ApiResponse<ListaRepeticiones>> GetAllFilter(AppOrdenProductoRepeticionFilterDto filter)
@@ -94,7 +90,7 @@ namespace AppService.Core.Services
 
             ApiResponse<ListaRepeticiones> response = new ApiResponse<ListaRepeticiones>(resultDto);
 
-            /*var listRepeticiones=await GetRedis($"ListRepeticiones{filter.IdCliente}");
+            /*var listRepeticiones=await GetCacheAsync($"ListRepeticiones{filter.IdCliente}");
             if (listRepeticiones != null)
             {
                 response = System.Text.Json.JsonSerializer.Deserialize<ApiResponse<ListaRepeticiones>> (listRepeticiones);
@@ -246,14 +242,57 @@ namespace AppService.Core.Services
             metadata.IsValid = true;
             metadata.Message = "";
             response.Meta = metadata;
-            await AddRedis($"ListRepeticiones{filter.IdCliente}", System.Text.Json.JsonSerializer.Serialize(response));
+            await SetCacheAsync($"ListRepeticiones{filter.IdCliente}", System.Text.Json.JsonSerializer.Serialize(response));
             return response;
 
 
         }
+        public async Task<ApiResponse<bool>> PuedeModificarProducto(PuedeModificarProductoOrdenFilterDto filter)
+        {
+            var response = new ApiResponse<bool>(false);
+            var metadata = new Metadata
+            {
+                IsValid = false,
+                Message = string.Empty
+            };
+
+            var usuarioConectado = filter?.UsuarioConectado?.Trim();
+            if (string.IsNullOrWhiteSpace(usuarioConectado))
+            {
+                metadata.Message = "Usuario conectado requerido";
+                response.Meta = metadata;
+                return response;
+            }
+
+            var permission = await _unitOfWork.AppOrdenProductoRepeticionRepository
+                .PuedeModificarProductoAsync(usuarioConectado);
+
+            response.Data = permission.PuedeModificar;
+            metadata.IsValid = string.Equals(permission.Message, "Success", StringComparison.OrdinalIgnoreCase);
+            metadata.Message = metadata.IsValid ? string.Empty : permission.Message;
+
+            response.Meta = metadata;
+            return response;
+        }
+
         public async Task<ApiResponse<bool>> UpdateProductoOrden(UpdateProductoOrdenFilterDto filter)
         {
-           
+            var permissionResponse = await PuedeModificarProducto(new PuedeModificarProductoOrdenFilterDto
+            {
+                UsuarioConectado = filter?.UsuarioConectado
+            });
+            if (!permissionResponse.Meta.IsValid)
+            {
+                return permissionResponse;
+            }
+            if (!permissionResponse.Data)
+            {
+                permissionResponse.Meta.IsValid = false;
+                permissionResponse.Meta.Message =
+                    "Los vendedores no estan autorizados para modificar el producto de una orden";
+                return permissionResponse;
+            }
+
             Metadata metadata = new Metadata
             {
                 IsValid = true,
@@ -262,20 +301,52 @@ namespace AppService.Core.Services
             };
            
             ApiResponse<bool> response = new ApiResponse<bool>(false);
+            if (filter.Orden <= 0)
+            {
+                metadata.IsValid = false;
+                metadata.Message = "Orden requerida";
+                response.Meta = metadata;
+                return response;
+            }
+
+            if (filter.IdProducto <= 0 || await _appProductsService.GetById(filter.IdProducto) == null)
+            {
+                metadata.IsValid = false;
+                metadata.Message = "Producto no valido";
+                response.Meta = metadata;
+                return response;
+            }
+
             var repeticion = await GetByOrden(filter.Orden);
+            if (repeticion == null)
+            {
+                metadata.IsValid = false;
+                metadata.Message = "Orden no encontrada";
+                response.Meta = metadata;
+                return response;
+            }
+
             repeticion.AppproductsId = filter.IdProducto;
             await Update(repeticion);
+
+            var idCliente = repeticion.IdCliente?.Trim();
+            if (!string.IsNullOrWhiteSpace(idCliente))
+            {
+                RemoveCache($"ListRepeticiones{idCliente}");
+            }
 
             var orden = await _unitOfWork.Cpry012Repository.GetByOrdenAsync(filter.Orden);
             if (orden != null)
             {
-                DeleteRedis($"ListRepeticiones{orden.Cliente.ToString()}");
                 orden.AppproductsId = filter.IdProducto;
                 _unitOfWork.Cpry012Repository.UpdateProductoEnOrden(orden);
+            }
+
+            if (!string.IsNullOrWhiteSpace(idCliente))
+            {
                 AppOrdenProductoRepeticionFilterDto filterRepeticion = new AppOrdenProductoRepeticionFilterDto();
-                filterRepeticion.IdCliente = orden.Cliente.ToString();
+                filterRepeticion.IdCliente = idCliente;
                 await GetAllFilter(filterRepeticion);
-                //await _unitOfWork.SaveChangesAsync();
             }
 
             response.Data = true;

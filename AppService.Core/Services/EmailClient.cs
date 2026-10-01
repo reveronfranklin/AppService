@@ -1,4 +1,5 @@
-﻿using AppService.Core.CustomEntities;
+using Microsoft.Extensions.Configuration;
+using AppService.Core.CustomEntities;
 using AppService.Core.Interfaces;
 using AppService.Core.Utility;
 using System;
@@ -12,12 +13,14 @@ namespace AppService.Core.Services
 
         private readonly HttpClient _client;
         private readonly IUnitOfWork unitOfWork;
+        private readonly IConfiguration _emailConfiguration;
 
-        public EmailClient(HttpClient httpClient)
+        public EmailClient(HttpClient httpClient, IConfiguration configuration)
         {
 
             
-            httpClient.BaseAddress = new Uri("http://localhost:3002/api/email/send-email");
+            _emailConfiguration = configuration;
+            httpClient.BaseAddress = new Uri(configuration["EmailService:Url"] ?? "http://localhost:3002/api/email/send-email");
           
             
             _client = httpClient;
@@ -36,7 +39,11 @@ namespace AppService.Core.Services
                 _client.DefaultRequestHeaders.Add("Accept", "application/json");
 
 
-                var result = await _client.PostAsync(_client.BaseAddress, data);
+                using var request = new HttpRequestMessage(HttpMethod.Post, _client.BaseAddress) { Content = data };
+                var key = _emailConfiguration["EmailService:ServiceKey"];
+                if (!string.IsNullOrWhiteSpace(key)) request.Headers.Add("X-Email-Service-Key", key);
+                request.Headers.Add("Idempotency-Key", Guid.NewGuid().ToString());
+                var result = await _client.SendAsync(request);
                 string resultContent = await result.Content.ReadAsStringAsync();
 
                 metadata.IsValid = result.IsSuccessStatusCode;
@@ -47,7 +54,7 @@ namespace AppService.Core.Services
             {
 
                 metadata.IsValid = false;
-                metadata.Message = ex.InnerException.Message;
+                metadata.Message = ex.InnerException?.Message ?? ex.Message;
                 return metadata;
             }
 

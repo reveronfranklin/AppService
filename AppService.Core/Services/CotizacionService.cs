@@ -1,4 +1,4 @@
-﻿using AppService.Core.CustomEntities;
+using AppService.Core.CustomEntities;
 using AppService.Core.DataContratosStock;
 using AppService.Core.DTOs;
 using AppService.Core.DTOs.Odoo.Clientes.OdooClients;
@@ -21,7 +21,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using StackExchange.Redis;
+
 using static AppService.Core.DTOs.Odoo.Cotizaciones.Enviar.OdooCotizacionEnviar;
 using static AppService.Core.DTOs.Odoo.Cotizaciones.Enviar.OdooDetailCotizacionDelete;
 using static AppService.Core.DTOs.Odoo.Cotizaciones.Enviar.OdooGeneralCotizacionDelete;
@@ -44,7 +44,7 @@ namespace AppService.Core.Services
         private readonly IAppRecipesByAppDetailQuotesService _appRecipesByAppDetailQuotesService;
 
 
-        private readonly IConnectionMultiplexer _connectionMultiplexer;
+
 
 
         public CotizacionService(
@@ -57,10 +57,7 @@ namespace AppService.Core.Services
           IOdooClient odooClient,
           IAppProductsService appProductsService,
           IMtrContactosService mtrContactosService,
-          IAppRecipesByAppDetailQuotesService appRecipesByAppDetailQuotesService,
-      
-       
-          IConnectionMultiplexer connectionMultiplexer
+          IAppRecipesByAppDetailQuotesService appRecipesByAppDetailQuotesService
        
         )
         {
@@ -75,26 +72,9 @@ namespace AppService.Core.Services
             _mtrContactosService = mtrContactosService;
             _appRecipesByAppDetailQuotesService = appRecipesByAppDetailQuotesService;
     
-            _connectionMultiplexer = connectionMultiplexer;
+
         }
 
-        public async Task AddRedis(string key, string value)
-        {
-            var db = _connectionMultiplexer.GetDatabase();
-            await db.StringSetAsync(key, value,TimeSpan.FromHours(2));
-        }
-        public void DeleteRedis(string key)
-        {
-            var db = _connectionMultiplexer.GetDatabase();
-            db.KeyDelete(key);
-        }
-        public async Task<string> GetRedis(string key)
-        {
-            var db = _connectionMultiplexer.GetDatabase();
-            //db.KeyDelete("ListProducts");
-            return await db.StringGetAsync(key);
-        }
-        
         public async Task<List<Wsmy501>> GetAll() => await this._unitOfWork.CotizacionRepository.GetAll();
 
         public async Task<Wsmy501> GetById(int id) => await this._unitOfWork.CotizacionRepository.GetById(id);

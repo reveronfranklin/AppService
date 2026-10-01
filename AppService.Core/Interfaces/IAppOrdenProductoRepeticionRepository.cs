@@ -8,6 +8,7 @@ namespace AppService.Core.Interfaces
     {
         Task<List<AppOrdenProductoRepeticion>> GetAll();
         Task<AppOrdenProductoRepeticion> GetByOrden(long orden);
+        Task<(bool PuedeModificar, string Message)> PuedeModificarProductoAsync(string usuarioConectado);
         Task<List<AppOrdenProductoRepeticion>> GetByCliente(string idCliente);
         Task<List<AppRepeticionClienteProducto>> GetAppRepeticionClienteProductoByCliente(string idCliente);
         Task<List<AppRepeticionClienteNombreForma>> GetAppRepeticionClienteNombreFormaByCliente(string idCliente);

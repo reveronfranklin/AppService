@@ -1,5 +1,5 @@
 dotnet publish -c Release
-
+dotnet publish -c Release -r win-x64 --self-contained false -o ./publish-win
 https://www.youtube.com/watch?v=JrfB_33Do_8&list=PLU3UD_RM_1Abkcw8jjCl4o179jfyD47mj&index=2
 
 Clean Architecture

@@ -60,6 +60,16 @@ namespace AppService.Api.Controllers
 
         }
 
+        [HttpPost]
+        [Route("[action]")]
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(ApiResponse<bool>))]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> PuedeModificarProducto(PuedeModificarProductoOrdenFilterDto filter)
+        {
+            var response = await _appOrdenProductoRepeticionServices.PuedeModificarProducto(filter);
+            return Ok(response);
+        }
+
 
 
 

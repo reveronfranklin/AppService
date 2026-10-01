@@ -4,6 +4,7 @@ using AppService.Infrastructure.DataClientes;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -154,6 +155,61 @@ namespace AppService.Infrastructure.Repositories
 
 
 
+        }
+
+        public async Task<bool> ExisteClienteProspectoConflictivo(string rif, string vendedor)
+        {
+            var connection = _context.Database.GetDbConnection();
+            var shouldCloseConnection = connection.State != ConnectionState.Open;
+
+            try
+            {
+                if (shouldCloseConnection)
+                {
+                    await connection.OpenAsync();
+                }
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "sp_AppGeneralQuotes_ValidateProspectoCsmy003";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    var idClienteParameter = command.CreateParameter();
+                    idClienteParameter.ParameterName = "@IdCliente";
+                    idClienteParameter.Value = "000000";
+                    command.Parameters.Add(idClienteParameter);
+
+                    var usuarioParameter = command.CreateParameter();
+                    usuarioParameter.ParameterName = "@UsuarioActualiza";
+                    usuarioParameter.Value = vendedor ?? string.Empty;
+                    command.Parameters.Add(usuarioParameter);
+
+                    var rifParameter = command.CreateParameter();
+                    rifParameter.ParameterName = "@Rif";
+                    rifParameter.Value = rif ?? string.Empty;
+                    command.Parameters.Add(rifParameter);
+
+                    var messageParameter = command.CreateParameter();
+                    messageParameter.ParameterName = "@Message";
+                    messageParameter.DbType = DbType.String;
+                    messageParameter.Size = 4000;
+                    messageParameter.Direction = ParameterDirection.Output;
+                    command.Parameters.Add(messageParameter);
+
+                    await command.ExecuteNonQueryAsync();
+
+                    var message = messageParameter.Value?.ToString() ?? string.Empty;
+                    return !string.IsNullOrWhiteSpace(message)
+                        && !string.Equals(message, "Success", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            finally
+            {
+                if (shouldCloseConnection)
+                {
+                    connection.Close();
+                }
+            }
         }
 
 

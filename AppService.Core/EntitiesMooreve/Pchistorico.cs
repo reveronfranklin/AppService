@@ -14,6 +14,7 @@ namespace AppService.Core.EntitiesMooreve
         public long? Orden { get; set; }
         public string Producto { get; set; }
         public decimal? MontoReal { get; set; }
+        public decimal? Concesion { get; set; }
         public decimal? BsComision { get; set; }
         public decimal? PorcFlat { get; set; }
         public decimal? ComisionRangoCumplimientoCuotaGeneral { get; set; }

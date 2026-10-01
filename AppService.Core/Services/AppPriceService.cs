@@ -43,13 +43,22 @@ namespace AppService.Core.Services
           int appProductId)
         {
             List<AppPriceGetDto> resultDto = new List<AppPriceGetDto>();
-            List<AppPrice> allByAppProduct1 = await this._unitOfWork.AppPriceRepository.GetAllByAppProduct(appProductId);
             Metadata metadata = new Metadata()
             {
                 IsValid = true,
                 Message = ""
             };
             ApiResponse<List<AppPriceGetDto>> response = new ApiResponse<List<AppPriceGetDto>>(resultDto);
+            AppProducts product = await this._unitOfWork.AppProductsRepository.GetById(appProductId);
+            if (product == null || product.AppSubCategoryId != 2)
+            {
+                metadata.IsValid = false;
+                metadata.Message = "Los precios por rango solo aplican a productos Office Product de la subcategoria 2";
+                response.Meta = metadata;
+                response.Data = resultDto;
+                return response;
+            }
+            List<AppPrice> allByAppProduct1 = await this._unitOfWork.AppPriceRepository.GetAllByAppProduct(appProductId);
             List<AppPriceGetDto> appPriceDto = this._mapper.Map<List<AppPriceGetDto>>((object)allByAppProduct1);
             foreach (AppPriceGetDto item in appPriceDto)
             {
@@ -130,6 +139,14 @@ namespace AppService.Core.Services
                     response.Data = resultDto;
                     return response;
                 }
+                if (byId.AppSubCategoryId != 2)
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = "Los precios por rango solo aplican a productos Office Product de la subcategoria 2";
+                    response.Meta = metadata;
+                    response.Data = resultDto;
+                    return response;
+                }
                 AppProductsGetDto productDto = this._mapper.Map<AppProductsGetDto>((object)byId);
                 AppPrice source = await this.Add(this._mapper.Map<AppPrice>((object)appPriceCreateDto));
                 if (source != null)
@@ -190,7 +207,8 @@ namespace AppService.Core.Services
                 Message = ""
             };
             ApiResponse<AppPriceGetDto> response = new ApiResponse<AppPriceGetDto>(resultDto);
-            if (await this._unitOfWork.AppProductsRepository.GetById(apprpoductId) == null)
+            AppProducts product = await this._unitOfWork.AppProductsRepository.GetById(apprpoductId);
+            if (product == null)
             {
                 metadata.IsValid = false;
                 metadata.Message = "Codigo de producto no existe, verifique por favor";
@@ -198,6 +216,8 @@ namespace AppService.Core.Services
                 response.Data = resultDto;
                 return response;
             }
+            if (product.AppSubCategoryId != 2)
+                return await this.GetByProductoCantidadCalculado(apprpoductId, cantidad, condicionDePago);
             if (cantidad <= 0M)
             {
                 metadata.IsValid = false;
@@ -266,6 +286,14 @@ namespace AppService.Core.Services
             {
                 metadata.IsValid = false;
                 metadata.Message = "Codigo de producto no existe, verifique por favor";
+                response.Meta = metadata;
+                response.Data = resultDto;
+                return response;
+            }
+            if (byId.AppSubCategoryId != 2)
+            {
+                metadata.IsValid = false;
+                metadata.Message = "Los precios por rango solo aplican a productos Office Product de la subcategoria 2";
                 response.Meta = metadata;
                 response.Data = resultDto;
                 return response;
@@ -343,6 +371,14 @@ namespace AppService.Core.Services
                 {
                     metadata.IsValid = false;
                     metadata.Message = "Codigo de producto no existe, verifique por favor";
+                    response.Meta = metadata;
+                    response.Data = resultDto;
+                    return response;
+                }
+                if (appProductsFind.AppSubCategoryId != 2)
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = "Los precios por rango solo aplican a productos Office Product de la subcategoria 2";
                     response.Meta = metadata;
                     response.Data = resultDto;
                     return response;

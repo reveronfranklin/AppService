@@ -992,8 +992,9 @@ namespace AppService.Core.Services
                 return string.Empty;
             }
 
-            var clienteConflictivo = await _unitOfWork.MtrClienteRepository.GetByRifAndDifferentVendedorAsync(rifNormalizado, usuario);
-            if (clienteConflictivo == null)
+            var existeClienteConflictivo = await _unitOfWork.Wsmy065Repository
+                .ExisteClienteProspectoConflictivo(rifNormalizado, usuario);
+            if (!existeClienteConflictivo)
             {
                 return string.Empty;
             }

@@ -23,7 +23,11 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task<List<PageMenu>> GetMenuByRole(int role)
         {
-            return await _context.PageMenu.Where(x => x.Role == role).ToListAsync();
+            return await _context.PageMenu
+                .Where(x => x.Role == role && x.DisponibleIonic)
+                .OrderBy(x => x.Orden)
+                .ThenBy(x => x.Id)
+                .ToListAsync();
         }
     }
 }

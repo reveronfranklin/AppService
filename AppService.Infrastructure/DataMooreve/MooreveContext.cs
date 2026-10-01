@@ -8519,6 +8519,8 @@ namespace AppService.Infrastructure.DataMooreve
 
                 entity.Property(e => e.MontoReal).HasColumnType("numeric(18, 2)");
 
+                entity.Property(e => e.Concesion).HasColumnType("numeric(18, 2)");
+
                 entity.Property(e => e.MontoRealString).HasMaxLength(20);
 
                 entity.Property(e => e.MontoString).HasMaxLength(20);

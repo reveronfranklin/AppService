@@ -23,7 +23,11 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task<List<ChildMenu>> GetChildMenuByParent(int idMenu)
         {
-            return await _context.ChildMenu.Where(x => x.PageMenuId== idMenu).ToListAsync();
+            return await _context.ChildMenu
+                .Where(x => x.PageMenuId == idMenu && x.DisponibleIonic)
+                .OrderBy(x => x.Orden)
+                .ThenBy(x => x.Id)
+                .ToListAsync();
         }
     }
 }

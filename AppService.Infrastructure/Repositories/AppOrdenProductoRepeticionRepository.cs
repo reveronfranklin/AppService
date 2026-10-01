@@ -4,6 +4,7 @@ using AppService.Infrastructure.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
@@ -41,6 +42,61 @@ namespace AppService.Infrastructure.Repositories
             }
 
 
+        }
+
+        public async Task<(bool PuedeModificar, string Message)> PuedeModificarProductoAsync(string usuarioConectado)
+        {
+            var connection = _context.Database.GetDbConnection();
+            var shouldClose = connection.State != ConnectionState.Open;
+
+            try
+            {
+                if (shouldClose)
+                {
+                    await connection.OpenAsync();
+                }
+
+                using var command = connection.CreateCommand();
+                command.CommandText = "sp_AppOrdenProductoRepeticion_CanUpdateProduct";
+                command.CommandType = CommandType.StoredProcedure;
+
+                var usuarioParameter = command.CreateParameter();
+                usuarioParameter.ParameterName = "@UsuarioConectado";
+                usuarioParameter.DbType = DbType.String;
+                usuarioParameter.Size = 50;
+                usuarioParameter.Value = usuarioConectado ?? string.Empty;
+                command.Parameters.Add(usuarioParameter);
+
+                var puedeModificarParameter = command.CreateParameter();
+                puedeModificarParameter.ParameterName = "@PuedeModificar";
+                puedeModificarParameter.DbType = DbType.Boolean;
+                puedeModificarParameter.Direction = ParameterDirection.Output;
+                command.Parameters.Add(puedeModificarParameter);
+
+                var messageParameter = command.CreateParameter();
+                messageParameter.ParameterName = "@Message";
+                messageParameter.DbType = DbType.String;
+                messageParameter.Size = 4000;
+                messageParameter.Direction = ParameterDirection.Output;
+                command.Parameters.Add(messageParameter);
+
+                await command.ExecuteNonQueryAsync();
+
+                var puedeModificar = puedeModificarParameter.Value != System.DBNull.Value
+                    && System.Convert.ToBoolean(puedeModificarParameter.Value);
+                var message = messageParameter.Value == System.DBNull.Value
+                    ? string.Empty
+                    : messageParameter.Value?.ToString() ?? string.Empty;
+
+                return (puedeModificar, message);
+            }
+            finally
+            {
+                if (shouldClose && connection.State == ConnectionState.Open)
+                {
+                    connection.Close();
+                }
+            }
         }
         public void Update(AppOrdenProductoRepeticion entity)
         {

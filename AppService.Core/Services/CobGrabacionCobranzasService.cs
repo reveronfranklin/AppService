@@ -53,6 +53,11 @@ namespace AppService.Core.Services
 
         public async Task<CobGrabacionCobranzas> Insert(CobGrabacionCobranzas cobGrabacionCobranzas)
         {
+            var recibo = await _unitOfWork.GeneralCobranzaRepository.GetGeneralCobranzaDocumento((long)cobGrabacionCobranzas.Documento);
+            if (recibo?.FlagAprobado == true)
+            {
+                throw new Exception("El recibo está aprobado y no puede modificarse.");
+            }
 
             var docAfecta = await _unitOfWork.CobEstadoDeCuentaRepository.GetById(cobGrabacionCobranzas.DocAfecta);
             if (docAfecta != null)
@@ -98,6 +103,12 @@ namespace AppService.Core.Services
             if (cobranza == null)
             {
                 throw new Exception("Documento No existe");
+            }
+
+            var recibo = await _unitOfWork.GeneralCobranzaRepository.GetGeneralCobranzaDocumento((long)cobranza.Documento);
+            if (recibo?.FlagAprobado == true)
+            {
+                throw new Exception("El recibo está aprobado y no puede modificarse.");
             }
 
 
@@ -149,6 +160,12 @@ namespace AppService.Core.Services
             if (cobranza == null)
             {
                 throw new Exception("Documento No existe");
+            }
+
+            var recibo = await _unitOfWork.GeneralCobranzaRepository.GetGeneralCobranzaDocumento((long)cobranza.Documento);
+            if (recibo?.FlagAprobado == true)
+            {
+                throw new Exception("El recibo está aprobado y no puede modificarse.");
             }
 
             await _unitOfWork.CobGrabacionCobranzasRepository.Delete(id);
