@@ -594,8 +594,15 @@ namespace AppService.Infrastructure.Data
         public virtual DbSet<AppQuotesPaginate> AppQuotesPaginate { get; set; }
         
 
+        public System.Linq.IQueryable<LegacyQuoteReadScope> LegacyQuoteScope()
+            => FromExpression(() => LegacyQuoteScope());
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            var legacyScopeFunction=typeof(RRDContext).GetMethod(nameof(LegacyQuoteScope));
+            modelBuilder.Entity<LegacyQuoteReadScope>().HasNoKey().ToFunction(legacyScopeFunction);
+            modelBuilder.HasDbFunction(legacyScopeFunction).HasName("AppQuote120_LegacyScope").HasSchema("dbo");
+
             
             
             modelBuilder.Entity<PCTipoPagoOrdenNoCalcularComision>(entity =>

@@ -40,7 +40,7 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task<Wsmy639> GetByCotizacionRenglonPropuesta(string cotizacion, int renglon, int propuesta)
         {
-            return await _context.Wsmy639.Where(x => x.Cotizacion == cotizacion && x.Renglon == renglon && x.Propuesta == propuesta).FirstOrDefaultAsync();
+            return await _context.Wsmy639.Where(x => x.Cotizacion == cotizacion && x.Renglon == renglon && x.Propuesta == propuesta).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
         }
 
 
@@ -75,7 +75,7 @@ namespace AppService.Infrastructure.Repositories
 
                 var result = await _context.Wsmy639
                     .Where(x => x.Cotizacion == cotizacion && x.Renglon == renglon && x.Propuesta == propuesta)
-                    .FirstOrDefaultAsync();
+                    .OrderByDescending(x => x.Id).FirstOrDefaultAsync();
                 
                 return result;
                 
@@ -107,7 +107,7 @@ namespace AppService.Infrastructure.Repositories
 
                 var result = await _context.Wsmy639
                     .Where(x => x.Cotizacion == cotizacion && x.Renglon == renglon && x.Propuesta == propuesta)
-                    .FirstOrDefaultAsync();
+                    .OrderByDescending(x => x.Id).FirstOrDefaultAsync();
                 
                 return result;
             }
@@ -158,14 +158,25 @@ namespace AppService.Infrastructure.Repositories
         public async Task Delete(long id)
         {
             Wsmy639 entity = await GetById(id);
+            if (entity == null) return;
+            var latestStation = await _context.Wsmy647.Where(x => x.IdCalculo == id)
+                .OrderByDescending(x => x.FechaEntrada).ThenByDescending(x => x.Recnum).FirstOrDefaultAsync();
+            // REQ-132: returning to draft must retain a rejection for the consultant.
+            // A new cycle is created only by the explicit resubmission use case.
+            if (entity.IdEstatus == "RECH" ||
+                (latestStation != null && latestStation.IdEstatus == "RECH" && latestStation.FechaSalida.HasValue)) return;
             _context.Wsmy639.Remove(entity);
 
         }
 
         public async Task<long> NextId()
         {
-            var ultimo = await _context.Wsmy639.OrderByDescending(x => x.Id).FirstOrDefaultAsync();
-            return ultimo.Id + 1;
+            var next = new SqlParameter("@NextId", System.Data.SqlDbType.BigInt) { Direction = System.Data.ParameterDirection.Output };
+            var message = new SqlParameter("@Message", System.Data.SqlDbType.NVarChar, 4000) { Direction = System.Data.ParameterDirection.Output };
+            await _context.Database.ExecuteSqlRawAsync("EXEC dbo.PriceApproval_AllocateRequestId @NextId OUTPUT,@Message OUTPUT", next, message);
+            if (message.Value?.ToString() != "Success" || next.Value == DBNull.Value)
+                throw new InvalidOperationException(message.Value?.ToString() ?? "No fue posible reservar identidad de solicitud.");
+            return Convert.ToInt64(next.Value);
 
 
         }

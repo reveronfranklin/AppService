@@ -19,6 +19,7 @@ namespace AppService.Core.Services
     public class AppGeneralQuotesService : IAppGeneralQuotesService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILegacyQuoteModelAccess _quoteModelAccess;
         private readonly IMapper _mapper;
         private readonly IOfdCotizacionService _ofdCotizacionService;
         private readonly IMtrClienteService _mtrClienteService;
@@ -38,8 +39,23 @@ namespace AppService.Core.Services
                                         IAppProductsService appProductsService,
                                        IAprobacionesServices aprobacionesServices
                                         )
+            : this(unitOfWork, options, mapper, ofdCotizacionService, mtrClienteService, appDetailQuotesService, cotizacionService, appProductsService, aprobacionesServices, null)
+        {
+        }
+
+        public AppGeneralQuotesService(IUnitOfWork unitOfWork,
+                                       IOptions<PaginationOptions> options,
+                                        IMapper mapper,
+                                        IOfdCotizacionService ofdCotizacionService,
+                                        IMtrClienteService mtrClienteService,
+                                        IAppDetailQuotesService appDetailQuotesService,
+                                        ICotizacionService cotizacionService,
+                                        IAppProductsService appProductsService,
+                                       IAprobacionesServices aprobacionesServices,
+          ILegacyQuoteModelAccess quoteModelAccess)
         {
             _unitOfWork = unitOfWork;
+            _quoteModelAccess = quoteModelAccess;
             _mapper = mapper;
             _ofdCotizacionService = ofdCotizacionService;
             _mtrClienteService = mtrClienteService;
@@ -48,6 +64,11 @@ namespace AppService.Core.Services
             _appProductsService = appProductsService;
             _aprobacionesServices = aprobacionesServices;
             _paginationOptions = options.Value;
+        }
+
+        private Task<string> CheckLegacyQuoteAccess(int? generalId = null, int? detailId = null, string quotation = null)
+        {
+            return _quoteModelAccess?.CheckAsync(generalId, detailId, quotation) ?? Task.FromResult<string>(null);
         }
 
         public async Task<AppGeneralQuotes> GetById(int id)
@@ -1213,6 +1234,16 @@ namespace AppService.Core.Services
             ApiResponse<AppGeneralQuotesGetDto> response = new ApiResponse<AppGeneralQuotesGetDto>(resultDto);
             try
             {
+                // REQ120 F01 EARLY SERVICE GUARD
+                var modelBlock = await CheckLegacyQuoteAccess(generalId: dto.Id, quotation: dto.Cotizacion);
+                if (!string.IsNullOrEmpty(modelBlock))
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = modelBlock;
+                    response.Meta = metadata;
+                    return response;
+                }
+
 
 
               
@@ -1248,7 +1279,7 @@ namespace AppService.Core.Services
             catch (Exception ex)
             {
                 metadata.IsValid = false;
-                metadata.Message = ex.InnerException.Message;
+                metadata.Message = ex.InnerException?.Message ?? ex.Message;
                 response.Meta = metadata;
                 response.Data = resultDto;
                 return response;
@@ -1267,6 +1298,16 @@ namespace AppService.Core.Services
             ApiResponse<AppGeneralQuotesGetDto> response = new ApiResponse<AppGeneralQuotesGetDto>(resultDto);
             try
             {
+                // REQ120 F01 EARLY SERVICE GUARD
+                var modelBlock = await CheckLegacyQuoteAccess(generalId: dto.Id, quotation: dto.Cotizacion);
+                if (!string.IsNullOrEmpty(modelBlock))
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = modelBlock;
+                    response.Meta = metadata;
+                    return response;
+                }
+
 
 
                 var cotizacion = await _unitOfWork.AppGeneralQuotesRepository.GetByCotizacions(dto.Cotizacion);
@@ -1332,7 +1373,7 @@ namespace AppService.Core.Services
             catch (Exception ex)
             {
                 metadata.IsValid = false;
-                metadata.Message = ex.InnerException.Message;
+                metadata.Message = ex.InnerException?.Message ?? ex.Message;
                 response.Meta = metadata;
                 response.Data = resultDto;
                 return response;
@@ -1353,6 +1394,16 @@ namespace AppService.Core.Services
             ApiResponse<AppGeneralQuotesGetDto> response = new ApiResponse<AppGeneralQuotesGetDto>(resultDto);
             try
             {
+                // REQ120 F01 EARLY SERVICE GUARD
+                var modelBlock = await CheckLegacyQuoteAccess(generalId: dto.Id, quotation: dto.Cotizacion);
+                if (!string.IsNullOrEmpty(modelBlock))
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = modelBlock;
+                    response.Meta = metadata;
+                    return response;
+                }
+
                 AppGeneralQuotes appGeneralQuotes = await this.GetById(dto.Id);
                 if (appGeneralQuotes == null)
                 {
@@ -1465,7 +1516,7 @@ namespace AppService.Core.Services
             catch (Exception ex)
             {
                 metadata.IsValid = false;
-                metadata.Message = ex.InnerException.Message;
+                metadata.Message = ex.InnerException?.Message ?? ex.Message;
                 response.Meta = metadata;
                 response.Data = resultDto;
                 return response;
@@ -1484,6 +1535,16 @@ namespace AppService.Core.Services
             ApiResponse<AppGeneralQuotesGetDto> response = new ApiResponse<AppGeneralQuotesGetDto>(resultDto);
             try
             {
+                // REQ120 F01 EARLY SERVICE GUARD
+                var modelBlock = await CheckLegacyQuoteAccess(generalId: appGeneralQuotesUpdateDto.Id, quotation: appGeneralQuotesUpdateDto.Cotizacion);
+                if (!string.IsNullOrEmpty(modelBlock))
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = modelBlock;
+                    response.Meta = metadata;
+                    return response;
+                }
+
                 bool recalcularPrecio = false;
 
                 var prospectoVendedorMessage = await ValidateProspectoVendedorAsync(
@@ -1687,7 +1748,7 @@ namespace AppService.Core.Services
             catch (Exception ex)
             {
                 metadata.IsValid = false;
-                metadata.Message = ex.InnerException.Message;
+                metadata.Message = ex.InnerException?.Message ?? ex.Message;
                 response.Meta = metadata;
                 response.Data = resultDto;
                 return response;
@@ -1710,6 +1771,16 @@ namespace AppService.Core.Services
 
             try
             {
+                // REQ120 F01 EARLY SERVICE GUARD
+                var modelBlock = await CheckLegacyQuoteAccess(generalId: appGeneralQuotesDeleteDto.Id, quotation: appGeneralQuotesDeleteDto.Cotizacion);
+                if (!string.IsNullOrEmpty(modelBlock))
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = modelBlock;
+                    response.Meta = metadata;
+                    return response;
+                }
+
 
                 AppGeneralQuotes appGeneralQuotes = await GetById(appGeneralQuotesDeleteDto.Id);
                 if (appGeneralQuotes == null)
@@ -1767,7 +1838,7 @@ namespace AppService.Core.Services
             {
                 metadata.IsValid = false;
 
-                metadata.Message = ex.InnerException.Message;
+                metadata.Message = ex.InnerException?.Message ?? ex.Message;
 
                 response.Meta = metadata;
                 response.Data = resultDto;
@@ -1819,6 +1890,16 @@ namespace AppService.Core.Services
             ApiResponse<AppGeneralQuotesGetDto> response = new ApiResponse<AppGeneralQuotesGetDto>(resultDto);
             try
             {
+                // REQ120 F01 EARLY SERVICE GUARD
+                var modelBlock = await CheckLegacyQuoteAccess(generalId: dto.Id);
+                if (!string.IsNullOrEmpty(modelBlock))
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = modelBlock;
+                    response.Meta = metadata;
+                    return response;
+                }
+
                 var appGeneralQuotes = await this.GetByIdForUpdate(dto.Id);
                 if (appGeneralQuotes == null)
                 {
@@ -2171,6 +2252,16 @@ namespace AppService.Core.Services
 
             try
             {
+                // REQ120 F01 EARLY SERVICE GUARD
+                var modelBlock = await CheckLegacyQuoteAccess(generalId: dto.Id, quotation: dto.Cotizacion);
+                if (!string.IsNullOrEmpty(modelBlock))
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = modelBlock;
+                    response.Meta = metadata;
+                    return response;
+                }
+
                 var general = await GetById(dto.Id);
                 if (general != null)//update
                 {
@@ -2285,7 +2376,7 @@ namespace AppService.Core.Services
             catch (Exception ex)
             {
                 metadata.IsValid = false;
-                metadata.Message = ex.InnerException.Message;
+                metadata.Message = ex.InnerException?.Message ?? ex.Message;
                 response.Meta = metadata;
                 response.Data = resultDto;
                 return response;

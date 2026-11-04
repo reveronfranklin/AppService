@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using AppService.Core.Interfaces;
 using AppService.Infrastructure.Data;
 using AppService.Infrastructure.DataClientes;
@@ -30,6 +31,7 @@ namespace AppService.Infrastructure.Repositories
     public class UnitOfWork : IUnitOfWork
     {
         private readonly RRDContext _context;
+        private readonly IConfiguration _quoteModel120Configuration;
         private readonly MooreveContext _mooreveContext;
         private readonly MCContext _mcContext;
         private readonly IMaestrosContext _maestrosContext;
@@ -283,8 +285,14 @@ namespace AppService.Infrastructure.Repositories
         
 
         public UnitOfWork(RRDContext context, MooreveContext mooreveContext, MCContext mcContext, IMaestrosContext maestrosContext, SapContext sapContext, ClientesContext clientesContext, FacturacionContext facturacionContext, ContratosStockContext contratosStockContext, DWContext dWContext, NominaContext nominaContext, SpiContext spiContext, PlantaContext plantaContext, MaterialesContext materialesContext,EstadisticasContext estadisticasContext,IAppCache cache,POWERBIContext powerBIContext)
+            : this(context, mooreveContext, mcContext, maestrosContext, sapContext, clientesContext, facturacionContext, contratosStockContext, dWContext, nominaContext, spiContext, plantaContext, materialesContext, estadisticasContext, cache, powerBIContext, null)
+        {
+        }
+
+        public UnitOfWork(RRDContext context, MooreveContext mooreveContext, MCContext mcContext, IMaestrosContext maestrosContext, SapContext sapContext, ClientesContext clientesContext, FacturacionContext facturacionContext, ContratosStockContext contratosStockContext, DWContext dWContext, NominaContext nominaContext, SpiContext spiContext, PlantaContext plantaContext, MaterialesContext materialesContext,EstadisticasContext estadisticasContext,IAppCache cache,POWERBIContext powerBIContext, IConfiguration quoteModel120Configuration)
         {
             _context = context;
+            _quoteModel120Configuration = quoteModel120Configuration;
             _mooreveContext = mooreveContext;
             _mcContext = mcContext;
             _maestrosContext = maestrosContext;
@@ -380,7 +388,7 @@ namespace AppService.Infrastructure.Repositories
 
         public IChildMenuRepository ChildMenuRepository => _childMenuRepository ?? new ChildMenuRepository(_context);
 
-        public IAppGeneralQuotesRepository AppGeneralQuotesRepository => _appGeneralQuotesRepository ?? new AppGeneralQuotesRepository(_context, _mooreveContext);
+        public IAppGeneralQuotesRepository AppGeneralQuotesRepository => _appGeneralQuotesRepository ?? new AppGeneralQuotesRepository(_context, _mooreveContext, _quoteModel120Configuration);
 
         public IMtrDireccionesRepository MtrDireccionesRepository => _mtrDireccionesRepository ?? new MtrDireccionesRepository(_context);
 
@@ -401,7 +409,7 @@ namespace AppService.Infrastructure.Repositories
         public IAppProductsRepository AppProductsRepository => _appProductsRepository ?? new AppProductsRepository(_context);
 
 
-        public IAppDetailQuotesRepository AppDetailQuotesRepository => _appDetailQuotesRepository ?? new AppDetailQuotesRepository(_context);
+        public IAppDetailQuotesRepository AppDetailQuotesRepository => _appDetailQuotesRepository ?? new AppDetailQuotesRepository(_context, _quoteModel120Configuration);
 
         public IAppVariablesRepository AppVariablesRepository => _appVariablesRepository ?? new AppVariablesRepository(_context);
 

@@ -36,6 +36,7 @@ namespace AppService.Core.Services
         }
 
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILegacyQuoteModelAccess _quoteModelAccess;
         private readonly IMapper _mapper;
         private readonly IAppProductsService _appProductsService;
         private readonly IAppUnitsService _appUnitsService;
@@ -68,8 +69,29 @@ namespace AppService.Core.Services
           IMunicipioServices municipioServices
        
           )
+            : this(unitOfWork, options, mapper, appProductsService, appUnitsService, appStatusQuoteService, tPaTasaReferencialServices, appDetailQuotesConversionUnitService, appTemplateConversionUnitService, cotizacionService, aprobacionesServices, appRecipesByAppDetailQuotesService, appGetPriceService, municipioServices, null)
+        {
+        }
+
+        public AppDetailQuotesService(
+          IUnitOfWork unitOfWork,
+          IOptions<PaginationOptions> options,
+          IMapper mapper,
+          IAppProductsService appProductsService,
+          IAppUnitsService appUnitsService,
+          IAppStatusQuoteService appStatusQuoteService,
+          ITPaTasaReferencialServices tPaTasaReferencialServices,
+          IAppDetailQuotesConversionUnitService appDetailQuotesConversionUnitService,
+          IAppTemplateConversionUnitService appTemplateConversionUnitService,
+          ICotizacionService cotizacionService,
+          IAprobacionesServices aprobacionesServices,
+          IAppRecipesByAppDetailQuotesService appRecipesByAppDetailQuotesService,
+          IAppGetPriceService appGetPriceService,
+          IMunicipioServices municipioServices,
+          ILegacyQuoteModelAccess quoteModelAccess)
         {
             this._unitOfWork = unitOfWork;
+            _quoteModelAccess = quoteModelAccess;
             this._mapper = mapper;
             this._appProductsService = appProductsService;
             this._appUnitsService = appUnitsService;
@@ -83,6 +105,11 @@ namespace AppService.Core.Services
             _appRecipesByAppDetailQuotesService = appRecipesByAppDetailQuotesService;
             _appGetPriceService = appGetPriceService;
             _municipioServices = municipioServices;
+        }
+
+        private Task<string> CheckLegacyQuoteAccess(int? generalId = null, int? detailId = null, string quotation = null)
+        {
+            return _quoteModelAccess?.CheckAsync(generalId, detailId, quotation) ?? Task.FromResult<string>(null);
         }
 
         public async Task<List<AppDetailQuotes>> GetAll() => await this._unitOfWork.AppDetailQuotesRepository.GetAll();
@@ -436,6 +463,16 @@ namespace AppService.Core.Services
             ApiResponse<AppDetailQuotesGetDto> response = new ApiResponse<AppDetailQuotesGetDto>(resultDto);
             try
             {
+                // REQ120 F01 EARLY SERVICE GUARD
+                var modelBlock = await CheckLegacyQuoteAccess(generalId: appDetailQuotesDto.AppGeneralQuotesId, quotation: appDetailQuotesDto.Cotizacion);
+                if (!string.IsNullOrEmpty(modelBlock))
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = modelBlock;
+                    response.Meta = metadata;
+                    return response;
+                }
+
                 AppGeneralQuotes appGeneralQuotesFind = await this._unitOfWork.AppGeneralQuotesRepository.GetById(appDetailQuotesDto.AppGeneralQuotesId);
                 if (appGeneralQuotesFind == null)
                 {
@@ -713,7 +750,7 @@ namespace AppService.Core.Services
             catch (Exception ex)
             {
                 metadata.IsValid = false;
-                metadata.Message = ex.InnerException.Message;
+                metadata.Message = ex.InnerException?.Message ?? ex.Message;
                 response.Meta = metadata;
                 response.Data = resultDto;
                 return response;
@@ -874,6 +911,16 @@ namespace AppService.Core.Services
             ApiResponse<AppDetailQuotesGetDto> response = new ApiResponse<AppDetailQuotesGetDto>(resultDto);
             try
             {
+                // REQ120 F01 EARLY SERVICE GUARD
+                var modelBlock = await CheckLegacyQuoteAccess(detailId: appDetailQuotesUpdateDto.Id);
+                if (!string.IsNullOrEmpty(modelBlock))
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = modelBlock;
+                    response.Meta = metadata;
+                    return response;
+                }
+
                 bool recalcularPrecio = false;
             
              
@@ -1226,7 +1273,7 @@ namespace AppService.Core.Services
             catch (Exception ex)
             {
                 metadata.IsValid = false;
-                metadata.Message = ex.InnerException.Message;
+                metadata.Message = ex.InnerException?.Message ?? ex.Message;
                 response.Meta = metadata;
                 response.Data = resultDto;
                 return response;
@@ -1727,6 +1774,16 @@ namespace AppService.Core.Services
             ApiResponse<bool> response = new ApiResponse<bool>(resultDto);
             try
             {
+                // REQ120 F01 EARLY SERVICE GUARD
+                var modelBlock = await CheckLegacyQuoteAccess(detailId: appDetailQuotesDeleteDto.Id, quotation: appDetailQuotesDeleteDto.Cotizacion);
+                if (!string.IsNullOrEmpty(modelBlock))
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = modelBlock;
+                    response.Meta = metadata;
+                    return response;
+                }
+
                 AppDetailQuotes byId = await this.GetById(appDetailQuotesDeleteDto.Id);
                 if (byId == null)
                 {
@@ -2103,6 +2160,26 @@ namespace AppService.Core.Services
                 Message = ""
             };
             ApiResponse<bool> response = new ApiResponse<bool>(data);
+            try
+            {
+                // REQ120 F01 EARLY SERVICE GUARD
+                var modelBlock = await CheckLegacyQuoteAccess(detailId: appGanarPerderDto.AppDetailQuotesId);
+                if (!string.IsNullOrEmpty(modelBlock))
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = modelBlock;
+                    response.Meta = metadata;
+                    return response;
+                }
+            }
+            catch (Exception ex)
+            {
+                metadata.IsValid = false;
+                metadata.Message = ex.InnerException?.Message ?? ex.Message;
+                response.Meta = metadata;
+                return response;
+            }
+
             if (appGanarPerderDto.CondicionId == 1)
             {
                 string canWinMessage = await this._unitOfWork.AppDetailQuotesRepository

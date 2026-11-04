@@ -21,12 +21,21 @@ namespace AppService.Api.Controllers
     {
         private readonly IAppGeneralQuotesService _appGeneralQuotesService;
         private readonly ICotizacionService _cotizacionService;
+        private readonly ILegacyQuoteModelAccess _quoteModelAccess;
 
         public AppGeneralQuotesController(IAppGeneralQuotesService appGeneralQuotesService,
                                            ICotizacionService cotizacionService)
+            : this(appGeneralQuotesService, cotizacionService, null)
+        {
+        }
+
+        [Microsoft.Extensions.DependencyInjection.ActivatorUtilitiesConstructor]
+        public AppGeneralQuotesController(IAppGeneralQuotesService appGeneralQuotesService,
+                                           ICotizacionService cotizacionService, ILegacyQuoteModelAccess quoteModelAccess)
         {
             _appGeneralQuotesService = appGeneralQuotesService;
             _cotizacionService = cotizacionService;
+            _quoteModelAccess = quoteModelAccess;
         }
 
 
@@ -81,7 +90,7 @@ namespace AppService.Api.Controllers
             {
 
                 metadata.IsValid = false;
-                metadata.Message = e.InnerException.Message;
+                metadata.Message = e.InnerException?.Message ?? e.Message;
                 var responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
                 {
                     Meta = metadata
@@ -130,7 +139,7 @@ namespace AppService.Api.Controllers
             {
 
                 metadata.IsValid = false;
-                metadata.Message = e.InnerException.Message;
+                metadata.Message = e.InnerException?.Message ?? e.Message;
                 var responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
                 {
                     Meta = metadata
@@ -725,6 +734,17 @@ namespace AppService.Api.Controllers
 
             try
             {
+                if (_quoteModelAccess != null)
+                {
+                    var message = await _quoteModelAccess.CheckAsync(generalId: appGeneralQuotesDeleteDto.Id, quotation: appGeneralQuotesDeleteDto.Cotizacion);
+                    if (!string.IsNullOrEmpty(message))
+                    {
+                        metadata.IsValid = false;
+                        metadata.Message = message;
+                        return Ok(new ApiResponse<AppGeneralQuotesGetDto>(null) { Meta = metadata });
+                    }
+                }
+
 
 
                 await _cotizacionService.IntegrarCotizacion(appGeneralQuotesDeleteDto.Id, true);
@@ -737,7 +757,7 @@ namespace AppService.Api.Controllers
             {
 
                 metadata.IsValid = false;
-                metadata.Message = e.InnerException.Message;
+                metadata.Message = e.InnerException?.Message ?? e.Message;
                 var responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
                 {
                     Meta = metadata

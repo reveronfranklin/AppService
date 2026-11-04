@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using System;
 using AppService.Core.Entities;
 using AppService.Core.Interfaces;
 using AppService.Infrastructure.Data;
@@ -15,16 +16,31 @@ namespace AppService.Infrastructure.Repositories
     {
 
         private readonly RRDContext _context;
+        private readonly bool _quoteModel120GuardsEnabled;
 
         public AppDetailQuotesRepository(RRDContext context)
+            : this(context, null)
+        {
+        }
+
+        public AppDetailQuotesRepository(RRDContext context, IConfiguration configuration)
         {
             _context = context;
+            _quoteModel120GuardsEnabled = configuration?.GetValue<bool>("QuoteModel120:CompatibilityGuardsEnabled") ?? false;
         }
+
+
+        private IQueryable<AppGeneralQuotes> LegacyGeneralQuotes => !_quoteModel120GuardsEnabled
+            ? _context.AppGeneralQuotes
+            : _context.AppGeneralQuotes.Where(g => _context.LegacyQuoteScope().Any(s => s.Id == g.Id));
+        private IQueryable<AppDetailQuotes> LegacyDetailQuotes => !_quoteModel120GuardsEnabled
+            ? _context.AppDetailQuotes
+            : _context.AppDetailQuotes.Where(d => _context.LegacyQuoteScope().Any(s => s.Id == d.AppGeneralQuotesId && s.Cotizacion == d.Cotizacion));
 
         public async Task<List<AppDetailQuotes>> GetAll()
         {
 
-            return await _context.AppDetailQuotes.ToListAsync();
+            return await LegacyDetailQuotes.ToListAsync();
 
         }
 
@@ -89,7 +105,7 @@ namespace AppService.Infrastructure.Repositories
         public async Task<List<AppDetailQuotes>> GetByYearMonth(int year, int month)
         {
 
-            return await _context.AppDetailQuotes
+            return await LegacyDetailQuotes
                 .Where(x=>x.FechaRegistro.Year == year && x.FechaRegistro.Month == month)
                 .ToListAsync();
 
@@ -98,18 +114,18 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task<List<AppDetailQuotes>> GetByAppGeneralQuotesId(int appGeneralQuotesId)
         {
-            return await _context.AppDetailQuotes.Where(x => x.AppGeneralQuotesId == appGeneralQuotesId).Include(x => x.AppGeneralQuotes).Include(x => x.IdEstatusNavigation).Include(x => x.IdProductoNavigation).ToListAsync();
+            return await LegacyDetailQuotes.Where(x => x.AppGeneralQuotesId == appGeneralQuotesId).Include(x => x.AppGeneralQuotes).Include(x => x.IdEstatusNavigation).Include(x => x.IdProductoNavigation).ToListAsync();
         }
         public async Task<List<AppDetailQuotes>> GeSimpletByAppGeneralQuotesId(int appGeneralQuotesId)
         {
-            return await _context.AppDetailQuotes.Where(x => x.AppGeneralQuotesId == appGeneralQuotesId).ToListAsync();
+            return await LegacyDetailQuotes.Where(x => x.AppGeneralQuotesId == appGeneralQuotesId).ToListAsync();
         }
 
         public async Task<bool> ExisteEnEspera(int appGeneralQuotesId)
         {
 
             bool result = false;
-            var detail = await _context.AppDetailQuotes.Where(x => x.AppGeneralQuotesId == appGeneralQuotesId).ToListAsync();
+            var detail = await LegacyDetailQuotes.Where(x => x.AppGeneralQuotesId == appGeneralQuotesId).ToListAsync();
             if (detail != null)
             {
                 foreach (var item in detail)
@@ -135,7 +151,7 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task<List<AppDetailQuotes>> GetBySubCategopry(int subCategory)
         {
-            var detail = await _context.AppDetailQuotes.Where(x => x.IdEstatus<5 && x.IdProductoNavigation.AppSubCategoryId == subCategory).ToListAsync();
+            var detail = await LegacyDetailQuotes.Where(x => x.IdEstatus<5 && x.IdProductoNavigation.AppSubCategoryId == subCategory).ToListAsync();
 
             return detail;
 
@@ -145,50 +161,42 @@ namespace AppService.Infrastructure.Repositories
         public async Task<AppDetailQuotes> GetById(int id)
         {
 
-            var detail = await _context.AppDetailQuotes.Include(x => x.IdProductoNavigation).Include(x => x.IdEstatusNavigation).Include(x => x.AppGeneralQuotes).Where(x => x.Id == id).FirstOrDefaultAsync();
+            var detail = await LegacyDetailQuotes.Include(x => x.IdProductoNavigation).Include(x => x.IdEstatusNavigation).Include(x => x.AppGeneralQuotes).Where(x => x.Id == id).FirstOrDefaultAsync();
             return detail;
 
         }
 
         public async Task<List<AppDetailQuotes>> GetByQuotesCotizacion(string cotizacion)
         {
-            var detail = await _context.AppDetailQuotes.Where(x => x.Cotizacion == cotizacion).ToListAsync();
+            var detail = await LegacyDetailQuotes.Where(x => x.Cotizacion == cotizacion).ToListAsync();
 
             return detail;
 
         }
         public async Task<AppDetailQuotes> GetByQuetesProduct(string cotizacion, int idProduct)
         {
-            var detail = await _context.AppDetailQuotes.Where(x => x.Cotizacion == cotizacion && x.IdProducto == idProduct).FirstOrDefaultAsync();
+            var detail = await LegacyDetailQuotes.Where(x => x.Cotizacion == cotizacion && x.IdProducto == idProduct).FirstOrDefaultAsync();
 
             return detail;
 
         }
         public async Task<AppDetailQuotes> GetByGeneralQuotesExternalcode(int idGeneralQuotes, string externalCode)
         {
-            var detail = await _context.AppDetailQuotes.Where(x => x.AppGeneralQuotesId == idGeneralQuotes && x.IdProductoNavigation.ExternalCode == externalCode).FirstOrDefaultAsync();
+            var detail = await LegacyDetailQuotes.Where(x => x.AppGeneralQuotesId == idGeneralQuotes && x.IdProductoNavigation.ExternalCode == externalCode).FirstOrDefaultAsync();
 
             return detail;
 
         }
         public async Task<bool> ProductExistInQuotesDetail(int idProduct)
         {
-
-            var detail = await _context.AppDetailQuotes.Where(x => x.IdProducto == idProduct).FirstOrDefaultAsync();
-            if (detail != null)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-
-
+            // Product integrity spans every quote model, without loading/tracking120 entities.
+            return await _context.AppDetailQuotes.AnyAsync(x => x.IdProducto == idProduct);
         }
+
 
         public async Task Add(AppDetailQuotes entity)
         {
+            await LegacyQuoteModel120Guard.CheckAsync(_context, _quoteModel120GuardsEnabled, generalId: entity.AppGeneralQuotesId, quotation: entity.Cotizacion);
 
             FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
 
@@ -208,6 +216,7 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task UpdateFlete(int appDetailQuotesId,decimal porcFlete,decimal flete)
         {
+            await LegacyQuoteModel120Guard.CheckAsync(_context, _quoteModel120GuardsEnabled, detailId: appDetailQuotesId);
             try
             {
                 string porcFleteString = porcFlete.ToString();
@@ -229,6 +238,7 @@ namespace AppService.Infrastructure.Repositories
         
         public async Task UpdatePrecioMinimo(int appDetailQuotesId,decimal precioMinimo,decimal precioMaximo,int calculoId)
         {
+            await LegacyQuoteModel120Guard.CheckAsync(_context, _quoteModel120GuardsEnabled, detailId: appDetailQuotesId);
             try
             {
                 string minimo = precioMinimo.ToString();
@@ -254,6 +264,7 @@ namespace AppService.Infrastructure.Repositories
         
         public void UpdatePrecios(int appDetailsId,decimal precioMinimo,decimal precioMaximo, int calculoId,int solicitarPrecio)
         {
+            LegacyQuoteModel120Guard.Check(_context, _quoteModel120GuardsEnabled, detailId: appDetailsId);
             var precioMinimoString = precioMinimo.ToString();
             precioMinimoString = precioMinimoString.Replace(",", ".");
             var precioMaximoString = precioMaximo.ToString();
@@ -270,6 +281,7 @@ namespace AppService.Infrastructure.Repositories
         }
         public void UpdateCondicionPago(int appGeneralQuotesId,short condicionPago)
         {
+            LegacyQuoteModel120Guard.Check(_context, _quoteModel120GuardsEnabled, generalId: appGeneralQuotesId);
 
             try
             {
@@ -296,6 +308,7 @@ namespace AppService.Infrastructure.Repositories
 
         public void Update(AppDetailQuotes entity)
         {
+            LegacyQuoteModel120Guard.Check(_context, _quoteModel120GuardsEnabled, generalId: entity.AppGeneralQuotesId, detailId: entity.Id, quotation: entity.Cotizacion);
             FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
 
             var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
@@ -305,6 +318,7 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task Delete(int id)
         {
+            await LegacyQuoteModel120Guard.CheckAsync(_context, _quoteModel120GuardsEnabled, detailId: id);
             
           
 

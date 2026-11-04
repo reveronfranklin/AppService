@@ -1,4 +1,4 @@
-using AppService.Core.CustomEntities;
+﻿using AppService.Core.CustomEntities;
 using AppService.Core.DataContratosStock;
 using AppService.Core.DTOs;
 using AppService.Core.DTOs.Odoo.Clientes.OdooClients;
@@ -33,6 +33,7 @@ namespace AppService.Core.Services
     {
         private const decimal ValorCero = 0.0000M;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILegacyQuoteModelAccess _quoteModelAccess;
         private readonly PaginationOptions _paginationOptions;
         private readonly IMapper _mapper;
         private readonly IAppUnitsService _appUnitsService;
@@ -60,8 +61,24 @@ namespace AppService.Core.Services
           IAppRecipesByAppDetailQuotesService appRecipesByAppDetailQuotesService
        
         )
+            : this(unitOfWork, options, mapper, appUnitsService, mtrTipoMonedaService, aprobacionesServices, odooClient, appProductsService, mtrContactosService, appRecipesByAppDetailQuotesService, null)
+        {
+        }
+
+        public CotizacionService(
+          IUnitOfWork unitOfWork,
+          IOptions<PaginationOptions> options,
+          IMapper mapper,
+          IAppUnitsService appUnitsService,
+          IMtrTipoMonedaService mtrTipoMonedaService,
+          IAprobacionesServices aprobacionesServices,
+          IOdooClient odooClient,
+          IAppProductsService appProductsService,
+          IMtrContactosService mtrContactosService,
+          IAppRecipesByAppDetailQuotesService appRecipesByAppDetailQuotesService, ILegacyQuoteModelAccess quoteModelAccess)
         {
             _unitOfWork = unitOfWork;
+            _quoteModelAccess = quoteModelAccess;
             _paginationOptions = options.Value;
             _mapper = mapper;
             _appUnitsService = appUnitsService;
@@ -73,6 +90,30 @@ namespace AppService.Core.Services
             _appRecipesByAppDetailQuotesService = appRecipesByAppDetailQuotesService;
     
 
+        }
+
+        private async Task EnsureLegacyQuoteAccess(int? generalId = null, string quotation = null, int? detailId = null)
+        {
+            if (_quoteModelAccess == null) return;
+            var message = await _quoteModelAccess.CheckAsync(generalId: generalId, detailId: detailId, quotation: quotation);
+            if (!string.IsNullOrEmpty(message)) throw new InvalidOperationException(message);
+        }
+
+        private async Task EnsureExternalLegacyQuoteAccess(string quotation)
+        {
+            if (_quoteModelAccess == null) return;
+            var message = await _quoteModelAccess.CheckExternalAsync(quotation);
+            if (!string.IsNullOrEmpty(message)) throw new InvalidOperationException(message);
+        }
+        private async Task<bool> SkipLegacyBatchItem(int? generalId = null, string quotation = null, bool external = false)
+        {
+            if (_quoteModelAccess == null) return false;
+            var message = external
+                ? await _quoteModelAccess.CheckExternalAsync(quotation)
+                : await _quoteModelAccess.CheckAsync(generalId: generalId, quotation: quotation);
+            if (string.IsNullOrEmpty(message)) return false;
+            Console.WriteLine(message);
+            return true;
         }
 
         public async Task<List<Wsmy501>> GetAll() => await this._unitOfWork.CotizacionRepository.GetAll();
@@ -221,6 +262,7 @@ namespace AppService.Core.Services
             
             foreach (AppGeneralQuotes item in pendientesIntegrar)
             {
+                if (await SkipLegacyBatchItem(generalId: item.Id, quotation: item.Cotizacion)) continue;
                 try
                 {
                     Console.WriteLine($"Integrando cotizacion: {item.Cotizacion}");
@@ -245,6 +287,7 @@ namespace AppService.Core.Services
 
             foreach (AppGeneralQuotes item in pendientesIntegrar)
             {
+                if (await SkipLegacyBatchItem(generalId: item.Id, quotation: item.Cotizacion)) continue;
                 var detailQuotes = await _unitOfWork.AppDetailQuotesRepository.GetByAppGeneralQuotesId(item.Id);
                 if (detailQuotes.Count > 0)
                 {
@@ -286,6 +329,8 @@ namespace AppService.Core.Services
 
         public async Task IntegrarCotizacionPorLote(int generalQuotesId, bool actualizarDetalle)
         {
+            // REQ120: protect this public gateway before any legacy effect.
+            await EnsureLegacyQuoteAccess(generalId: generalQuotesId);
           
             AppGeneralQuotes generalQuotes = await this._unitOfWork.AppGeneralQuotesRepository.GetById(generalQuotesId);
             if (generalQuotes == null)
@@ -349,6 +394,8 @@ namespace AppService.Core.Services
         
         public async Task IntegrarCotizacion(int generalQuotesId, bool actualizarDetalle,bool integrar=true)
         {
+            // REQ120: reject before configuration, external reads or writes.
+            await EnsureLegacyQuoteAccess(generalId: generalQuotesId);
           
             
            var configIntegrar =await  _unitOfWork.AppConfigAppRepository.GetByKey("INTEGRAR");
@@ -421,6 +468,8 @@ namespace AppService.Core.Services
 
         public async Task UpdateGeneralCotizacion(AppGeneralQuotes generalQuotes)
         {
+            // REQ120: protect this public gateway before any legacy effect.
+            await EnsureLegacyQuoteAccess(generalId: generalQuotes.Id, quotation: generalQuotes.Cotizacion);
             try
             {
      Wsmy501 cotizacion = await this._unitOfWork.CotizacionRepository.GetByCotizacion(generalQuotes.Cotizacion);
@@ -588,6 +637,8 @@ namespace AppService.Core.Services
 
         public async Task UpdateDetailCotizacion(AppDetailQuotes appDetailQuotes)
         {
+            // REQ120: protect this public gateway before any legacy effect.
+            await EnsureLegacyQuoteAccess(generalId: appDetailQuotes.AppGeneralQuotesId, detailId: appDetailQuotes.Id, quotation: appDetailQuotes.Cotizacion);
             AppProducts appProducts = await this._unitOfWork.AppProductsRepository.GetById(appDetailQuotes.IdProducto);
             if (appProducts != null)
             {
@@ -750,6 +801,8 @@ namespace AppService.Core.Services
 
         public async Task UpdatePropuestaCotizacion(AppDetailQuotes appDetailQuotes, int renglon)
         {
+            // REQ120: protect this public gateway before any legacy effect.
+            await EnsureLegacyQuoteAccess(generalId: appDetailQuotes.AppGeneralQuotesId, detailId: appDetailQuotes.Id, quotation: appDetailQuotes.Cotizacion);
 
             var appGeneralQuotes = await _unitOfWork.AppGeneralQuotesRepository.GetById(appDetailQuotes.AppGeneralQuotesId);
             decimal porcFlete;
@@ -1094,6 +1147,8 @@ namespace AppService.Core.Services
 
         public async Task UpdateWpry229(AppDetailQuotes appDetailQuotes, int renglon)
         {
+            // REQ120: protect this public gateway before any legacy effect.
+            await EnsureLegacyQuoteAccess(generalId: appDetailQuotes.AppGeneralQuotesId, detailId: appDetailQuotes.Id, quotation: appDetailQuotes.Cotizacion);
             var prod = await _unitOfWork.AppProductsRepository.GetById(appDetailQuotes.IdProducto);
             ValoresCotizacionDto valoresCotizacion = await this.ValoresCotizacion(appDetailQuotes);
             Wsmy515 propuesta = await this._unitOfWork.PropuestaRepository.GetByCotizacionRenglonPropuesta(appDetailQuotes.Cotizacion, renglon, 1);
@@ -1301,6 +1356,8 @@ namespace AppService.Core.Services
         }  
         public async Task UpdateWpry240(AppDetailQuotes appDetailQuotes, int renglon)
         {
+            // REQ120: protect this public gateway before any legacy effect.
+            await EnsureLegacyQuoteAccess(generalId: appDetailQuotes.AppGeneralQuotesId, detailId: appDetailQuotes.Id, quotation: appDetailQuotes.Cotizacion);
 
             var papelesActuales = await _unitOfWork.Wpry240Repository.GetByCotizacion(appDetailQuotes.Cotizacion);
             if (papelesActuales != null && papelesActuales.Count()>0)
@@ -1450,6 +1507,8 @@ namespace AppService.Core.Services
 
         public async Task UpdateWpry241(AppDetailQuotes appDetailQuotes, int renglon)
         {
+            // REQ120: protect this public gateway before any legacy effect.
+            await EnsureLegacyQuoteAccess(generalId: appDetailQuotes.AppGeneralQuotesId, detailId: appDetailQuotes.Id, quotation: appDetailQuotes.Cotizacion);
             Wsmy515 propuesta = await this._unitOfWork.PropuestaRepository.GetByCotizacionRenglonPropuesta(appDetailQuotes.Cotizacion, renglon, 1);
             if (propuesta == null)
             {
@@ -1658,6 +1717,8 @@ namespace AppService.Core.Services
 
         public async Task DeleteWpry229ByCotizacion(AppDetailQuotes appDetailQuotes)
         {
+            // REQ120: protect this public gateway before any legacy effect.
+            await EnsureLegacyQuoteAccess(generalId: appDetailQuotes.AppGeneralQuotesId, detailId: appDetailQuotes.Id, quotation: appDetailQuotes.Cotizacion);
             List<Wpry229> byCotizacion = await this._unitOfWork.Wpry229Repository.GetByCotizacion(appDetailQuotes.Cotizacion);
             if (byCotizacion == null)
                 return;
@@ -1675,6 +1736,8 @@ namespace AppService.Core.Services
 
         public async Task DeleteWpry240ByCotizacion(AppDetailQuotes appDetailQuotes)
         {
+            // REQ120: protect this public gateway before any legacy effect.
+            await EnsureLegacyQuoteAccess(generalId: appDetailQuotes.AppGeneralQuotesId, detailId: appDetailQuotes.Id, quotation: appDetailQuotes.Cotizacion);
             List<Wpry240> byCotizacion = await this._unitOfWork.Wpry240Repository.GetByCotizacion(appDetailQuotes.Cotizacion);
             if (byCotizacion == null)
                 return;
@@ -1687,6 +1750,8 @@ namespace AppService.Core.Services
 
         public async Task DeleteWpry241ByCotizacion(AppDetailQuotes appDetailQuotes)
         {
+            // REQ120: protect this public gateway before any legacy effect.
+            await EnsureLegacyQuoteAccess(generalId: appDetailQuotes.AppGeneralQuotesId, detailId: appDetailQuotes.Id, quotation: appDetailQuotes.Cotizacion);
             List<Wpry241> byCotizacion = await this._unitOfWork.Wpry241Repository.GetByCotizacion(appDetailQuotes.Cotizacion);
             if (byCotizacion == null)
                 return;
@@ -1699,6 +1764,8 @@ namespace AppService.Core.Services
 
         public async Task DeleteWpry251ByCotizacion(AppDetailQuotes appDetailQuotes)
         {
+            // REQ120: protect this public gateway before any legacy effect.
+            await EnsureLegacyQuoteAccess(generalId: appDetailQuotes.AppGeneralQuotesId, detailId: appDetailQuotes.Id, quotation: appDetailQuotes.Cotizacion);
 
              var wpry251 = await this.GetByCotizacion(appDetailQuotes.Cotizacion);
              if (wpry251 != null)
@@ -1713,6 +1780,8 @@ namespace AppService.Core.Services
 
         public async Task DeletePropuestaCotizacion(AppDetailQuotes appDetailQuotes, int renglon)
         {
+            // REQ120: protect this public gateway before any legacy effect.
+            await EnsureLegacyQuoteAccess(generalId: appDetailQuotes.AppGeneralQuotesId, detailId: appDetailQuotes.Id, quotation: appDetailQuotes.Cotizacion);
             if (await this._unitOfWork.PropuestaRepository.GetByCotizacionRenglonPropuesta(appDetailQuotes.Cotizacion, renglon, 1) == null)
                 return;
             await this._unitOfWork.PropuestaRepository.Delete(appDetailQuotes.Cotizacion, renglon, 1);
@@ -1721,6 +1790,8 @@ namespace AppService.Core.Services
 
         public async Task DeleteRenglonCotizacion(AppDetailQuotes appDetailQuotes, int renglon)
         {
+            // REQ120: protect this public gateway before any legacy effect.
+            await EnsureLegacyQuoteAccess(generalId: appDetailQuotes.AppGeneralQuotesId, detailId: appDetailQuotes.Id, quotation: appDetailQuotes.Cotizacion);
             if (await this._unitOfWork.RenglonRepository.GetByCotizacionRenglon(appDetailQuotes.Cotizacion, renglon) == null)
                 return;
 
@@ -1734,6 +1805,8 @@ namespace AppService.Core.Services
 
         public async Task DeleteCotizacion(AppGeneralQuotes appGeneralQuotes)
         {
+            // REQ120: reject before configuration, external reads or writes.
+            await EnsureLegacyQuoteAccess(generalId: appGeneralQuotes.Id, quotation: appGeneralQuotes.Cotizacion);
             if (await this._unitOfWork.CotizacionRepository.GetByCotizacion(appGeneralQuotes.Cotizacion) == null)
                 return;
             List<AppDetailQuotes> appGeneralQuotesId = await this._unitOfWork.AppDetailQuotesRepository.GetByAppGeneralQuotesId(appGeneralQuotes.Id);
@@ -1761,6 +1834,8 @@ namespace AppService.Core.Services
 
         public async Task DeleteCotizacionRenglon(AppDetailQuotes appDetailQuotes)
         {
+            // REQ120: protect this public gateway before any legacy effect.
+            await EnsureLegacyQuoteAccess(generalId: appDetailQuotes.AppGeneralQuotesId, detailId: appDetailQuotes.Id, quotation: appDetailQuotes.Cotizacion);
             
             
             await _unitOfWork.PropuestaRepository.DeleteCotizacion(appDetailQuotes.Cotizacion);
@@ -2035,7 +2110,11 @@ namespace AppService.Core.Services
                 {
                     Wpry229 wpry229New = new Wpry229();
                     wpry229New.IdTipoProducto = aplicacion.CodAplicacion;
-                    wpry229New.DescripcionSolicitud = cpry012.NombreProducto.Trim();
+                    // La repeticion conserva el nombre comercial editado en la cotizacion.
+                    wpry229New.DescripcionSolicitud =
+                        string.IsNullOrWhiteSpace(appDetailQuotes.NombreComercialProducto)
+                            ? cpry012.NombreProducto.Trim()
+                            : appDetailQuotes.NombreComercialProducto;
                     wpry229New.Cotizacion = cotizacion;
                     wpry229New.Renglon = renglon;
                     wpry229New.Propuesta = propuesta;
@@ -2221,6 +2300,17 @@ namespace AppService.Core.Services
         //######################################################
         public async Task DeleteCotizacionesDetailToOdoo(List<int> mooreIds)
         {
+            // Validate the entire batch before the first Post: a later unsafe Id
+            // must not leave earlier legacy items already sent.
+            if (_quoteModelAccess != null)
+            {
+                foreach (var mooreId in mooreIds)
+                {
+                    var message = await _quoteModelAccess.CheckOdooDetailAsync(mooreId);
+                    if (!string.IsNullOrEmpty(message)) throw new InvalidOperationException(message);
+                }
+            }
+
 
 
 
@@ -2291,7 +2381,7 @@ namespace AppService.Core.Services
                 catch (Exception e)
                 {
 
-                    var msg = e.InnerException.Message + "" + item;
+                    var msg = (e.InnerException?.Message ?? e.Message) + "" + item;
                     return;
                 }
 
@@ -2309,6 +2399,12 @@ namespace AppService.Core.Services
 
         public async Task<OdooClients> GetOdooDeleteDetail(int mooreId)
         {
+            if (_quoteModelAccess != null)
+            {
+                var message = await _quoteModelAccess.CheckOdooDetailAsync(mooreId);
+                if (!string.IsNullOrEmpty(message)) throw new InvalidOperationException(message);
+            }
+
             /*
               OdooServerProd
               OdooServerDev
@@ -2360,6 +2456,7 @@ namespace AppService.Core.Services
 
             foreach (var item in cotizaciones)
             {
+                if (await SkipLegacyBatchItem(quotation: item, external: true)) continue;
 
 
 
@@ -2444,6 +2541,7 @@ namespace AppService.Core.Services
 
         public async Task<OdooClients> GetOdooCotizacionDeleteGeneral(string cotizacion)
         {
+            await EnsureExternalLegacyQuoteAccess(cotizacion);
 
             /*
           OdooServerProd
@@ -2490,6 +2588,7 @@ namespace AppService.Core.Services
 
         public async Task<OdooClients> GetOdooCotizacion(string cotizacion)
         {
+            await EnsureExternalLegacyQuoteAccess(cotizacion);
 
             /*
             OdooServerProd
@@ -2648,6 +2747,7 @@ namespace AppService.Core.Services
             var cont = 0;
             foreach (var item in cotizaciones.Where(x=>x.Trim()=="AY02202405018").ToList())
             {
+                if (await SkipLegacyBatchItem(quotation: item, external: true)) continue;
                 cont++;
                 Console.WriteLine("Actualizando: " + cont.ToString() + " de: " + cotizaciones.Count().ToString());
 
@@ -2776,6 +2876,7 @@ namespace AppService.Core.Services
 
         public async Task UpdateCotizacionToOdoo(string cotizacion)
         {
+            await EnsureExternalLegacyQuoteAccess(cotizacion);
 
 
 

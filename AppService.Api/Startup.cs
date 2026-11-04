@@ -1,4 +1,4 @@
-using AppService.Core.CustomEntities;
+﻿using AppService.Core.CustomEntities;
 using AppService.Core.Interfaces;
 using AppService.Core.Services;
 using AppService.Infrastructure.Data;
@@ -63,6 +63,16 @@ namespace AppService.Api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            if (Configuration.GetValue<bool>("QuotationLocal:Enabled"))
+                services.ConfigureAll<Microsoft.Extensions.Http.HttpClientFactoryOptions>(options =>
+                    options.HttpMessageHandlerBuilderActions.Add(builder =>
+                    {
+                        builder.AdditionalHandlers.Add(new QuotationLocalHttpHandler());
+                        if (builder.PrimaryHandler is System.Net.Http.HttpClientHandler handler)
+                            handler.AllowAutoRedirect = false;
+                        if (builder.PrimaryHandler is System.Net.Http.SocketsHttpHandler socketsHandler)
+                            socketsHandler.AllowAutoRedirect = false;
+                    }));
             //services.AddCors();
 
 
@@ -171,10 +181,15 @@ namespace AppService.Api
                     sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
             );
 
-            services.AddDbContext<SpiContext>(options =>
-                options.UseOracle(Configuration.GetConnectionString("spiConnection"),
-                    b => b.UseOracleSQLCompatibility("11")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
-            );
+            if (Configuration.GetValue<bool>("QuotationLocal:Enabled"))
+                // UnitOfWork resolves every context, even for quotation-only reads.
+                // SPI has no local fixture: leave it without a provider so SPI operations fail locally.
+                services.AddDbContext<SpiContext>();
+            else
+                services.AddDbContext<SpiContext>(options =>
+                    options.UseOracle(Configuration.GetConnectionString("spiConnection"),
+                        b => b.UseOracleSQLCompatibility("11")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+                );
 
             services.AddAppCache(Configuration);
 
@@ -286,6 +301,7 @@ namespace AppService.Api
 
             services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));
             services.AddTransient<IUnitOfWork, UnitOfWork>();
+            services.AddTransient<ILegacyQuoteModelAccess, AppService.Infrastructure.Repositories.LegacyQuoteModel120Access>();
 
             //services.AddHostedService<Worker>()
             //        .AddSingleton<ICotizacionService, CotizacionService>();

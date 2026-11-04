@@ -1,4 +1,5 @@
-﻿using AppService.Core.Entities;
+﻿using Microsoft.Extensions.Configuration;
+using AppService.Core.Entities;
 using AppService.Core.Interfaces;
 using AppService.Core.QueryFilters;
 using AppService.Infrastructure.Data;
@@ -16,17 +17,33 @@ namespace AppService.Infrastructure.Repositories
     {
 
         private readonly RRDContext _context;
+        private readonly bool _quoteModel120GuardsEnabled;
         private readonly MooreveContext _mooreveContext;
 
         public AppGeneralQuotesRepository(RRDContext context, MooreveContext mooreveContext)
+            : this(context, mooreveContext, null)
+        {
+        }
+
+        public AppGeneralQuotesRepository(RRDContext context, MooreveContext mooreveContext, IConfiguration configuration)
         {
             _context = context;
+            _quoteModel120GuardsEnabled = configuration?.GetValue<bool>("QuoteModel120:CompatibilityGuardsEnabled") ?? false;
             _mooreveContext = mooreveContext;
         }
 
 
+
+        private IQueryable<AppGeneralQuotes> LegacyGeneralQuotes => !_quoteModel120GuardsEnabled
+            ? _context.AppGeneralQuotes
+            : _context.AppGeneralQuotes.Where(g => _context.LegacyQuoteScope().Any(s => s.Id == g.Id));
+        private IQueryable<AppDetailQuotes> LegacyDetailQuotes => !_quoteModel120GuardsEnabled
+            ? _context.AppDetailQuotes
+            : _context.AppDetailQuotes.Where(d => _context.LegacyQuoteScope().Any(s => s.Id == d.AppGeneralQuotesId && s.Cotizacion == d.Cotizacion));
+
         public async Task UpdatSearchText(string usuario)
         {
+            if (_quoteModel120GuardsEnabled) { await LegacyQuoteModel120Maintenance.RefreshSearchAsync(_context, usuario); return; }
 
             FormattableString query = $"";
             query =
@@ -71,6 +88,7 @@ namespace AppService.Infrastructure.Repositories
         
           public async Task<bool> EnviarAlCliente(string cotizacion)
         {
+           await LegacyQuoteModel120Guard.CheckAsync(_context, _quoteModel120GuardsEnabled, quotation: cotizacion);
            var mensaje="";
             FormattableString xqueryDiario = $"exec sp_AppAppGeneralQuote_EnviarAlCliente {cotizacion},{mensaje}";
 
@@ -81,6 +99,7 @@ namespace AppService.Infrastructure.Repositories
         
         public void UpdatSearchTextById(int id)
         {
+            if (id > 0) LegacyQuoteModel120Guard.Check(_context, _quoteModel120GuardsEnabled, generalId: id);
 
          
             FormattableString xqueryDiario = $"";
@@ -162,7 +181,7 @@ namespace AppService.Infrastructure.Repositories
                 {
                     if (filter.SearchText != null && filter.SearchText.Length > 0)
                     {
-                        result = await _context.AppGeneralQuotes
+                        result = await LegacyGeneralQuotes
                             .AsNoTracking()
                              .Include(x => x.IdClienteNavigation)
                              .Include(x => x.IdVendedorNavigation)
@@ -178,7 +197,7 @@ namespace AppService.Infrastructure.Repositories
                     }
                     else if (filter.Cotizacion != null && filter.Cotizacion.Length > 0)
                     {
-                        result = await _context.AppGeneralQuotes
+                        result = await LegacyGeneralQuotes
                             .AsNoTracking()
                              .Include(x => x.IdClienteNavigation)
                              .Include(x => x.IdVendedorNavigation)
@@ -194,7 +213,7 @@ namespace AppService.Infrastructure.Repositories
                     }
                     else
                     {
-                        result = await _context.AppGeneralQuotes
+                        result = await LegacyGeneralQuotes
                             .AsNoTracking()
                             .Include(x => x.IdClienteNavigation)
                             .Include(x => x.IdVendedorNavigation)
@@ -215,7 +234,7 @@ namespace AppService.Infrastructure.Repositories
                 {
                     if (filter.SearchText != null && filter.SearchText.Length > 0)
                     {
-                        result = await _context.AppGeneralQuotes
+                        result = await LegacyGeneralQuotes
                             .AsNoTracking()
                              .Include(x => x.IdClienteNavigation)
                              .Include(x => x.IdVendedorNavigation)
@@ -230,7 +249,7 @@ namespace AppService.Infrastructure.Repositories
                     }
                     else if (filter.Cotizacion != null && filter.Cotizacion.Length > 0)
                     {
-                        result = await _context.AppGeneralQuotes
+                        result = await LegacyGeneralQuotes
                             .AsNoTracking()
                              .Include(x => x.IdClienteNavigation)
                              .Include(x => x.IdVendedorNavigation)
@@ -245,7 +264,7 @@ namespace AppService.Infrastructure.Repositories
                     }
                     else
                     {
-                        result = await _context.AppGeneralQuotes
+                        result = await LegacyGeneralQuotes
                             .AsNoTracking()
                             .Include(x => x.IdClienteNavigation)
                             .Include(x => x.IdVendedorNavigation)
@@ -263,7 +282,7 @@ namespace AppService.Infrastructure.Repositories
                 {
                     if (filter.SearchText != null && filter.SearchText.Length > 0)
                     {
-                        result = await _context.AppGeneralQuotes
+                        result = await LegacyGeneralQuotes
                                      .AsNoTracking()
                                     .Include(x => x.IdClienteNavigation)
                                     .Include(x => x.IdVendedorNavigation)
@@ -277,7 +296,7 @@ namespace AppService.Infrastructure.Repositories
                     }
                     else if (filter.Cotizacion != null && filter.Cotizacion.Length > 0)
                     {
-                        result = await _context.AppGeneralQuotes
+                        result = await LegacyGeneralQuotes
                             .AsNoTracking()
                              .Include(x => x.IdClienteNavigation)
                              .Include(x => x.IdVendedorNavigation)
@@ -292,7 +311,7 @@ namespace AppService.Infrastructure.Repositories
                     }
                     else
                     {
-                        result = await _context.AppGeneralQuotes
+                        result = await LegacyGeneralQuotes
                              .AsNoTracking()
                              .Include(x => x.IdClienteNavigation)
                              .Include(x => x.IdVendedorNavigation)
@@ -365,7 +384,7 @@ namespace AppService.Infrastructure.Repositories
 
     // 3. Base Query Construction
     // Start with a base query that includes common includes and AsNoTracking
-    var query = _context.AppGeneralQuotes
+    var query = LegacyGeneralQuotes
                         .AsNoTracking()
                         .Include(x => x.IdClienteNavigation)
                         .Include(x => x.IdVendedorNavigation)
@@ -433,7 +452,7 @@ namespace AppService.Infrastructure.Repositories
             AppGeneralQuotes result = new AppGeneralQuotes();
             try
             {
-                result = await _context.AppGeneralQuotes.AsNoTracking().Include(x => x.IdEstatusNavigation)
+                result = await LegacyGeneralQuotes.AsNoTracking().Include(x => x.IdEstatusNavigation)
                                                          .Include(x => x.AppDetailQuotes)
                                                          .Include(x => x.IdClienteNavigation)
                                                          .Where(x => x.Id == id).FirstOrDefaultAsync();
@@ -459,7 +478,7 @@ namespace AppService.Infrastructure.Repositories
             AppGeneralQuotes result = new AppGeneralQuotes();
             try
             {
-                result = await _context.AppGeneralQuotes.Where(x => x.Id == id).FirstOrDefaultAsync();
+                result = await LegacyGeneralQuotes.Where(x => x.Id == id).FirstOrDefaultAsync();
 
                 return result;
 
@@ -496,7 +515,7 @@ namespace AppService.Infrastructure.Repositories
                 fechaDesde = DateTime.Now.AddDays(-3);
                 fechaHasta = DateTime.Now;
 
-                result = await _context.AppGeneralQuotes.Where(x => x.FechaActualiza >= fechaDesde && x.AppDetailQuotes.Count > 0).Select(p => p.Cotizacion).ToListAsync();
+                result = await LegacyGeneralQuotes.Where(x => x.FechaActualiza >= fechaDesde && x.AppDetailQuotes.Count > 0).Select(p => p.Cotizacion).ToListAsync();
 
 
                 return result;
@@ -532,7 +551,7 @@ namespace AppService.Infrastructure.Repositories
                 fechaDesde = DateTime.Now.AddDays(-30);
                 fechaHasta = DateTime.Now;
 
-                result = await _context.AppGeneralQuotes.Where(x => x.Fecha >= fechaDesde && x.AppDetailQuotes.Count > 0).ToListAsync();
+                result = await LegacyGeneralQuotes.Where(x => x.Fecha >= fechaDesde && x.AppDetailQuotes.Count > 0).ToListAsync();
 
 
                 return result;
@@ -554,13 +573,13 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task<List<AppGeneralQuotes>> GetByCotizacionesPendientesIntegrar()
         {
-            var result = await _context.AppGeneralQuotes.AsNoTracking().Where(x => x.IntegrarCotizacion == true).ToListAsync();
+            var result = await LegacyGeneralQuotes.AsNoTracking().Where(x => x.IntegrarCotizacion == true).ToListAsync();
             return result;
         }
 
         public async Task<AppGeneralQuotes> GetByCotizacions(string cotizacion)
         {
-            return await _context.AppGeneralQuotes.AsNoTracking().Where(x => x.Cotizacion == cotizacion).FirstOrDefaultAsync();
+            return await LegacyGeneralQuotes.AsNoTracking().Where(x => x.Cotizacion == cotizacion).FirstOrDefaultAsync();
         }
 
         public async Task Add(AppGeneralQuotes entity)
@@ -575,6 +594,7 @@ namespace AppService.Infrastructure.Repositories
 
         public void Update(AppGeneralQuotes entity)
         {
+            LegacyQuoteModel120Guard.Check(_context, _quoteModel120GuardsEnabled, generalId: entity.Id, quotation: entity.Cotizacion);
             entity.IntegrarCotizacion = true;
             _context.AppGeneralQuotes.Update(entity);
             UpdatSearchTextById(entity.Id);
@@ -583,6 +603,7 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task Delete(int id)
         {
+            await LegacyQuoteModel120Guard.CheckAsync(_context, _quoteModel120GuardsEnabled, generalId: id);
             AppGeneralQuotes entity = await GetByIdForUpdate(id);
             _context.AppGeneralQuotes.Remove(entity);
 
@@ -590,6 +611,7 @@ namespace AppService.Infrastructure.Repositories
 
         public void MarcarIntegrado(bool marca,int id)
         {
+            LegacyQuoteModel120Guard.Check(_context, _quoteModel120GuardsEnabled, generalId: id);
             int integrar = 0;
             if (marca == false)
             {
@@ -662,12 +684,13 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task<bool> PermiteAdicionarDetalle(int idGeneralQuote)
         {
+            if (_quoteModel120GuardsEnabled && !await LegacyGeneralQuotes.AnyAsync(g => g.Id == idGeneralQuote)) return false;
 
             bool result = new bool();
 
             try
             {
-                var detail = await _context.AppDetailQuotes.Where(x => x.AppGeneralQuotesId == idGeneralQuote).ToListAsync();
+                var detail = await LegacyDetailQuotes.Where(x => x.AppGeneralQuotesId == idGeneralQuote).ToListAsync();
                 if (detail == null || detail.Count == 0)
                 {
                     result = true;
@@ -707,6 +730,7 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task<bool> RetornarAGrabacion(string cotizacion )
         {
+            await LegacyQuoteModel120Guard.CheckAsync(_context, _quoteModel120GuardsEnabled, quotation: cotizacion);
           
             try
             {
@@ -729,6 +753,7 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task<bool> AppDeleteSolcitudCreditoCotizacion(string cotizacion )
         {
+            await LegacyQuoteModel120Guard.CheckAsync(_context, _quoteModel120GuardsEnabled, quotation: cotizacion);
           
             FormattableString xqueryDiarioPasePlanta = $"exec AppDeleteSolcitudCreditoCotizacion {cotizacion}";
             var resultPasePlanta = _context.Database.ExecuteSqlInterpolated(xqueryDiarioPasePlanta);
@@ -741,6 +766,7 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task<int> VerificarStatus(int idGeneralQuote)
         {
+            await LegacyQuoteModel120Guard.CheckAsync(_context, _quoteModel120GuardsEnabled, generalId: idGeneralQuote);
 
             int result = 0;
 
@@ -760,7 +786,7 @@ namespace AppService.Infrastructure.Repositories
                         Update(generalQuotes);
 
 
-                        var detailQuotes = await _context.AppDetailQuotes.Where(x => x.AppGeneralQuotesId == idGeneralQuote).ToListAsync();
+                        var detailQuotes = await LegacyDetailQuotes.Where(x => x.AppGeneralQuotesId == idGeneralQuote).ToListAsync();
                         if (detailQuotes.Count > 0)
                         {
 

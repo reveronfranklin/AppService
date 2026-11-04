@@ -20,14 +20,24 @@ namespace AppService.Api.Controllers
         private readonly IAppDetailQuotesService _appDetailQuotesService;
         private readonly IAppGeneralQuotesService _appGeneralQuotesService;
         private readonly ICotizacionService _cotizacionService;
+        private readonly ILegacyQuoteModelAccess _quoteModelAccess;
 
         public AppDetailQuotesController(IAppDetailQuotesService appDetailQuotesService,
                                            IAppGeneralQuotesService appGeneralQuotesService,
                                            ICotizacionService cotizacionService)
+            : this(appDetailQuotesService, appGeneralQuotesService, cotizacionService, null)
+        {
+        }
+
+        [Microsoft.Extensions.DependencyInjection.ActivatorUtilitiesConstructor]
+        public AppDetailQuotesController(IAppDetailQuotesService appDetailQuotesService,
+                                           IAppGeneralQuotesService appGeneralQuotesService,
+                                           ICotizacionService cotizacionService, ILegacyQuoteModelAccess quoteModelAccess)
         {
             _appDetailQuotesService = appDetailQuotesService;
             _appGeneralQuotesService = appGeneralQuotesService;
             _cotizacionService = cotizacionService;
+            _quoteModelAccess = quoteModelAccess;
         }
 
         
@@ -136,6 +146,18 @@ namespace AppService.Api.Controllers
 
             try
             {
+                // REQ120: gate before the controller's delete/create product-switch branch.
+                if (_quoteModelAccess != null)
+                {
+                    var modelBlock = await _quoteModelAccess.CheckAsync(detailId: appDetailQuotesUpdateDto.Id);
+                    if (!string.IsNullOrEmpty(modelBlock))
+                    {
+                        metadata.IsValid = false;
+                        metadata.Message = modelBlock;
+                        return Ok(new Core.Responses.ApiResponse<AppDetailQuotesGetDto>(new AppDetailQuotesGetDto()) { Meta = metadata });
+                    }
+                }
+
                 if (appDetailQuotesUpdateDto.EliminarSolicitud==true)
                 {
                     appDetailQuotesUpdateDto.SolicitarPrecio = true;
@@ -205,7 +227,7 @@ namespace AppService.Api.Controllers
             {
 
                 metadata.IsValid = false;
-                metadata.Message = e.InnerException.Message;
+                metadata.Message = e.InnerException?.Message ?? e.Message;
                 ApiResponse<AppDetailQuotesGetDto> responseError = new ApiResponse<AppDetailQuotesGetDto>(null)
                 {
                     Meta = metadata
