@@ -14,8 +14,6 @@ namespace AppService.Core.DTOs
         public AppRutasDocumentosFiscalesDto(string ambiente)
         {
             _ambiente = ambiente;
-            //ambiente="producction";
-
             if (ambiente == "producction")
             {
                 FolderFiscales = "W:\\";

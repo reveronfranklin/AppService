@@ -8519,6 +8519,8 @@ namespace AppService.Infrastructure.DataMooreve
 
                 entity.Property(e => e.MontoReal).HasColumnType("numeric(18, 2)");
 
+                entity.Property(e => e.Concesion).HasColumnType("numeric(18, 2)");
+
                 entity.Property(e => e.MontoRealString).HasMaxLength(20);
 
                 entity.Property(e => e.MontoString).HasMaxLength(20);
@@ -22799,7 +22801,6 @@ namespace AppService.Infrastructure.DataMooreve
                 entity.HasOne(d => d.Wpry240)
                     .WithMany(p => p.Wpry241)
                     .HasForeignKey(d => new { d.Cotizacion, d.Renglon, d.Propuesta, d.IdParte })
-                   
                     .HasConstraintName("FK_WPRY241_WPRY240");
             });
 
@@ -32066,9 +32067,15 @@ namespace AppService.Infrastructure.DataMooreve
                     .HasMaxLength(80)
                     .IsUnicode(false);
 
-                entity.Property(e => e.NumCliDesde).HasColumnName("NUM_CLI_DESDE");
+                entity.Property(e => e.NumCliDesde)
+                    .HasColumnName("NUM_CLI_DESDE")
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
 
-                entity.Property(e => e.NumCliHasta).HasColumnName("NUM_CLI_HASTA");
+                entity.Property(e => e.NumCliHasta)
+                    .HasColumnName("NUM_CLI_HASTA")
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.NumClieDEnt).HasColumnName("NUM_CLIE_D_ENT");
 
@@ -32082,13 +32089,19 @@ namespace AppService.Infrastructure.DataMooreve
 
                 entity.Property(e => e.NumContDFact).HasColumnName("NUM_CONT_D_FACT");
 
-                entity.Property(e => e.NumContDesde).HasColumnName("NUM_CONT_DESDE");
+                entity.Property(e => e.NumContDesde)
+                    .HasColumnName("NUM_CONT_DESDE")
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.NumContHEnt).HasColumnName("NUM_CONT_H_ENT");
 
                 entity.Property(e => e.NumContHFact).HasColumnName("NUM_CONT_H_FACT");
 
-                entity.Property(e => e.NumContHasta).HasColumnName("NUM_CONT_HASTA");
+                entity.Property(e => e.NumContHasta)
+                    .HasColumnName("NUM_CONT_HASTA")
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.NumJob).HasColumnName("NUM_JOB");
 

@@ -1,6 +1,4 @@
-﻿using AppService.Core.Entities;
-
-namespace AppService.Core.DTOs
+﻿namespace AppService.Core.DTOs
 {
     public class AppGeneralQuotesActionSheetDto
     {
@@ -24,28 +22,6 @@ namespace AppService.Core.DTOs
         public bool Imprimir { get; set; }
 
         public bool RetornarAGrabacion { get; set; }
-
-
-
-        public AppGeneralQuotesActionSheetDto Adapter(AppGeneralQuotesActionSheet appGeneralQuotesActionSheet)
-        {
-                if (appGeneralQuotesActionSheet == null)
-                {
-                    return new AppGeneralQuotesActionSheetDto();
-                }
-                Actualizar = (bool)appGeneralQuotesActionSheet.Actualizar;
-                EnviarAlCliente = (bool)appGeneralQuotesActionSheet.EnviarAlCliente;
-                EnviarAprobacionPrecio = (bool)appGeneralQuotesActionSheet.EnviarAprobacionPrecio;
-                GanarPerder = (bool)appGeneralQuotesActionSheet.GanarPerder;
-                Postergar = (bool)appGeneralQuotesActionSheet.Postergar;
-                Eliminar = (bool)appGeneralQuotesActionSheet.Eliminar;
-                Cancel = (bool)appGeneralQuotesActionSheet.Cancel;
-                ExistQuotes = (bool)appGeneralQuotesActionSheet.ExistQuotes;
-                Imprimir = (bool)appGeneralQuotesActionSheet.Imprimir;
-                RetornarAGrabacion = (bool)appGeneralQuotesActionSheet.RetornarAGrabacion;
-                return this;
-                
-        }
 
     }
 }

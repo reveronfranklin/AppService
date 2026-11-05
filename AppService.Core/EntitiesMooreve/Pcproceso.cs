@@ -22,7 +22,5 @@ namespace AppService.Core.EntitiesMooreve
         public int? RegistrosCerrados { get; set; }
         public bool? PeriodoCerrado { get; set; }
         public int? IdPeriodo { get; set; }
-        public double? Duracion { get; set; }
-
     }
 }

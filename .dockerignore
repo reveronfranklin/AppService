@@ -1,0 +1,20 @@
+
+# QA build context: never send local settings, credentials, databases or generated outputs.
+.git
+**/.git
+**/node_modules
+**/bin
+**/obj
+**/bin-*
+**/obj-*
+**/publish*
+**/.local-replica
+**/appsettings*.json
+**/.env*
+**/*.bak
+**/*.mdf
+**/*.ldf
+**/*.zip
+**/*.log
+**/.DS_Store
+**/Log-*.txt

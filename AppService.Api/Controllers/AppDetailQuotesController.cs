@@ -1,7 +1,6 @@
 ﻿using AppService.Api.Responses;
 using AppService.Core.CustomEntities;
 using AppService.Core.DTOs;
-using AppService.Core.Entities;
 using AppService.Core.Interfaces;
 using AppService.Core.QueryFilters;
 using Microsoft.AspNetCore.Mvc;
@@ -21,14 +20,24 @@ namespace AppService.Api.Controllers
         private readonly IAppDetailQuotesService _appDetailQuotesService;
         private readonly IAppGeneralQuotesService _appGeneralQuotesService;
         private readonly ICotizacionService _cotizacionService;
+        private readonly ILegacyQuoteModelAccess _quoteModelAccess;
 
         public AppDetailQuotesController(IAppDetailQuotesService appDetailQuotesService,
                                            IAppGeneralQuotesService appGeneralQuotesService,
                                            ICotizacionService cotizacionService)
+            : this(appDetailQuotesService, appGeneralQuotesService, cotizacionService, null)
+        {
+        }
+
+        [Microsoft.Extensions.DependencyInjection.ActivatorUtilitiesConstructor]
+        public AppDetailQuotesController(IAppDetailQuotesService appDetailQuotesService,
+                                           IAppGeneralQuotesService appGeneralQuotesService,
+                                           ICotizacionService cotizacionService, ILegacyQuoteModelAccess quoteModelAccess)
         {
             _appDetailQuotesService = appDetailQuotesService;
             _appGeneralQuotesService = appGeneralQuotesService;
             _cotizacionService = cotizacionService;
+            _quoteModelAccess = quoteModelAccess;
         }
 
         
@@ -137,17 +146,26 @@ namespace AppService.Api.Controllers
 
             try
             {
+                // REQ120: gate before the controller's delete/create product-switch branch.
+                if (_quoteModelAccess != null)
+                {
+                    var modelBlock = await _quoteModelAccess.CheckAsync(detailId: appDetailQuotesUpdateDto.Id);
+                    if (!string.IsNullOrEmpty(modelBlock))
+                    {
+                        metadata.IsValid = false;
+                        metadata.Message = modelBlock;
+                        return Ok(new Core.Responses.ApiResponse<AppDetailQuotesGetDto>(new AppDetailQuotesGetDto()) { Meta = metadata });
+                    }
+                }
+
                 if (appDetailQuotesUpdateDto.EliminarSolicitud==true)
                 {
                     appDetailQuotesUpdateDto.SolicitarPrecio = true;
                 }
 
-                AppGeneralQuotes appGeneralQuotes=new AppGeneralQuotes();
-
                 var appDetailQuotes = await _appDetailQuotesService.GetById(appDetailQuotesUpdateDto.Id);
                 if (appDetailQuotes != null)
                 {
-                    appGeneralQuotes = await _appGeneralQuotesService.GetById(appDetailQuotes.AppGeneralQuotesId);
                     // SI CAMBIA EL PRODUCTO DEL ITEM SE PROCEDE A ELIMININAR  Y CREAR CON EL NUEVO PRODUCTO
                     if (appDetailQuotes.IdProducto != appDetailQuotesUpdateDto.IdProducto)
                     {
@@ -190,15 +208,9 @@ namespace AppService.Api.Controllers
                 {
                     AppGeneralQuotesQueryFilter filterGeneral = new AppGeneralQuotesQueryFilter
                     {
-                        Cotizacion = detailQuotes.Data.Cotizacion,
-                        FechaDesde = appGeneralQuotes.Fecha.ToShortDateString(),
-                        FechaHasta = DateTime.Now.ToShortDateString()
-
+                        Cotizacion = detailQuotes.Data.Cotizacion
                     };
-
-                    var generalQuotes = await _appGeneralQuotesService.GetAllAppGeneralQuotes(filterGeneral);
-                    
-                    
+                    PagedList<AppGeneralQuotesGetDto> generalQuotes = await _appGeneralQuotesService.GetAllAppGeneralQuotes(filterGeneral);
                     ApiResponse<List<AppGeneralQuotesGetDto>> response = new ApiResponse<List<AppGeneralQuotesGetDto>>(generalQuotes)
                     {
                         Meta = detailQuotes.Meta
@@ -215,7 +227,7 @@ namespace AppService.Api.Controllers
             {
 
                 metadata.IsValid = false;
-                metadata.Message = e.InnerException.Message;
+                metadata.Message = e.InnerException?.Message ?? e.Message;
                 ApiResponse<AppDetailQuotesGetDto> responseError = new ApiResponse<AppDetailQuotesGetDto>(null)
                 {
                     Meta = metadata
@@ -228,7 +240,8 @@ namespace AppService.Api.Controllers
 
         }
 
-       /// <summary>
+
+        /// <summary>
         /// Elimina AppDetailQuotes
         ///  
         /// 
@@ -278,7 +291,7 @@ namespace AppService.Api.Controllers
             {
 
                 metadata.IsValid = false;
-                metadata.Message = e.InnerException.Message;
+                metadata.Message = e.InnerException?.Message ?? e.Message;
                 ApiResponse<AppGeneralQuotesGetDto> responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
                 {
                     Meta = metadata

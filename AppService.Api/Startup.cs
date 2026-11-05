@@ -43,9 +43,11 @@ using AppService.Core.Interfaces.Comisiones;
 using AppService.Core.Interfaces.Cotizaciones;
 using AppService.Core.Interfaces.PowerBi;
 using AppService.Core.Interfaces.Ventas;
+using AppService.Core.Features.Especificaciones.GetAllFilter;
 using AppService.Core.Services.PowerBi;
+using AppService.Infrastructure.Features.Especificaciones.GetAllFilter;
 using AppService.Infrastructure.DataPowerBI;
-using StackExchange.Redis;
+using AppService.Infrastructure.Caching;
 
 namespace AppService.Api
 {
@@ -61,6 +63,16 @@ namespace AppService.Api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            if (Configuration.GetValue<bool>("QuotationLocal:Enabled"))
+                services.ConfigureAll<Microsoft.Extensions.Http.HttpClientFactoryOptions>(options =>
+                    options.HttpMessageHandlerBuilderActions.Add(builder =>
+                    {
+                        builder.AdditionalHandlers.Add(new QuotationLocalHttpHandler());
+                        if (builder.PrimaryHandler is System.Net.Http.HttpClientHandler handler)
+                            handler.AllowAutoRedirect = false;
+                        if (builder.PrimaryHandler is System.Net.Http.SocketsHttpHandler socketsHandler)
+                            socketsHandler.AllowAutoRedirect = false;
+                    }));
             //services.AddCors();
 
 
@@ -169,13 +181,17 @@ namespace AppService.Api
                     sqlServerOptions => sqlServerOptions.CommandTimeout(3600))
             );
 
-            services.AddDbContext<SpiContext>(options =>
-                options.UseOracle(Configuration.GetConnectionString("spiConnection"),
-                    b => b.UseOracleSQLCompatibility("11")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
-            );
+            if (Configuration.GetValue<bool>("QuotationLocal:Enabled"))
+                // UnitOfWork resolves every context, even for quotation-only reads.
+                // SPI has no local fixture: leave it without a provider so SPI operations fail locally.
+                services.AddDbContext<SpiContext>();
+            else
+                services.AddDbContext<SpiContext>(options =>
+                    options.UseOracle(Configuration.GetConnectionString("spiConnection"),
+                        b => b.UseOracleSQLCompatibility("11")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+                );
 
-            services.AddSingleton<IConnectionMultiplexer>(_ =>
-                ConnectionMultiplexer.Connect(Configuration.GetConnectionString("redisConnection")));
+            services.AddAppCache(Configuration);
 
 
             services.AddTransient<IPowerBiOrdenesService, PowerBiOrdenesService>();
@@ -248,6 +264,8 @@ namespace AppService.Api
 
             services.AddTransient<IMunicipioServices, MunicipioServices>();
 
+            services.AddTransient<IGetAllFilterReadRepository, GetAllFilterReadRepository>();
+            services.AddTransient<GetAllFilterHandler>();
             services.AddTransient<IAppEspecificacionesServices, AppEspecificacionesServices>();
             services.AddTransient<IPeriodosService, PeriodosService>();
             services.AddTransient<IAppCalculadoraService, AppCalculadoraService>();
@@ -283,6 +301,7 @@ namespace AppService.Api
 
             services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));
             services.AddTransient<IUnitOfWork, UnitOfWork>();
+            services.AddTransient<ILegacyQuoteModelAccess, AppService.Infrastructure.Repositories.LegacyQuoteModel120Access>();
 
             //services.AddHostedService<Worker>()
             //        .AddSingleton<ICotizacionService, CotizacionService>();
@@ -326,16 +345,11 @@ namespace AppService.Api
             });
 
 
-            
-
-           services.AddCors(o => o.AddPolicy("charppolicy", builder =>
+            services.AddCors(o => o.AddPolicy("charppolicy", builder =>
             {
                 builder
-                   
-                    //.AllowAnyOrigin()
-                    .WithOrigins("https://mooreapps.com.ve:10443","https://mooreapps.com.ve:14443","http://localhost:3000","http://localhost:8100","https://mooreapps.com.ve:3000")
+                    .AllowAnyOrigin()
                     .AllowAnyMethod()
-                    .AllowCredentials()
                     .AllowAnyHeader();
             }));
 
@@ -365,10 +379,18 @@ namespace AppService.Api
             loggerFactory.AddFile("Log-{Date}.txt");
 
 
-            if (env.IsDevelopment())
+            var remoteQa = Configuration.GetValue<bool>("QuotationLocal:Enabled") && Configuration.GetValue<bool>("QuotationLocal:RemoteQaEnabled");
+            if (env.IsDevelopment() && !remoteQa)
             {
                 app.UseDeveloperExceptionPage();
             }
+            if (remoteQa)
+                app.UseExceptionHandler(error => error.Run(async context =>
+                {
+                    context.Response.StatusCode = 500;
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsync("{\"message\":\"No se pudo completar la operacion QA.\"}");
+                }));
 
             app.UseHttpsRedirection();
 
@@ -387,13 +409,41 @@ namespace AppService.Api
             //  app.UseHangfireDashboard();
 
             app.UseAuthentication();
+            if (remoteQa)
+                app.Use(async (context, next) =>
+                {
+                    var login = HttpMethods.IsPost(context.Request.Method) && string.Equals(context.Request.Path.Value?.TrimEnd('/'), "/api/Token", StringComparison.OrdinalIgnoreCase);
+                    if (context.Request.Path.StartsWithSegments("/api") && !login && context.User.Identity?.IsAuthenticated != true)
+                    {
+                        context.Response.StatusCode = 401;
+                        context.Response.ContentType = "application/json";
+                        await context.Response.WriteAsync("{\"message\":\"Se requiere una sesion QA.\"}");
+                        return;
+                    }
+                    await next();
+                });
 
             app.UseAuthorization();
 
 
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+                if (remoteQa)
+                    endpoints.MapGet("/qa-health", async context => await context.Response.WriteAsJsonAsync(new { environment = "qa", service = "auth", release = Configuration["QaDeployment:Revision"] }));
+            });
 
 
-                  }
+            //**GENERAADOR DE EXPRESIONES
+            //https://www.freeformatter.com/cron-expression-generator-quartz.html
+            //**
+
+            //var cotizacionServices = serviceProvider.GetService<ICotizacionService>();
+            // recurringJobManager.AddOrUpdate("Integrar_cotizaciones_odoo", () => cotizacionServices.UpdateCotizacionesToOdoo(), "*/30 * * * * *");
+
+
+            // var cobEstadoCuentaService = serviceProvider.GetService<ICobEstadoCuentaService>();
+            // recurringJobManager.AddOrUpdate("ActualizarEstadoCuentaMultimonedas", () => cobEstadoCuentaService.GenerateEstadoCuentaMultimoneda(), Cron.Daily());
+        }
     }
 }

@@ -19,5 +19,8 @@ namespace AppService.Core.Entities
     public string Icon { get; set; }
 
     public bool Mobil { get; set; }
+    public int Orden { get; set; }
+    public bool DisponibleIonic { get; set; }
+    public bool DisponibleReact { get; set; }
     }
 }

@@ -1,0 +1,70 @@
+name: Deploy QA
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: qa-auth
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      QA_COMPONENT: auth
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 2
+      - name: Configure pinned SSH access
+        env:
+          QA_KEY: ${{ secrets.QA_SSH_PRIVATE_KEY }}
+          QA_HOST: ${{ secrets.QA_SSH_HOST }}
+          QA_USER: ${{ secrets.QA_SSH_USER }}
+          QA_PORT: ${{ secrets.QA_SSH_PORT }}
+          QA_KNOWN_HOSTS: ${{ secrets.QA_SSH_KNOWN_HOSTS }}
+        run: |
+          umask 077
+          mkdir -p "$RUNNER_TEMP/qa-ssh"
+          printf '%s\n' "$QA_KEY" > "$RUNNER_TEMP/qa-ssh/key"
+          printf '%s\n' "$QA_KNOWN_HOSTS" > "$RUNNER_TEMP/qa-ssh/known_hosts"
+          printf 'Host qa\n HostName %s\n User %s\n Port %s\n IdentityFile %s/qa-ssh/key\n UserKnownHostsFile %s/qa-ssh/known_hosts\n StrictHostKeyChecking yes\n BatchMode yes\n IdentitiesOnly yes\n' "$QA_HOST" "$QA_USER" "$QA_PORT" "$RUNNER_TEMP" "$RUNNER_TEMP" > "$RUNNER_TEMP/qa-ssh/config"
+          ssh -F "$RUNNER_TEMP/qa-ssh/config" qa "status $QA_COMPONENT $GITHUB_SHA" > "$RUNNER_TEMP/qa-status.json"
+      - name: Require explicit database migrations after initial seed
+        if: env.QA_COMPONENT != 'frontend'
+        env:
+          QA_BEFORE: ${{ github.event.before }}
+        run: |
+          python3 - <<'PYCODE'
+          import json,os,subprocess
+          from pathlib import Path
+          status=json.loads(Path(os.environ['RUNNER_TEMP']+'/qa-status.json').read_text())
+          assert status['seedReady'], 'QA database seed is incomplete'
+          manifest=json.loads(Path('deploy/qa/migrations/manifest.json').read_text())
+          assert manifest['version']==1
+          if not status['initialSeedBaseline']:
+              before=os.environ.get('QA_BEFORE','')
+              if not before or set(before)=={'0'}: before='HEAD^'
+              elif subprocess.run(['git','cat-file','-e',before],capture_output=True).returncode:
+                  subprocess.run(['git','fetch','--depth=1','origin',before],check=True)
+              changed=subprocess.check_output(['git','diff','--name-only',before,'HEAD'],text=True).splitlines()
+              sql=[p for p in changed if p.lower().endswith('.sql') and not p.startswith('deploy/qa/migrations/')]
+              if sql:
+                  added=[p for p in changed if p.startswith('deploy/qa/migrations/') and p.endswith('.sql')]
+                  declared={x['file'] for x in manifest['scripts']}
+                  assert any(Path(p).name in declared for p in added), 'SQL changed: add a new versioned QA migration and manifest entry; QA data must not be reseeded'
+          PYCODE
+      - name: Build tested application image
+        run: docker build -f deploy/qa/Dockerfile -t "moore-qa-$QA_COMPONENT:$GITHUB_SHA" .
+      - name: Upload and deploy with health check and app rollback
+        run: |
+          set -o pipefail
+          docker save "moore-qa-$QA_COMPONENT:$GITHUB_SHA" | gzip -1 > "$RUNNER_TEMP/qa-image.tar.gz"
+          ssh -F "$RUNNER_TEMP/qa-ssh/config" qa "upload $QA_COMPONENT $GITHUB_SHA" < "$RUNNER_TEMP/qa-image.tar.gz"
+          ssh -F "$RUNNER_TEMP/qa-ssh/config" qa "deploy $QA_COMPONENT $GITHUB_SHA"
+      - name: Remove runner SSH key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/qa-ssh"

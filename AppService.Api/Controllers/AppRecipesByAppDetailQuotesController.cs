@@ -51,14 +51,7 @@ namespace AppService.Api.Controllers
                     filters.CondicionDePago = 40;
                 }
                 AppPriceGetDto productoCantidad = await quotesController._appRecipesByAppDetailQuotesService.GetPrecioProductoCantidad(filters.AppProuctId, (Decimal)filters.Cantidad,filters.CondicionDePago);
-               
-                
-                if (filters.AppDetailQuotesId > 0 && productoCantidad != null && productoCantidad.CalculoId> 0)
-                {
-                    //ACTUALIZAR COTIZACION EN HISTORICO DE CALCULO
-                    await _appRecipesByAppDetailQuotesService.UpdateCoticacionEnCalculo((int)filters.AppDetailQuotesId ,(int)productoCantidad.CalculoId);
-                    
-                }metadata.IsValid = true;
+                metadata.IsValid = true;
                 metadata.Message = "";
                 response.Data = productoCantidad;
                 response.Meta = metadata;
@@ -151,13 +144,7 @@ namespace AppService.Api.Controllers
                     filters.CondicionDePago = 40;
                 }
                 var productoCantidad = await _appRecipesByAppDetailQuotesService.GetPrice(filters);
-                if (filters.AppDetailQuotesId > 0 && productoCantidad.Data != null && productoCantidad.Data.CalculoId> 0)
-                {
-                    //ACTUALIZAR COTIZACION EN HISTORICO DE CALCULO
-                    await _appRecipesByAppDetailQuotesService.UpdateCoticacionEnCalculo((int)filters.AppDetailQuotesId ,(int)productoCantidad.Data.CalculoId);
-                    
-                }
-                
+
                     return (IActionResult)quotesController.Ok((object)productoCantidad);
             }
             catch (Exception ex)

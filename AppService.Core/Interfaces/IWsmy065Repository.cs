@@ -15,6 +15,7 @@ namespace AppService.Core.Interfaces
         Task AddRamo(Wsmy065 wsmy065);
         Csmy003 UpdateCsmy003(Csmy003 csmy003);
         Task<Csmy003> GetClienteCsmy003(string codigo);
+        Task<bool> ExisteClienteProspectoConflictivo(string rif, string vendedor);
         Task<List<Wsmy064>> GetListSector();
         Task<List<Wsmy065>> GetListRamosBySector(decimal codigoSector);
 

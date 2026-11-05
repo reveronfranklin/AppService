@@ -10,7 +10,11 @@
     {
         public long Orden { get; set; }
         public int IdProducto { get; set; }
-        
+        public string UsuarioConectado { get; set; }
+    }
 
+    public class PuedeModificarProductoOrdenFilterDto
+    {
+        public string UsuarioConectado { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using System;
 using AppService.Core.Entities;
 using AppService.Core.Interfaces;
 using AppService.Infrastructure.Data;
@@ -6,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Data;
+using System.Data.Common;
 
 namespace AppService.Infrastructure.Repositories
 {
@@ -13,23 +16,96 @@ namespace AppService.Infrastructure.Repositories
     {
 
         private readonly RRDContext _context;
+        private readonly bool _quoteModel120GuardsEnabled;
 
         public AppDetailQuotesRepository(RRDContext context)
+            : this(context, null)
+        {
+        }
+
+        public AppDetailQuotesRepository(RRDContext context, IConfiguration configuration)
         {
             _context = context;
+            _quoteModel120GuardsEnabled = configuration?.GetValue<bool>("QuoteModel120:CompatibilityGuardsEnabled") ?? false;
         }
+
+
+        private IQueryable<AppGeneralQuotes> LegacyGeneralQuotes => !_quoteModel120GuardsEnabled
+            ? _context.AppGeneralQuotes
+            : _context.AppGeneralQuotes.Where(g => _context.LegacyQuoteScope().Any(s => s.Id == g.Id));
+        private IQueryable<AppDetailQuotes> LegacyDetailQuotes => !_quoteModel120GuardsEnabled
+            ? _context.AppDetailQuotes
+            : _context.AppDetailQuotes.Where(d => _context.LegacyQuoteScope().Any(s => s.Id == d.AppGeneralQuotesId && s.Cotizacion == d.Cotizacion));
 
         public async Task<List<AppDetailQuotes>> GetAll()
         {
 
-            return await _context.AppDetailQuotes.ToListAsync();
+            return await LegacyDetailQuotes.ToListAsync();
 
+        }
+
+        public async Task<string> ValidateCanWin(int appDetailQuotesId)
+        {
+            DbConnection connection = _context.Database.GetDbConnection();
+            bool closeConnection = connection.State != ConnectionState.Open;
+
+            try
+            {
+                if (closeConnection)
+                {
+                    await connection.OpenAsync();
+                }
+
+                using (DbCommand command = connection.CreateCommand())
+                {
+                    command.CommandText = "dbo.AppDetailQuotes_ValidateCanWin";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    DbParameter detailId = command.CreateParameter();
+                    detailId.ParameterName = "@AppDetailQuotesId";
+                    detailId.DbType = DbType.Int32;
+                    detailId.Value = appDetailQuotesId;
+                    command.Parameters.Add(detailId);
+
+                    DbParameter canWin = command.CreateParameter();
+                    canWin.ParameterName = "@CanWin";
+                    canWin.DbType = DbType.Boolean;
+                    canWin.Direction = ParameterDirection.Output;
+                    command.Parameters.Add(canWin);
+
+                    DbParameter blockReason = command.CreateParameter();
+                    blockReason.ParameterName = "@BlockReason";
+                    blockReason.DbType = DbType.String;
+                    blockReason.Size = 30;
+                    blockReason.Direction = ParameterDirection.Output;
+                    command.Parameters.Add(blockReason);
+
+                    DbParameter message = command.CreateParameter();
+                    message.ParameterName = "@Message";
+                    message.DbType = DbType.String;
+                    message.Size = 4000;
+                    message.Direction = ParameterDirection.Output;
+                    command.Parameters.Add(message);
+
+                    await command.ExecuteNonQueryAsync();
+
+                    bool isValid = canWin.Value != DBNull.Value && Convert.ToBoolean(canWin.Value);
+                    return isValid ? string.Empty : Convert.ToString(message.Value);
+                }
+            }
+            finally
+            {
+                if (closeConnection)
+                {
+                    connection.Close();
+                }
+            }
         }
         
         public async Task<List<AppDetailQuotes>> GetByYearMonth(int year, int month)
         {
 
-            return await _context.AppDetailQuotes
+            return await LegacyDetailQuotes
                 .Where(x=>x.FechaRegistro.Year == year && x.FechaRegistro.Month == month)
                 .ToListAsync();
 
@@ -38,18 +114,18 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task<List<AppDetailQuotes>> GetByAppGeneralQuotesId(int appGeneralQuotesId)
         {
-            return await _context.AppDetailQuotes.Where(x => x.AppGeneralQuotesId == appGeneralQuotesId).Include(x => x.AppGeneralQuotes).Include(x => x.IdEstatusNavigation).Include(x => x.IdProductoNavigation).ToListAsync();
+            return await LegacyDetailQuotes.Where(x => x.AppGeneralQuotesId == appGeneralQuotesId).Include(x => x.AppGeneralQuotes).Include(x => x.IdEstatusNavigation).Include(x => x.IdProductoNavigation).ToListAsync();
         }
         public async Task<List<AppDetailQuotes>> GeSimpletByAppGeneralQuotesId(int appGeneralQuotesId)
         {
-            return await _context.AppDetailQuotes.Where(x => x.AppGeneralQuotesId == appGeneralQuotesId).ToListAsync();
+            return await LegacyDetailQuotes.Where(x => x.AppGeneralQuotesId == appGeneralQuotesId).ToListAsync();
         }
 
         public async Task<bool> ExisteEnEspera(int appGeneralQuotesId)
         {
 
             bool result = false;
-            var detail = await _context.AppDetailQuotes.Where(x => x.AppGeneralQuotesId == appGeneralQuotesId).ToListAsync();
+            var detail = await LegacyDetailQuotes.Where(x => x.AppGeneralQuotesId == appGeneralQuotesId).ToListAsync();
             if (detail != null)
             {
                 foreach (var item in detail)
@@ -75,7 +151,7 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task<List<AppDetailQuotes>> GetBySubCategopry(int subCategory)
         {
-            var detail = await _context.AppDetailQuotes.Where(x => x.IdEstatus<5 && x.IdProductoNavigation.AppSubCategoryId == subCategory).ToListAsync();
+            var detail = await LegacyDetailQuotes.Where(x => x.IdEstatus<5 && x.IdProductoNavigation.AppSubCategoryId == subCategory).ToListAsync();
 
             return detail;
 
@@ -85,158 +161,42 @@ namespace AppService.Infrastructure.Repositories
         public async Task<AppDetailQuotes> GetById(int id)
         {
 
-            var detail = await _context.AppDetailQuotes.Include(x => x.IdProductoNavigation).Include(x => x.IdEstatusNavigation).Include(x => x.AppGeneralQuotes).Where(x => x.Id == id).FirstOrDefaultAsync();
+            var detail = await LegacyDetailQuotes.Include(x => x.IdProductoNavigation).Include(x => x.IdEstatusNavigation).Include(x => x.AppGeneralQuotes).Where(x => x.Id == id).FirstOrDefaultAsync();
             return detail;
 
         }
-        public async Task<AppDetailQuotes> GetByIdSimple(int id)
-{
-    try
-    {
-        var detail = await _context.AppDetailQuotes
-            .AsNoTracking()
-            .Where(x => x.Id == id)
-            .Select(x => new AppDetailQuotes
-            {
-                // Propiedades Principales e IDs
-                Id = x.Id,
-                AppGeneralQuotesId = x.AppGeneralQuotesId,
-                Cotizacion = x.Cotizacion,
-                Producto = x.Producto,
-                IdProducto = x.IdProducto,
-                NombreComercialProducto = x.NombreComercialProducto,
-                IdEstatus = x.IdEstatus,
-                IdUnidad = x.IdUnidad,
-                IdCondPago = x.IdCondPago,
-
-                // Valores Numéricos y Moneda
-                Cantidad = x.Cantidad,
-                Precio = x.Precio,
-                Total = x.Total,
-                PrecioUsd = x.PrecioUsd,
-                TotalUsd = x.TotalUsd,
-                ValorConvertido = x.ValorConvertido,
-                UnitPriceBaseProduction = x.UnitPriceBaseProduction,
-                UnitPriceConverted = x.UnitPriceConverted,
-                UnitPriceBaseProductionMaximo = x.UnitPriceBaseProductionMaximo,
-                Rprecio = x.Rprecio,
-                Rtotal = x.Rtotal,
-                CantidadSolicitada = x.CantidadSolicitada,
-                CantidadPorUnidadProduccion = x.CantidadPorUnidadProduccion,
-                MedidaBasica = x.MedidaBasica,
-                MedidaOpuesta = x.MedidaOpuesta,
-                PorcFlete = x.PorcFlete,
-                Flete = x.Flete,
-
-                // Textos y Observaciones
-                Observaciones = x.Observaciones,
-                ObsSolicitud = x.ObsSolicitud,
-                Papeles = x.Papeles,
-                TipoPapeles = x.TipoPapeles,
-                Tintas = x.Tintas,
-                Medidas = x.Medidas,
-                Forma = x.Forma,
-                Salida = x.Salida,
-                Presentacion = x.Presentacion,
-                MedidaBasicaFraccionPulgada = x.MedidaBasicaFraccionPulgada,
-                MedidaOpuestaFraccionPulgada = x.MedidaOpuestaFraccionPulgada,
-                MensajeSolicitarPrecio = x.MensajeSolicitarPrecio,
-                CodigoProducto = x.CodigoProducto,
-
-                // Enteros y Flags
-                DiasEntrega = x.DiasEntrega,
-                RazonGanadaPerdida = x.RazonGanadaPerdida,
-                Competidor = x.Competidor,
-                QuantityPerPackage = x.QuantityPerPackage,
-                CalculoId = x.CalculoId,
-                OdooId = x.OdooId,
-                CantPartes = x.CantPartes,
-                CantTintas = x.CantTintas,
-                OrdenAnterior = x.OrdenAnterior,
-                Orden = x.Orden,
-                SolicitarPrecio = x.SolicitarPrecio,
-                Estimada = x.Estimada,
-
-                // Fechas y Auditoría
-                FechaRegistro = x.FechaRegistro,
-                CreatedAt = x.CreatedAt,
-                UpdatedAt = x.UpdatedAt,
-                UserCreate = x.UserCreate,
-                UserUpdate = x.UserUpdate
-                
-                // Nota: Las propiedades 'virtual' se dejan fuera para evitar el error de referencia nula, 
-                // ya que se cargan a demanda o mediante .Include() si el mapeo fuera correcto.
-            })
-            .FirstOrDefaultAsync();
-
-        return detail;
-    }
-    catch (Exception ex)
-    {
-        // Uso de GetBaseException para obtener el error raíz sin riesgo de NullReference en el catch
-        var message = ex.GetBaseException().Message;
-        // Aquí podrías loguear el error: _logger.LogError(message);
-        return null;
-    }
-}
 
         public async Task<List<AppDetailQuotes>> GetByQuotesCotizacion(string cotizacion)
         {
-            var detail = await _context.AppDetailQuotes.Where(x => x.Cotizacion == cotizacion).ToListAsync();
+            var detail = await LegacyDetailQuotes.Where(x => x.Cotizacion == cotizacion).ToListAsync();
 
             return detail;
 
         }
-        
-        public async Task<bool> EsDigital(string cotizacion)
-        {
-            var result = false;
-            var detail = await _context.AppDetailQuotes.Where(x => x.Cotizacion == cotizacion).FirstOrDefaultAsync();
-            if (detail != null)
-            {
-                var producto = await _context.AppProducts.Where(x => x.Id == detail.IdProducto).FirstOrDefaultAsync();
-                if (producto != null &&  producto.TipoCalculo==4)
-                {
-                   result = true;
-                }
-            }
-            return result;
-
-        }
-        
-        
         public async Task<AppDetailQuotes> GetByQuetesProduct(string cotizacion, int idProduct)
         {
-            var detail = await _context.AppDetailQuotes.Where(x => x.Cotizacion == cotizacion && x.IdProducto == idProduct).FirstOrDefaultAsync();
+            var detail = await LegacyDetailQuotes.Where(x => x.Cotizacion == cotizacion && x.IdProducto == idProduct).FirstOrDefaultAsync();
 
             return detail;
 
         }
         public async Task<AppDetailQuotes> GetByGeneralQuotesExternalcode(int idGeneralQuotes, string externalCode)
         {
-            var detail = await _context.AppDetailQuotes.Where(x => x.AppGeneralQuotesId == idGeneralQuotes && x.IdProductoNavigation.ExternalCode == externalCode).FirstOrDefaultAsync();
+            var detail = await LegacyDetailQuotes.Where(x => x.AppGeneralQuotesId == idGeneralQuotes && x.IdProductoNavigation.ExternalCode == externalCode).FirstOrDefaultAsync();
 
             return detail;
 
         }
         public async Task<bool> ProductExistInQuotesDetail(int idProduct)
         {
-
-            var detail = await _context.AppDetailQuotes.Where(x => x.IdProducto == idProduct).FirstOrDefaultAsync();
-            if (detail != null)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-
-
+            // Product integrity spans every quote model, without loading/tracking120 entities.
+            return await _context.AppDetailQuotes.AnyAsync(x => x.IdProducto == idProduct);
         }
+
 
         public async Task Add(AppDetailQuotes entity)
         {
+            await LegacyQuoteModel120Guard.CheckAsync(_context, _quoteModel120GuardsEnabled, generalId: entity.AppGeneralQuotesId, quotation: entity.Cotizacion);
 
             FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
 
@@ -256,19 +216,16 @@ namespace AppService.Infrastructure.Repositories
 
         public async Task UpdateFlete(int appDetailQuotesId,decimal porcFlete,decimal flete)
         {
+            await LegacyQuoteModel120Guard.CheckAsync(_context, _quoteModel120GuardsEnabled, detailId: appDetailQuotesId);
             try
             {
-                
-              
-                    string porcFleteString = porcFlete.ToString();
-                    string fleteString = flete.ToString();
-                    porcFleteString = porcFleteString.Replace(",", ".");
-                    fleteString = fleteString.Replace(",", ".");
-                    FormattableString xqueryDiario = $"UPDATE AppDetailQuotes SET PorcFlete={porcFleteString},Flete={fleteString} WHERE ID={appDetailQuotesId}";
+                string porcFleteString = porcFlete.ToString();
+                string fleteString = flete.ToString();
+                porcFleteString = porcFleteString.Replace(",", ".");
+                fleteString = fleteString.Replace(",", ".");
+                FormattableString xqueryDiario = $"UPDATE AppDetailQuotes SET PorcFlete={porcFleteString},Flete={fleteString} WHERE ID={appDetailQuotesId}";
 
-                    var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
-                
-              
+                var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
             }
             catch (Exception e)
             {
@@ -279,15 +236,17 @@ namespace AppService.Infrastructure.Repositories
 
         }
         
-        public async Task AppEvaluarRequiereSolicitarPrecio(int appDetailQuotesId,decimal cantidad)
+        public async Task UpdatePrecioMinimo(int appDetailQuotesId,decimal precioMinimo,decimal precioMaximo,int calculoId)
         {
+            await LegacyQuoteModel120Guard.CheckAsync(_context, _quoteModel120GuardsEnabled, detailId: appDetailQuotesId);
             try
             {
-              
-                string cantidadString = cantidad.ToString();
-
-                cantidadString = cantidadString.Replace(",", ".");
-                FormattableString xqueryDiario = $"EXECUTE AppEvaluarRequiereSolicitarPrecio {appDetailQuotesId},{cantidadString}";
+                string minimo = precioMinimo.ToString();
+                string maximo = precioMaximo.ToString();
+                minimo = minimo.Replace(",", ".");
+                maximo = maximo.Replace(",", ".");
+                var query =$"exec UpdatePrecioListaCotizacion {appDetailQuotesId},{minimo}, {maximo},{calculoId}";
+                FormattableString xqueryDiario = $"exec UpdatePrecioListaCotizacion {appDetailQuotesId},{minimo}, {maximo},{calculoId}";
 
                 var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
             }
@@ -300,78 +259,32 @@ namespace AppService.Infrastructure.Repositories
 
         }
 
-
-       /* public async Task<bool> Editable(int appDetailQuotesId)
+        
+        
+        
+        public void UpdatePrecios(int appDetailsId,decimal precioMinimo,decimal precioMaximo, int calculoId,int solicitarPrecio)
         {
-            bool result = false;
-            var appDetailQuotes = await _context.AppDetailQuotes.Where(x => x.Id == appDetailQuotesId).FirstOrDefaultAsync();
-            if (appDetailQuotes != null && appDetailQuotes.IdEstatus < 5)
-            {
-                result = true;
-            }
-            return result;
+            LegacyQuoteModel120Guard.Check(_context, _quoteModel120GuardsEnabled, detailId: appDetailsId);
+            var precioMinimoString = precioMinimo.ToString();
+            precioMinimoString = precioMinimoString.Replace(",", ".");
+            var precioMaximoString = precioMaximo.ToString();
+            precioMaximoString = precioMaximoString.Replace(",", ".");
             
-        }*/
-        
-        
-        public async Task UpdatePrecioMinimo(int appDetailQuotesId,decimal precioMinimo,decimal precioMaximo,int calculoId)
-        {
-            try
-            {
-                 
-                 
-         
-                    string minimo = precioMinimo.ToString();
-                    string maximo = precioMaximo.ToString();
-                    minimo = minimo.Replace(",", ".");
-                    maximo = maximo.Replace(",", ".");
-                    var query =$"exec UpdatePrecioListaCotizacion {appDetailQuotesId},{minimo}, {maximo},{calculoId}";
-                    FormattableString xqueryDiario = $"exec UpdatePrecioListaCotizacion {appDetailQuotesId},{minimo}, {maximo},{calculoId}";
+            FormattableString queryGeneral = $"update AppDetailQuotes set UnitPriceBaseProduction= {precioMinimoString} ,UnitPriceBaseProductionMaximo={precioMaximoString},CalculoId={calculoId},SolicitarPrecio={solicitarPrecio} where id={appDetailsId}";
 
-                    var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+            var resultGeneral = _context.Database.ExecuteSqlInterpolated(queryGeneral);
+     
             
-              
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-         
-            
-
-        }
-
-        
-        
-        
-        public async Task   UpdatePrecios(int appDetailsId,decimal precioMinimo,decimal precioMaximo, int calculoId,int solicitarPrecio)
-        {
-           
-         
-                var precioMinimoString = precioMinimo.ToString();
-                precioMinimoString = precioMinimoString.Replace(",", ".");
-                var precioMaximoString = precioMaximo.ToString();
-                precioMaximoString = precioMaximoString.Replace(",", ".");
-            
-                FormattableString queryGeneral = $"update AppDetailQuotes set UnitPriceBaseProduction= {precioMinimoString} ,UnitPriceBaseProductionMaximo={precioMaximoString},CalculoId={calculoId},SolicitarPrecio={solicitarPrecio} where id={appDetailsId}";
-
-                var resultGeneral = _context.Database.ExecuteSqlInterpolated(queryGeneral);
-
-
-            
-         
        
             
 
         }
         public void UpdateCondicionPago(int appGeneralQuotesId,short condicionPago)
         {
+            LegacyQuoteModel120Guard.Check(_context, _quoteModel120GuardsEnabled, generalId: appGeneralQuotesId);
 
             try
             {
-              
-
-                
                 FormattableString queryGeneral = $"UPDATE AppGeneralQuotes SET IdCondPago ={condicionPago} ,integrarCotizacion= 1 WHERE ID={appGeneralQuotesId}";
 
                 var resultGeneral = _context.Database.ExecuteSqlInterpolated(queryGeneral);
@@ -393,77 +306,28 @@ namespace AppService.Infrastructure.Repositories
 
         }
 
-        public Task Update(AppDetailQuotes entity)
+        public void Update(AppDetailQuotes entity)
         {
-            /*var detailQuotes = await _context.AppDetailQuotes.FirstOrDefaultAsync(x => x.Id == entity.Id);
-            if (detailQuotes != null)
-            {
-                
-          
-                if (detailQuotes is { Orden: > 0 })
-                {
-                    return;
-                }
-                
-                if (detailQuotes.IdEstatus<5)
-                {
-                    FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
+            LegacyQuoteModel120Guard.Check(_context, _quoteModel120GuardsEnabled, generalId: entity.AppGeneralQuotesId, detailId: entity.Id, quotation: entity.Cotizacion);
+            FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
 
-                    var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
-                    _context.AppDetailQuotes.Update(entity);
-                }
-            }*/
-            
-            //FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
-
-            //var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+            var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
             _context.AppDetailQuotes.Update(entity);
-            return Task.CompletedTask;
+
         }
-
-
-
-
-
-        public async Task AppActualizaPapelesDetailQuotes(int id,string cotizacion)
-        {
-            
-                try
-                {
-                      FormattableString xqueryDiario = $"EXEC AppActualizaPapelesDetailQuotes {id},{cotizacion}";
-
-                    var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
-                }
-                catch (System.Exception e)
-                {
-                    
-                    Console.WriteLine(e);
-                }
-                  
-                
-        }
-
-
 
         public async Task Delete(int id)
         {
+            await LegacyQuoteModel120Guard.CheckAsync(_context, _quoteModel120GuardsEnabled, detailId: id);
             
           
 
             AppDetailQuotes entity = await GetById(id);
-            if (entity != null)
-            {
-               
-                    _context.AppDetailQuotes.Remove(entity);
+            _context.AppDetailQuotes.Remove(entity);
             
-                    FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
+            FormattableString xqueryDiario = $"UPDATE AppGeneralQuotes SET IntegrarCotizacion = 1 WHERE ID={entity.AppGeneralQuotesId}";
 
-                    var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
-                
-
-            }
-           
-          
+            var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
 
         }
 

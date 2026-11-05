@@ -21,14 +21,21 @@ namespace AppService.Api.Controllers
     {
         private readonly IAppGeneralQuotesService _appGeneralQuotesService;
         private readonly ICotizacionService _cotizacionService;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly ILegacyQuoteModelAccess _quoteModelAccess;
 
         public AppGeneralQuotesController(IAppGeneralQuotesService appGeneralQuotesService,
-                                           ICotizacionService cotizacionService,IUnitOfWork unitOfWork)
+                                           ICotizacionService cotizacionService)
+            : this(appGeneralQuotesService, cotizacionService, null)
+        {
+        }
+
+        [Microsoft.Extensions.DependencyInjection.ActivatorUtilitiesConstructor]
+        public AppGeneralQuotesController(IAppGeneralQuotesService appGeneralQuotesService,
+                                           ICotizacionService cotizacionService, ILegacyQuoteModelAccess quoteModelAccess)
         {
             _appGeneralQuotesService = appGeneralQuotesService;
             _cotizacionService = cotizacionService;
-            _unitOfWork = unitOfWork;
+            _quoteModelAccess = quoteModelAccess;
         }
 
 
@@ -83,7 +90,7 @@ namespace AppService.Api.Controllers
             {
 
                 metadata.IsValid = false;
-                metadata.Message = e.InnerException.Message;
+                metadata.Message = e.InnerException?.Message ?? e.Message;
                 var responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
                 {
                     Meta = metadata
@@ -132,7 +139,7 @@ namespace AppService.Api.Controllers
             {
 
                 metadata.IsValid = false;
-                metadata.Message = e.InnerException.Message;
+                metadata.Message = e.InnerException?.Message ?? e.Message;
                 var responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
                 {
                     Meta = metadata
@@ -173,36 +180,15 @@ namespace AppService.Api.Controllers
             {
 
 
-               
-                var config =await _unitOfWork.AppConfigAppRepository.GetByKey("DetenerCotizador");
-                if (config != null)
-                {
-                    if (config.Valor == "1")
-                    {
-                        metadata.IsValid = false;
-                        metadata.Message = "Cotizador Detenido Temporalmente";
-                        metadata.TotalCount = 0;
-                        metadata.PageSize = filters.PageSize;
-                        metadata.CurrentPage = 0;
-                        metadata.TotalPage = filters.PageNumber;
-                        metadata.HasNextPage = false;
-                        metadata.HasPreviousPage = false;
-                        metadata.NextPageUrl = "";
-                        
-                        metadata.PreviousPageUrl = "";
+                //_cotizacionService.IntegrarCotizaciones();
 
-                        ApiResponse<List<AppGeneralQuotesGetDto>> response = new ApiResponse<List<AppGeneralQuotesGetDto>>(null)
-                        {
-                            Meta = metadata
-                        };
+                // await _cotizacionService.IntegrarCotizacion(667, true);
 
-                        return Ok(response);
-                    }
-                }
+
 
                 var generalQuotes = await _appGeneralQuotesService.GetAllAppGeneralQuotes(filters);
 
-                //await Task.Delay(5000);
+
 
                 if (generalQuotes != null)
                 {
@@ -235,7 +221,6 @@ namespace AppService.Api.Controllers
                     metadata.HasNextPage = false;
                     metadata.HasPreviousPage = false;
                     metadata.NextPageUrl = "";
-                    
                     metadata.PreviousPageUrl = "";
 
                     ApiResponse<List<AppGeneralQuotesGetDto>> response = new ApiResponse<List<AppGeneralQuotesGetDto>>(generalQuotes)
@@ -478,23 +463,6 @@ namespace AppService.Api.Controllers
             try
             {
 
-                var config =await _unitOfWork.AppConfigAppRepository.GetByKey("DetenerCotizador");
-                if (config != null)
-                {
-                    if (config.Valor == "1")
-                    {
-                         metadata.IsValid = false;
-                        metadata.Message = "Cotizador Detenido Temporalmente";
-                        var responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
-                        {
-                            Meta = metadata
-                        };
-
-
-                        return Ok(responseError);
-                    }
-                }
-
 
                 var generalQuotes = await _appGeneralQuotesService.InsertGeneralQuotes(appGeneralQuotesCreateDto);
 
@@ -612,26 +580,9 @@ namespace AppService.Api.Controllers
             try
             {
 
-                var config =await _unitOfWork.AppConfigAppRepository.GetByKey("DetenerCotizador");
-                if (config != null)
-                {
-                    if (config.Valor == "1")
-                    {
-                        metadata.IsValid = false;
-                        metadata.Message = "Cotizador Detenido Temporalmente";
-                        var responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
-                        {
-                            Meta = metadata
-                        };
-
-
-                        return Ok(responseError);
-                    }
-                }
-
 
                 var generalQuotes = await _appGeneralQuotesService.UpdateGeneralQuotes(appGeneralQuotesUpdateDto);
-               
+
                 return Ok(generalQuotes);
 
 
@@ -641,8 +592,7 @@ namespace AppService.Api.Controllers
             {
 
                 metadata.IsValid = false;
-              
-                 metadata.Message = e.InnerException?.Message ?? e.Message;
+                metadata.Message = e.InnerException.Message;
                 var responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
                 {
                     Meta = metadata
@@ -784,6 +734,17 @@ namespace AppService.Api.Controllers
 
             try
             {
+                if (_quoteModelAccess != null)
+                {
+                    var message = await _quoteModelAccess.CheckAsync(generalId: appGeneralQuotesDeleteDto.Id, quotation: appGeneralQuotesDeleteDto.Cotizacion);
+                    if (!string.IsNullOrEmpty(message))
+                    {
+                        metadata.IsValid = false;
+                        metadata.Message = message;
+                        return Ok(new ApiResponse<AppGeneralQuotesGetDto>(null) { Meta = metadata });
+                    }
+                }
+
 
 
                 await _cotizacionService.IntegrarCotizacion(appGeneralQuotesDeleteDto.Id, true);
@@ -796,7 +757,7 @@ namespace AppService.Api.Controllers
             {
 
                 metadata.IsValid = false;
-                metadata.Message = e.InnerException.Message;
+                metadata.Message = e.InnerException?.Message ?? e.Message;
                 var responseError = new ApiResponse<AppGeneralQuotesGetDto>(null)
                 {
                     Meta = metadata

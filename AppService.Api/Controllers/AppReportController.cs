@@ -73,13 +73,12 @@ namespace AppService.Api.Controllers
                 myreport = "Ventas/Cotizador Plus/AppCotizacionPlusFormas";
 
             }
-            if (subcategoria == 2 || subcategoria==17)
+            if (subcategoria == 2 || subcategoria==17 || subcategoria==19)
             {
                 myreport = "Ventas/Cotizador Plus/CotizacionPlusStock";
             }
             if (subcategoria == 9)
             {
-                await _appDetailQuotesService.ArmaDataReportEtiquetasPrime(cotizacion);
                 myreport = "Ventas/Cotizador Plus/AppReporteCotizacionEtiquetasPrime ";
             }
 

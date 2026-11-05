@@ -3044,6 +3044,11 @@ namespace AppService.Infrastructure.DataClientes
                     .IsFixedLength()
                     .HasDefaultValueSql("(N'X')");
 
+                entity.Property(e => e.FlagActivoComercial)
+                    .HasColumnName("Flag_Activo_Comercial")
+                    .HasMaxLength(1)
+                    .IsFixedLength();
+
                 entity.Property(e => e.FlagCerrado)
                     .HasColumnName("Flag_Cerrado")
                     .HasMaxLength(1)

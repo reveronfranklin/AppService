@@ -71,7 +71,7 @@ namespace AppService.Infrastructure.Repositories
         public async Task<IEnumerable<MtrVendedor>> ListvendedoresPorUsuario(MtrVendedorQueryFilter filter)
         {
             List<MtrVendedor> result = new List<MtrVendedor>();
-            string usuario = filter.Usuario.ToUpper();
+            string usuario = filter.Usuario;
 
             var vendedor = await _context.MtrVendedor.Where(x => x.Codigo == usuario && x.Activo == "X").FirstOrDefaultAsync();
             if (vendedor != null)

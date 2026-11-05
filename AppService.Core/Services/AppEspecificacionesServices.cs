@@ -2,6 +2,7 @@
 using AppService.Core.DTOs.Especificaciones;
 using AppService.Core.Entities;
 using AppService.Core.EntitiesMooreve;
+using AppService.Core.Features.Especificaciones.GetAllFilter;
 using AppService.Core.Interfaces;
 using AppService.Core.Responses;
 using AutoMapper;
@@ -20,20 +21,27 @@ namespace AppService.Core.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly PaginationOptions _paginationOptions;
         private readonly IMapper _mapper;
+        private readonly GetAllFilterHandler _getAllFilterHandler;
 
 
         public AppEspecificacionesServices(IUnitOfWork unitOfWork,
                                      IOptions<PaginationOptions> options,
-                                     IMapper mapper)
+                                     IMapper mapper,
+                                     GetAllFilterHandler getAllFilterHandler)
         {
             _unitOfWork = unitOfWork;
             _paginationOptions = options.Value;
             _mapper = mapper;
+            _getAllFilterHandler = getAllFilterHandler;
 
         }
 
         public async Task<ApiResponse<EspecificacionesGetDto>> GetAllFilter(PartesFilter filter)
         {
+            if (_getAllFilterHandler != null)
+            {
+                return await _getAllFilterHandler.Handle(new GetAllFilterQuery(filter));
+            }
 
 
             EspecificacionesGetDto resultDto = new EspecificacionesGetDto();
@@ -354,6 +362,7 @@ namespace AppService.Core.Services
                 metadata.IsValid = false;
                 //metadata.Message = ex.InnerException.Message;
                 response.Data = null;
+                metadata.Message = ex.Message;
                 response.Meta = metadata;
                 return response;
             }
@@ -378,6 +387,63 @@ namespace AppService.Core.Services
             ApiResponse<EspecificacionesGetDto> response = new ApiResponse<EspecificacionesGetDto>(resultDto);
             try
             {
+                if (dto.PartesFilter.Propuesta != 1)
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = "La propuesta del producto debe ser igual a 1";
+                    response.Data = null;
+                    response.Meta = metadata;
+                    return response;
+                }
+
+                // Validar todas las partes antes de realizar escrituras. La familia permitida
+                // permanece en WPRY240.TipoPapel/Gramaje; el usuario solo puede variar IdPapel.
+                foreach (var item in dto.partesGetDto)
+                {
+                    if (!string.Equals(item.Cotizacion?.Trim(), dto.PartesFilter.Cotizacion?.Trim(), StringComparison.OrdinalIgnoreCase)
+                        || item.Renglon != dto.PartesFilter.Renglon
+                        || item.Propuesta != dto.PartesFilter.Propuesta)
+                    {
+                        metadata.IsValid = false;
+                        metadata.Message = "La parte no pertenece al renglón y propuesta seleccionados";
+                        response.Data = null;
+                        response.Meta = metadata;
+                        return response;
+                    }
+
+                    var partePersistida = await _unitOfWork.Wpry240Repository
+                        .GetByCotizacionRenglonPropuestaParte(
+                            dto.PartesFilter.Cotizacion,
+                            dto.PartesFilter.Renglon,
+                            dto.PartesFilter.Propuesta,
+                            item.IdParte);
+
+                    if (partePersistida == null)
+                    {
+                        metadata.IsValid = false;
+                        metadata.Message = "No existe la parte " + item.IdParte.ToString() + " para el producto seleccionado";
+                        response.Data = null;
+                        response.Meta = metadata;
+                        return response;
+                    }
+
+                    var codigoPapel = item.IdPapelNew.IsNullOrEmpty()
+                        ? partePersistida.IdPapel
+                        : item.IdPapelNew.Trim();
+                    var papelSeleccionado = await _unitOfWork.Wimy001Repository.GettByCode(codigoPapel);
+
+                    if (papelSeleccionado == null
+                        || !string.Equals(papelSeleccionado.TipoPapel?.Trim(), partePersistida.TipoPapel?.Trim(), StringComparison.OrdinalIgnoreCase)
+                        || !string.Equals(papelSeleccionado.Gramaje?.Trim(), partePersistida.Gramaje?.Trim(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        metadata.IsValid = false;
+                        metadata.Message = "El papel " + codigoPapel + " no tiene el mismo tipo y gramaje permitido para la parte " + item.IdParte.ToString();
+                        response.Data = null;
+                        response.Meta = metadata;
+                        return response;
+                    }
+                }
+
                 var wpry229 = await _unitOfWork.Wpry229Repository.GetByCotizacionRenglonPropuesta(dto.PartesFilter.Cotizacion, dto.PartesFilter.Renglon, dto.PartesFilter.Propuesta);
                 if (wpry229 != null)
                 {
@@ -432,6 +498,15 @@ namespace AppService.Core.Services
                 foreach (var item in dto.partesGetDto)
                 {
 
+                    if (item.TintasFrenteNew.IsNullOrEmpty() && !item.TintasFrente.IsNullOrEmpty())
+                    {
+                        item.TintasFrenteNew=item.TintasFrente;
+                    }
+                       if (item.TintasRespaldoNew.IsNullOrEmpty() && !item.TintasRespaldo.IsNullOrEmpty())
+                    {
+                        item.TintasRespaldoNew=item.TintasRespaldo;
+                    }
+
 
                     //*********ACTUALIZAMOS LAS CARACTERISTICAS POR PARTE***********
                     foreach (var itemVariables in item.AppVariablesEspecificacionesPartesGetDto)
@@ -467,7 +542,10 @@ namespace AppService.Core.Services
                     var parte = await _unitOfWork.Wpry240Repository.GetByCotizacionRenglonPropuestaParte(item.Cotizacion, item.Renglon, item.Propuesta, item.IdParte);
                     if (parte != null)
                     {
-
+                        if (item.IdPapelNew.IsNullOrEmpty() )
+                        {
+                           item.IdPapelNew= parte.IdPapel ;
+                        }
                         parte.IdPapel = item.IdPapelNew;
                         parte.FrasesMarginales = item.FrasesMarginales;
                         _unitOfWork.Wpry240Repository.Update(parte);
@@ -481,10 +559,7 @@ namespace AppService.Core.Services
                             await _unitOfWork.SaveChangesAsync();
                         }
 
-                        if (item.TintasFrenteNew.IsNullOrEmpty())
-                        {
-                            item.TintasFrenteNew = "S/IMP";
-                        }
+
                         if (!item.TintasFrenteNew.IsNullOrEmpty())
                         {
 
@@ -497,13 +572,7 @@ namespace AppService.Core.Services
                                 wpry241Insert.Propuesta = item.Propuesta;
                                 wpry241Insert.IdParte = item.IdParte;
                                 wpry241Insert.IdUbicacion = 1;
-                                var esDigital = await _unitOfWork.AppDetailQuotesRepository.EsDigital(item.Cotizacion);
-                                var tintaFrente = itemTintaFrente;
-                                if (itemTintaFrente == "S/IMP" && esDigital)
-                                {
-                                    tintaFrente = "CMYK";
-                                }
-                                wpry241Insert.IdTinta = tintaFrente;
+                                wpry241Insert.IdTinta = itemTintaFrente;
                                 wpry241Insert.FechaRegistro = DateTime.Now;
                                 await _unitOfWork.Wpry241Repository.Add(wpry241Insert);
                                 await _unitOfWork.SaveChangesAsync();

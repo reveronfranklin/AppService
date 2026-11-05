@@ -210,6 +210,7 @@ namespace AppService.Core.Services
                     resultItemMenu.Role = (int)itemMenu.Role;
                     resultItemMenu.Title = itemMenu.Title;
                     resultItemMenu.Url = itemMenu.Url;
+                    resultItemMenu.Orden = itemMenu.Orden;
 
                     List<Children> resultChild = new List<Children>();
                     var child = await GetChildMenuByParent(itemMenu.Id);
@@ -225,13 +226,17 @@ namespace AppService.Core.Services
                             itemChildDto.Url = itemChild.Url;
                             itemChildDto.PageMenuId = (int)itemChild.PageMenuId;
                             itemChildDto.Icon = itemChild.Icon;
+                            itemChildDto.Orden = itemChild.Orden;
                            
                             resultChild.Add(itemChildDto);
                         }
                         resultItemMenu.Children = resultChild;
                     }
 
-                    result.Add(resultItemMenu);
+                    if (!string.IsNullOrWhiteSpace(resultItemMenu.Url) || resultItemMenu.Children?.Count > 0)
+                    {
+                        result.Add(resultItemMenu);
+                    }
                 }
                
             }

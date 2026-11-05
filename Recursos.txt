@@ -1,7 +1,7 @@
 dotnet publish -c Release
-
+dotnet publish -c Release -r win-x64 --self-contained false -o ./publish-win
 https://www.youtube.com/watch?v=JrfB_33Do_8&list=PLU3UD_RM_1Abkcw8jjCl4o179jfyD47mj&index=2
-
+Prueba de salida
 Clean Architecture
 
 Github repo: https://github.com/jebmole/SocialMedia
@@ -21,7 +21,7 @@ Scaffold-DbContext "Server=.;Database=Clientes;User Id=userweb;Password=userweb2
 Scaffold-DbContext "Server=172.28.107.19\\FSVEMCYN03D;Database=Facturacion;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true" Microsoft.EntityFrameworkCore.SqlServer -OutputDir DataFacturacion
 Scaffold-DbContext "Server=.;Database=Facturacion;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true" Microsoft.EntityFrameworkCore.SqlServer -OutputDir DataFacturacion
 
-
+UserApp2026*
 
 dotnet ef dbcontext scaffold "Server=172.28.107.19\\FSVEMCYN03D;Database=Mooreve;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true" Microsoft.EntityFrameworkCore.SqlServer -OutputDir DataTmp
 

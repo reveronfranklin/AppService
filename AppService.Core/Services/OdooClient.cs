@@ -1,4 +1,5 @@
-﻿using AppService.Core.CustomEntities;
+using Microsoft.Extensions.Configuration;
+using AppService.Core.CustomEntities;
 using AppService.Core.Interfaces;
 using AppService.Core.Utility;
 using System;
@@ -13,8 +14,9 @@ namespace AppService.Core.Services
         private readonly HttpClient _client;
         private readonly HttpClient _httpClientEmail;
         private readonly IUnitOfWork unitOfWork;
+        private readonly IConfiguration _emailConfiguration;
 
-        public OdooClient(HttpClient httpClient,HttpClient httpClientEmail)
+        public OdooClient(HttpClient httpClient,HttpClient httpClientEmail, IConfiguration configuration)
         {
 
             /*OdooUrlBaseProd
@@ -34,7 +36,8 @@ namespace AppService.Core.Services
             {
                 httpClient.BaseAddress = new Uri("https://mooreveit-moore-qa-7272646.dev.odoo.com/jsonrpc/");
             }
-            httpClientEmail.BaseAddress = new Uri("http://localhost:3002/api/email/send-email");
+            _emailConfiguration = configuration;
+            httpClientEmail.BaseAddress = new Uri(configuration["EmailService:Url"] ?? "http://localhost:3002/api/email/send-email");
 
             //var url="https://mooreveit-moore-qa1-5818605.dev.odoo.com/jsonrpc/"
             //httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
@@ -59,7 +62,11 @@ namespace AppService.Core.Services
                 _client.DefaultRequestHeaders.Add("Accept", "application/json");
 
 
-                var result = await _httpClientEmail.PostAsync(_httpClientEmail.BaseAddress, data);
+                using var request = new HttpRequestMessage(HttpMethod.Post, _httpClientEmail.BaseAddress) { Content = data };
+                var key = _emailConfiguration["EmailService:ServiceKey"];
+                if (!string.IsNullOrWhiteSpace(key)) request.Headers.Add("X-Email-Service-Key", key);
+                request.Headers.Add("Idempotency-Key", Guid.NewGuid().ToString());
+                var result = await _httpClientEmail.SendAsync(request);
                 string resultContent = await result.Content.ReadAsStringAsync();
 
                 metadata.IsValid = result.IsSuccessStatusCode;
@@ -70,7 +77,7 @@ namespace AppService.Core.Services
             {
 
                 metadata.IsValid = false;
-                metadata.Message = ex.InnerException.Message;
+                metadata.Message = ex.InnerException?.Message ?? ex.Message;
                 return metadata;
             }
 
@@ -102,7 +109,7 @@ namespace AppService.Core.Services
             {
 
                 metadata.IsValid = false;
-                metadata.Message = ex.InnerException.Message;
+                metadata.Message = ex.InnerException?.Message ?? ex.Message;
                 return metadata;
             }
 

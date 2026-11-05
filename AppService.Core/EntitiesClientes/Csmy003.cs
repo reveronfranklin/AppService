@@ -94,6 +94,7 @@ namespace AppService.Core.EntitiesClientes
         public string Depurar { get; set; }
         public double? CodJdePadre { get; set; }
         public string FlagAtendido { get; set; }
+        public string FlagActivoComercial { get; set; }
         public DateTime? FechaAtendido { get; set; }
         public DateTime? FechaDesatendido { get; set; }
         public DateTime? FechaModificadoLimite { get; set; }

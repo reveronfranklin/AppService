@@ -7,6 +7,7 @@ namespace AppService.Core.Interfaces
     public interface IAppOrdenProductoRepeticionServices
     {
         Task<ApiResponse<ListaRepeticiones>> GetAllFilter(AppOrdenProductoRepeticionFilterDto filter);
+        Task<ApiResponse<bool>> PuedeModificarProducto(PuedeModificarProductoOrdenFilterDto filter);
         Task<ApiResponse<bool>> UpdateProductoOrden(UpdateProductoOrdenFilterDto filter);
 
     }

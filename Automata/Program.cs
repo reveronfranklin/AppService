@@ -1,4 +1,4 @@
-﻿
+
 
 using AppService.Core.CustomEntities;
 using AppService.Core.Interfaces;
@@ -27,7 +27,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using StackExchange.Redis;
+using AppService.Infrastructure.Caching;
 
 
 internal class Program
@@ -46,6 +46,7 @@ internal class Program
         Configuration = configurationBuilder.Build();
 
         var serviceCollection = new ServiceCollection();
+        serviceCollection.AddSingleton<IConfiguration>(Configuration);
         serviceCollection.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
         string rrdConection = "Server=172.28.107.19;Database=RRD;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true";
@@ -63,7 +64,7 @@ internal class Program
         string cxcConecction = "Server=172.28.107.19\\FSVEMCYN03D;Database=CXC;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true";
         string estadisticasConecction = "Server=172.28.107.19\\FSVEMCYN03D;Database=Estadisticas;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true";
         string spiConnection = "Data Source=172.28.107.20:1521/SPI;User Id=INFOCENT;Password=SPISENIOR;Validate Connection=true;";
-        string redisConnection = "localhost:6379";
+
         string powerBiConection = "Server=172.28.107.19\\FSVEMCYN03D;Database=POWERBI;User Id=userweb;Password=userweb2003;MultipleActiveResultSets=true";
 
         
@@ -163,8 +164,7 @@ internal class Program
                 options.UseOracle(spiConnection, b => b.UseOracleSQLCompatibility("11")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
       );
         
-        serviceCollection.AddSingleton<IConnectionMultiplexer>(_ =>
-            ConnectionMultiplexer.Connect(redisConnection));
+        serviceCollection.AddAppCache(Configuration);
         serviceCollection.AddTransient<IPowerBiOrdenesService, PowerBiOrdenesService>();
         serviceCollection.AddTransient<IAppConfigAppService, AppConfigAppService>();
         serviceCollection.AddTransient<IAppVariablesService, AppVariablesService>();
@@ -297,8 +297,7 @@ internal class Program
                         options.UseOracle(spiConnection, b => b.UseOracleSQLCompatibility("11"))
                             .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
                     )
-                    .AddSingleton<IConnectionMultiplexer>(_ =>
-                        ConnectionMultiplexer.Connect(redisConnection))
+                    .AddAppCache(Configuration)
                     .AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies())
                     .AddTransient<IAppConfigAppService, AppConfigAppService>()
                     .AddTransient<IAppVariablesService, AppVariablesService>()

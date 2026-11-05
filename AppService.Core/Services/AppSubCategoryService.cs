@@ -36,7 +36,7 @@ namespace AppService.Core.Services
             List<AppSubCategoryGetDto> resultDto = new List<AppSubCategoryGetDto>();
             ApiResponse<List<AppSubCategoryGetDto>> response = new ApiResponse<List<AppSubCategoryGetDto>>(resultDto);
 
-            var appSubCategory = await _unitOfWork.AppSubCategoryRepository.GetAllFilter(filter);
+            List<AppSubCategory> appSubCategory= await _unitOfWork.AppSubCategoryRepository.GetAllFilter(filter);
             appSubCategory=appSubCategory.OrderBy(x=>x.Description).ToList();
             resultDto = _mapper.Map<List<AppSubCategoryGetDto>>(appSubCategory);
            

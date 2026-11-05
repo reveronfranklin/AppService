@@ -67,7 +67,7 @@ namespace AppService.Core.Services
 
                 }
 
-                var pagedResult = PagedList<CobEstadoDeCuenta>.Create(listEstadoCuenta, filters.PageNumber, filters.PageSize,listEstadoCuenta.Count);
+                var pagedResult = PagedList<CobEstadoDeCuenta>.Create(listEstadoCuenta, filters.PageNumber, filters.PageSize);
 
                 return pagedResult;
             }
@@ -149,7 +149,7 @@ namespace AppService.Core.Services
 
 
 
-                var pagedResult = PagedList<CobEstadoCuentaMultiMoneda>.Create(estadCta, filters.PageNumber, filters.PageSize,estadCta.Count);
+                var pagedResult = PagedList<CobEstadoCuentaMultiMoneda>.Create(estadCta, filters.PageNumber, filters.PageSize);
 
                 return pagedResult;
             }
@@ -199,7 +199,10 @@ namespace AppService.Core.Services
             foreach (var item in resultSapEstadoCuenta.d.results)
             {
                 EstadoCuentaSap itemEstadoCuentaSap = new EstadoCuentaSap();
-
+                if (item.DocumentoSAP == "2200754151")
+                {
+                    var a = 1;
+                }
                 itemEstadoCuentaSap.DocumentoSAP = item.DocumentoSAP;
                 itemEstadoCuentaSap.DocumentoExterno = item.DocumentoExterno;
                 itemEstadoCuentaSap.ClaseDoc = item.ClaseDoc;

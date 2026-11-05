@@ -12,6 +12,7 @@ namespace AppService.Core.DTOs
         public string Url { get; set; }
         public string Icon { get; set; }
         public int PageMenuId { get; set; }
+        public int Orden { get; set; }
 
     }
 }

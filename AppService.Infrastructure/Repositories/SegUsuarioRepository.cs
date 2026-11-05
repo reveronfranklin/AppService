@@ -160,6 +160,7 @@ namespace AppService.Infrastructure.Repositories
                                      join ur in _context.SegUsuarioRol on u.IdUsuario equals ur.IdUsuario
                                      join r in _context.SegRol on ur.IdRol equals r.IdRol
                                      where u.Usuario == Usuario & r.IdPrograma == 141
+                                     orderby r.IdRol == 999 descending, r.IdRol
                                      select new { Clave = u.Clave, IdRol = r.IdRol, NombreUsuario = u.NombreUsuario }).FirstOrDefault();
 
                 if (BuscarUsuario != null)

@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Data.SqlClient; 
 
 namespace AppService.Infrastructure.Repositories
 {
@@ -19,7 +18,7 @@ namespace AppService.Infrastructure.Repositories
             _context = context;
         }
 
-        public void MarcarResultOdoo(string cotizacion, string mensajeError, int enviarOdoo)
+        public void MarcarResultOdoo(string cotizacion,string mensajeError,int enviarOdoo)
         {
             try
             {
@@ -30,49 +29,10 @@ namespace AppService.Infrastructure.Repositories
             catch (Exception e)
             {
                 Console.WriteLine(e);
-
-            }
-
-        }
-        
-        public void ActuaclizaPrecio(string cotizacion, string producto)
-{
-    try
-    {
-        // Primero ejecutar el procedimiento principal
-        var updateQuery = "EXEC mooreve.dbo.AppUpdatePrecioMinimo @cotizacion, @producto";
-        _context.Database.ExecuteSqlRaw(updateQuery,
-            new SqlParameter("@Cotizacion", cotizacion),
-            new SqlParameter("@Producto", producto));
-
-      
-    }
-    catch (Exception e)
-    {
-        Console.WriteLine(e);
-    }
-}
-
-        public void ActuaclizaPrecioBk(string cotizacion,string producto)
-        {
-            try
-            {
-                var queryInsert = $"EXEC mooreve.dbo.AppUpdatePrecioMinimo {cotizacion},{producto}";
-                var query = $"exec Mooreve.[dbo].[PaInsertEjecucionProceso] '{queryInsert}','SYSTEM'";
-                
-                FormattableString xqueryDiario = $"{query}";
-
-                var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
                 
             }
           
         }
-        
-      
         
         public string ProximaCotizacionCopia(string Cod_Vendedor)
         {

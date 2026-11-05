@@ -594,8 +594,15 @@ namespace AppService.Infrastructure.Data
         public virtual DbSet<AppQuotesPaginate> AppQuotesPaginate { get; set; }
         
 
+        public System.Linq.IQueryable<LegacyQuoteReadScope> LegacyQuoteScope()
+            => FromExpression(() => LegacyQuoteScope());
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            var legacyScopeFunction=typeof(RRDContext).GetMethod(nameof(LegacyQuoteScope));
+            modelBuilder.Entity<LegacyQuoteReadScope>().HasNoKey().ToFunction(legacyScopeFunction);
+            modelBuilder.HasDbFunction(legacyScopeFunction).HasName("AppQuote120_LegacyScope").HasSchema("dbo");
+
             
             
             modelBuilder.Entity<PCTipoPagoOrdenNoCalcularComision>(entity =>
@@ -769,6 +776,7 @@ namespace AppService.Infrastructure.Data
                 entity.Property<Decimal>((Expression<Func<AppService.Core.Entities.AppDetailQuotes, Decimal>>)(e => e.TotalUsd)).HasColumnType<Decimal>("numeric(18, 2)");
                 entity.Property<Decimal?>((Expression<Func<AppService.Core.Entities.AppDetailQuotes, Decimal?>>)(e => e.UnitPriceBaseProduction)).HasColumnType<Decimal?>("numeric(18, 4)").HasDefaultValueSql<Decimal?>("((0))");
                 entity.Property<Decimal?>((Expression<Func<AppService.Core.Entities.AppDetailQuotes, Decimal?>>)(e => e.UnitPriceConverted)).HasColumnType<Decimal?>("numeric(18, 4)").HasDefaultValueSql<Decimal?>("((0))");
+                entity.Property<Decimal?>((Expression<Func<AppService.Core.Entities.AppDetailQuotes, Decimal?>>)(e => e.PorcMaximoSobrePrecio)).HasColumnType<Decimal?>("decimal(10, 2)").HasDefaultValueSql<Decimal?>("((0))");
                 entity.Property<DateTime?>((Expression<Func<AppService.Core.Entities.AppDetailQuotes, DateTime?>>)(e => e.UpdatedAt)).HasDefaultValueSql<DateTime?>("(getdate())");
                 entity.Property<string>((Expression<Func<AppService.Core.Entities.AppDetailQuotes, string>>)(e => e.UserCreate)).IsRequired(true).HasMaxLength(50);
                 entity.Property<string>((Expression<Func<AppService.Core.Entities.AppDetailQuotes, string>>)(e => e.UserUpdate)).HasMaxLength(50);

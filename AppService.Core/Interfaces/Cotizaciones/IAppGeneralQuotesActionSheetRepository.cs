@@ -1,13 +1,9 @@
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using AppService.Core.Entities;
-using AppService.Core.EntitiesMooreve;
 
-namespace AppService.Core.Interfaces;
+namespace AppService.Core.Interfaces.Cotizaciones;
 
 public interface IAppGeneralQuotesActionSheetRepository
 {
     Task<AppGeneralQuotesActionSheet> GetByCotizacion(string cotizacion);
-    Task<AppGeneralQuotesActionSheet> Create(string cotizacion);
-
 }

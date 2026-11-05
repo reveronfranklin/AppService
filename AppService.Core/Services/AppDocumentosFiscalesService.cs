@@ -59,30 +59,16 @@ namespace AppService.Core.Services
 
         public string[] GetFicheros( string ruta )
         {
-           try
-            {
-            
-             AppRutasDocumentosFiscalesDto rutas = new AppRutasDocumentosFiscalesDto(_env);
+
+            AppRutasDocumentosFiscalesDto rutas = new AppRutasDocumentosFiscalesDto(_env);
 
             //string ruta = _paginationOptions.FolderFiscales ;
-            // string ruta = rutas.FolderFiscales;
+           // string ruta = rutas.FolderFiscales;
             string directorio = ruta;
             //string directorio = @"/Users/freveron/Documents/Moore/Facturacion/enProceso/";
-            
-
             string[] ficheros = Directory.GetFiles(directorio);
             string[] sorted = ficheros.OrderByDescending(o => o).ToArray();
             return sorted;
-
-           }
-           catch (System.Exception e)
-           {
-                Console.WriteLine(e);
-                string[] sorted = new string[0];
-                return sorted;
-           }
-
-           
         }
 
         public void Convert(string srcFile, string outFileName, string control, string anulado = "")
@@ -644,18 +630,25 @@ namespace AppService.Core.Services
             return result;
         }
 
-        public bool IsValidPdf(string fileName)
+      public bool IsValidPdf(string fileName)
+     {
+        try
         {
-            try
+            // El bloque using asegura que el Reader se cierre al terminar
+            using (var reader = new PdfReader(fileName))
             {
-                new PdfReader(fileName);
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
+                using (var pdfDoc = new PdfDocument(reader))
+                {
+                    return true;
+                }
             }
         }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
 
 
 

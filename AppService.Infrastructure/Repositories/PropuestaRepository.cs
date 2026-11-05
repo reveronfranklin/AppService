@@ -64,44 +64,16 @@ namespace AppService.Infrastructure.Repositories
             return flag;
         }
             
-        public async Task<bool> UpdateListaCotizacion(string cotizacion,string producto,decimal monto,decimal flete)
+        public async Task<bool> UpdateListaCotizacion(string cotizacion,decimal monto,decimal flete,string producto)
         {
             bool flag = false;
-            try
-            {
-                string montoString = monto.ToString(CultureInfo.InvariantCulture);
-                string fleteString = flete.ToString(CultureInfo.InvariantCulture);
-                FormattableString xqueryDiario = $"exec AppUpdateListaCotizacion '{cotizacion}','{producto}',{montoString},{fleteString}";
-                var query = $"exec AppUpdateListaCotizacion '{cotizacion}','{producto}',{montoString},{fleteString}";
-                var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
+            string montoString = monto.ToString(CultureInfo.InvariantCulture);
+            string fleteString = flete.ToString(CultureInfo.InvariantCulture);
+            FormattableString xqueryDiario = $"exec AppUpdateListaCotizacion {cotizacion},{producto},{montoString},{fleteString}";
 
+            var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
 
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                
-            }
-            
-      
-            
             return flag;
-        }
-        
-        public void ActuaclizaPrecio(string cotizacion,string producto)
-        {
-            try
-            {
-                FormattableString xqueryDiario = $"EXEC mooreve.dbo.AppUpdatePrecioMinimo {cotizacion},{producto}";
-
-                var resultDiario = _context.Database.ExecuteSqlInterpolated(xqueryDiario);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                
-            }
-          
         }
         
         public async Task<bool> CotizacionTieneOrden(string cotizacion)

@@ -43,15 +43,6 @@ namespace AppService.Core.DTOs
         public string Salida { get; set; } = string.Empty;
         public string Presentacion { get; set; } = string.Empty;
         public short IdCondPago { get; set; }
-         public int CalculoId { get; set; }
-        public decimal PorcFlete { get; set; }
-        public decimal Flete { get; set; }
-        
-        public bool? Estimada { get; set; }
-        
-        public string? MensajeSolicitarPrecio { get; set; }=string.Empty;
-        public bool? SolicitarPrecio { get; set; }
-        
 
         public AppProductConversionGetDto AppProductConversionGetDto { get; set; }
 
@@ -64,7 +55,11 @@ namespace AppService.Core.DTOs
         public List<AppTemplateConversionUnitGetDto> AppTemplateConversionUnitGetDto { get; set; }
 
         public StatusAprobacionDto StatusAprobacionDto { get; set; }
-       
+        public int CalculoId { get; set; }
+        public decimal PorcFlete { get; set; }
+        public decimal Flete { get; set; }
+        public decimal PorcMaximoSobrePrecio { get; set; }
+        
 
 
     }

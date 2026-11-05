@@ -34,13 +34,9 @@ namespace AppService.Core.Services
             return await _unitOfWork.AprobacionesRepository.GetByCotizacionRenglonPropuesta(cotizacion, renglon, propuesta);
         }
 
-        public async Task<Wsmy639> GetByCotizacionProducto(string cotizacion, string producto)
-        {
-            return await _unitOfWork.AprobacionesRepository.GetByCotizacionProducto(cotizacion, producto);
-        }
 
 
-        public async Task<ApiResponse<Wsmy639>> CreateAprobacion(string cotizacion, int renglon, int propuesta, string usuarioConectado,string mensajeSolicitarPrecio)
+        public async Task<ApiResponse<Wsmy639>> CreateAprobacion(string cotizacion, int renglon, int propuesta, string usuarioConectado)
         {
 
             Wsmy639 resultDto = new Wsmy639();
@@ -55,14 +51,14 @@ namespace AppService.Core.Services
             ApiResponse<Wsmy639> response = new ApiResponse<Wsmy639>(resultDto);
             try
             {
-               // var cotizacionObject = await _unitOfWork.CotizacionRepository.GetByCotizacion(cotizacion);
+                var cotizacionObject = await _unitOfWork.CotizacionRepository.GetByCotizacion(cotizacion);
 
-               // var renglonObject = await _unitOfWork.RenglonRepository.GetByCotizacionRenglon(cotizacion, renglon);
+                var renglonObject = await _unitOfWork.RenglonRepository.GetByCotizacionRenglon(cotizacion, renglon);
 
-                //var propuestaObject = await _unitOfWork.PropuestaRepository.GetByCotizacionRenglonPropuesta(cotizacion, renglon, propuesta);
+                var propuestaObject = await _unitOfWork.PropuestaRepository.GetByCotizacionRenglonPropuesta(cotizacion, renglon, propuesta);
 
 
-                var inserted = await _unitOfWork.AprobacionesRepository.CreaAprobacion(cotizacion, renglon, propuesta, usuarioConectado,mensajeSolicitarPrecio);
+                var inserted = await _unitOfWork.AprobacionesRepository.CreaAprobacion(cotizacion, renglon, propuesta, usuarioConectado);
 
 
 
@@ -308,7 +304,30 @@ namespace AppService.Core.Services
 
                 var inserted = await _unitOfWork.AprobacionesRepository.CreaAprobacionAprobada(cotizacion, renglon, propuesta, usuarioConectado);
 
+                if (inserted == null)
+                {
+                    metadata.IsValid = false;
+                    metadata.Message = "No se pudo crear la solicitud aprobada.";
+                    response.Data = null;
+                    response.Meta = metadata;
+                    return response;
+                }
 
+                inserted.FlagAprobado = true;
+                inserted.FlagEnviado = true;
+                inserted.FlagCerrado = true;
+                inserted.IdEstatus = "APRO";
+                inserted.ValorVentaAprobar =
+                    propuestaObject.PrecioUnitarioExterno.GetValueOrDefault() > 0
+                        ? propuestaObject.PrecioUnitarioExterno
+                        : propuestaObject.PrecioUnitario;
+                inserted.ValorVentaAprobarUsd =
+                    propuestaObject.PrecioUnitarioUsdExterno.GetValueOrDefault() > 0
+                        ? propuestaObject.PrecioUnitarioUsdExterno
+                        : propuestaObject.PrecioUnitarioUsd;
+
+                _unitOfWork.AprobacionesRepository.Update(inserted);
+                await _unitOfWork.SaveChangesAsync();
 
                 metadata.IsValid = true;
                 metadata.Message = "Solicitud Creada !!";
@@ -539,7 +558,16 @@ namespace AppService.Core.Services
             {
 
 
-              
+                // HdId.Value IdSoicitud wsmy515, 
+
+
+
+                // HdRuta.Value
+                // HdRuta.Value = Wsmy649.BuscarRuta(HdSubCategoria.Value, HdIdOficina.Value)
+
+                //HdIdNextEst.Value
+                //Wsmy649.BuscarAprobador(HdRuta.Value, HdSubCategoria.Value, HdIdOficina.Value, PuntosPorcDebajo, PuntosPorcArriba)
+                //IdEstacion
 
                 var cotizacionObject = await _unitOfWork.CotizacionRepository.GetByCotizacion(cotizacion);
                 usuarioConectado = cotizacionObject.CodVendedor;
@@ -547,7 +575,7 @@ namespace AppService.Core.Services
 
                 var propuestaObject = await _unitOfWork.PropuestaRepository.GetByCotizacionRenglonPropuesta(cotizacion, renglon, propuesta);
 
-                //var cliente = _unitOfWork.MtrClienteRepository.GetById(cotizacionObject.CodCliente);
+                var cliente = _unitOfWork.MtrClienteRepository.GetById(cotizacionObject.CodCliente);
 
                 var producto = await _unitOfWork.Csmy036Repository.GetByCode(renglonObject.CodProducto);
 

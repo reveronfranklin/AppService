@@ -85,12 +85,13 @@ namespace AppService.Core.Services
                         {
                             item.PrecioPorRango = true;
                             item.AppPriceDto = this._mapper.Map<List<AppPriceDto>>((object)allByAppProduct);
-                            var porcentajePrecioMaximo = await _unitOfWork.AppConfigAppRepository.GetByKey("UTILIDADOPMAX");
+                            var porcentajePrecioMaximo = await _unitOfWork.AppConfigAppRepository.GetByKey("PORC_MAXIMO_SOBREPRECIO");
                             foreach (var itemPrecio in item.AppPriceDto)
                             {
                                 decimal porcentaje = decimal.Parse(porcentajePrecioMaximo.Valor);
                                 var adicional = (itemPrecio.Precio * porcentaje) /100;
                                 itemPrecio.PrecioMaximo = itemPrecio.Precio + adicional;
+                                itemPrecio.PorcMaximoSobrePrecio=porcentaje;
                             }
                         }
                         else
@@ -144,7 +145,7 @@ namespace AppService.Core.Services
                         appProductConversionFilter.AppProductsId = appProductsDto.Id;
                         var conversiones = _appProductConversionService.GetAllByProduct(appProductConversionFilter);
                         appProductsDto.Conversiones = conversiones.Data;
-                        AppProductConversionGetDto conversion = new AppProductConversionGetDto();
+
                         List<AppPrice> allByAppProduct = await this._unitOfWork.AppPriceRepository.GetAllByAppProduct(appProductsDto.Id);
                         if (allByAppProduct != null && allByAppProduct.Count > 0)
                         {

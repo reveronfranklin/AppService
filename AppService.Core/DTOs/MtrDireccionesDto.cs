@@ -24,9 +24,6 @@ namespace AppService.Core.DTOs
     {
         public decimal Id { get; set; }
         public string Codigo { get; set; }
-        public string Vendedor { get; set; }
-        public string NombreVendedor { get; set; }
-        public string NombreOficina { get; set; }
         public string RifCliente { get; set; }
         public string RifDireccion { get; set; }
         public string Direccion { get; set; }
@@ -43,6 +40,8 @@ namespace AppService.Core.DTOs
         public string NombreEstado { get; set; }
         //si en csmy003 flag_atendido = X status es ACTIVO DE LO CONTRARIO ES INACTIVO
         public string Status { get; set; }
+
+        public bool Editable { get; set; }
         public string Ramo { get; set; }
         public string Sector { get; set; }
         public string DescripcionSector { get; set; }
@@ -54,11 +53,14 @@ namespace AppService.Core.DTOs
         public string DescripcionTipoNegocio { get; set; }
         public string PuntoReferencia { get; set; }
         public string ClaseCss { get { return GetClaseCss(Id,IdDireccionCliente); } }
+
+        public string NombreVendedor { get; set; }
+        public string NombreOficina { get; set; }
+
+
         public MtrSectorDto SectorObj { get; set; }
         public MtrDireccionesDto DireccionClienteObj { get; set; }
         public MtrDireccionesDto DireccionObj { get; set; }
-        
-        public bool Editable { get; set; }
         
         public string GetClaseCss(decimal Id, decimal IdDireccionCliente)
         {

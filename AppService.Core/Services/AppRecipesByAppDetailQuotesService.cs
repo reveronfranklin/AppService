@@ -111,13 +111,7 @@ namespace AppService.Core.Services
                     filter.AppProuctId = item.IdProducto;
                     filter.AppDetailQuotesId = item.Id;
                     filter.IdMunicipio = idMunicipio;
-                    var precio = await GetPrice(filter);
-                    if ( filter.AppDetailQuotesId > 0  && precio.Data.CalculoId> 0)
-                    {
-                         //ACTUALIZAR COTIZACION EN HISTORICO DE CALCULO
-                        await UpdateCoticacionEnCalculo((int)filter.AppDetailQuotesId ,(int)precio.Data.CalculoId);
-
-                    }
+                    await GetPrice(filter);
                 }
             }
             
@@ -160,15 +154,7 @@ namespace AppService.Core.Services
                 var detail = await _unitOfWork.AppDetailQuotesRepository.GetById((int)filter.AppDetailQuotesId);
                 if (detail != null)
                 {
-                    if (detail.OrdenAnterior == null)
-                    {
-                        ordenAnterior = 0;
-                    }
-                    else
-                    {
-                        ordenAnterior = (long)detail.OrdenAnterior;
-                    }
-                 
+                    ordenAnterior = (long)detail.OrdenAnterior;
                 }
                 else
                 {
@@ -506,17 +492,6 @@ namespace AppService.Core.Services
             return result;
         }
 
-        public async Task UpdateCoticacionEnCalculo(int appDetailQuotesId, int calculoId)
-        {
-
-            var detailQuotes = await _unitOfWork.AppDetailQuotesRepository.GetById(appDetailQuotesId);
-            if (detailQuotes != null)
-            {
-                await _unitOfWork.AppRecipesByAppDetailQuotesRepository.UpdateCotizacioEnHitorico(
-                    detailQuotes.Cotizacion, calculoId);
-            }
-
-        }
 
 
         public class ParametrosMaquina
@@ -1404,15 +1379,11 @@ namespace AppService.Core.Services
 
 
         }
-        
         public async Task CalulateRecipeByCalculoIdInMemory(int calculoId)
         {
             List<AppRecipesByAppDetailQuotes> allByCalculoId = await this._unitOfWork.AppRecipesByAppDetailQuotesRepository.GetAllByCalculoId(calculoId);
-            if (allByCalculoId == null || allByCalculoId.Count == 0)
-            {
-                 return;
-            }
-               
+            if (allByCalculoId == null)
+                return;
             var firstCalculo = allByCalculoId.FirstOrDefault();
             var product = await _unitOfWork.AppProductsRepository.GetById((int)firstCalculo.AppproductsId);
 
@@ -1445,7 +1416,6 @@ namespace AppService.Core.Services
                 newItem.EsVariableDeEntrada = item.EsVariableDeEntrada;
                 newItem.RetornarElMayor = item.RetornarElMayor;
                 newItem.RetornarElMenor = item.RetornarElMenor;
-                
              
                  newListCalculo.Add(newItem);
             }
@@ -1455,7 +1425,6 @@ namespace AppService.Core.Services
             this._unitOfWork.AppRecipesByAppDetailQuotesRepository.DeleteRange(allByCalculoId);
             await this._unitOfWork.SaveChangesAsync();
 
-            
 
             await this._unitOfWork.AppRecipesByAppDetailQuotesRepository.AddRange(newListCalculo);
             await this._unitOfWork.SaveChangesAsync();

@@ -1,4 +1,4 @@
-﻿using AppService.Core.EntitiesMooreve;
+using AppService.Core.EntitiesMooreve;
 using AppService.Core.Interfaces;
 using AppService.Infrastructure.DataMooreve;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using AppService.Core.DTOs.Comisiones;
 using AppService.Core.Entities;
 using AppService.Core.Interfaces.Comisiones;
-using StackExchange.Redis;
+
 
 namespace AppService.Infrastructure.Repositories
 {
@@ -18,30 +18,26 @@ namespace AppService.Infrastructure.Repositories
     {
 
         private readonly MooreveContext _context;
-        private readonly IConnectionMultiplexer _connectionMultiplexer;
+        private readonly IAppCache _cache;
 
-        public VHistoricoComisionesRepository(MooreveContext context,IConnectionMultiplexer connectionMultiplexer)
+        public VHistoricoComisionesRepository(MooreveContext context,IAppCache cache)
         {
             _context = context;
-            _connectionMultiplexer = connectionMultiplexer;
+            _cache = cache;
         }
 
         
-        public async Task AddRedis(string key, string value)
+        public async Task SetCacheAsync(string key, string value)
         {
-            var db = _connectionMultiplexer.GetDatabase();
-            await db.StringSetAsync(key, value,TimeSpan.FromDays(30));
+            await _cache.SetAsync(key, value,TimeSpan.FromDays(30));
         }
-        public void DeleteRedis(string key)
+        public void RemoveCache(string key)
         {
-            var db = _connectionMultiplexer.GetDatabase();
-            db.KeyDelete(key);
+            _cache.Remove(key);
         }
-        public async Task<string> GetRedis(string key)
+        public async Task<string> GetCacheAsync(string key)
         {
-            var db = _connectionMultiplexer.GetDatabase();
-            //db.KeyDelete("ListProducts");
-            return await db.StringGetAsync(key);
+            return await _cache.GetAsync(key);
         }
 
         
@@ -94,8 +90,8 @@ namespace AppService.Infrastructure.Repositories
         {
 
             List<VHistoricoComsiones> historico = new List<VHistoricoComsiones>();
-            if(update=="X")  DeleteRedis($"ListComisionesPeriodo{filter.Usuario}{filter.SearchText}");
-            var listHistorico=await GetRedis($"ListComisionesPeriodo{filter.Usuario}{filter.SearchText}");
+            if(update=="X")  RemoveCache($"ListComisionesPeriodo{filter.Usuario}{filter.SearchText}");
+            var listHistorico=await GetCacheAsync($"ListComisionesPeriodo{filter.Usuario}{filter.SearchText}");
             if (listHistorico != null)
             {
                 historico = System.Text.Json.JsonSerializer.Deserialize<List<VHistoricoComsiones>> (listHistorico);
@@ -143,7 +139,7 @@ namespace AppService.Infrastructure.Repositories
          
             if (historico.Count > 0)
             {
-                await AddRedis($"ListComisionesPeriodo{filter.Usuario}{filter.SearchText}", System.Text.Json.JsonSerializer.Serialize(historico));
+                await SetCacheAsync($"ListComisionesPeriodo{filter.Usuario}{filter.SearchText}", System.Text.Json.JsonSerializer.Serialize(historico));
             }
         
           
@@ -157,8 +153,8 @@ namespace AppService.Infrastructure.Repositories
             
            
             List<VHistoricoComsiones> result = new List<VHistoricoComsiones>();
-            if(update=="X" ) DeleteRedis($"ListComisionesPeriodo{idPeriodo}");
-            var listHistorico=await GetRedis($"ListComisionesPeriodo{idPeriodo}");
+            if(update=="X" ) RemoveCache($"ListComisionesPeriodo{idPeriodo}");
+            var listHistorico=await GetCacheAsync($"ListComisionesPeriodo{idPeriodo}");
             if (listHistorico != null)
             {
                 result = System.Text.Json.JsonSerializer.Deserialize<List<VHistoricoComsiones>> (listHistorico);
@@ -172,7 +168,7 @@ namespace AppService.Infrastructure.Repositories
               .ToListAsync();
           if (result.Count > 0)
           {
-              await AddRedis($"ListComisionesPeriodo{idPeriodo}", System.Text.Json.JsonSerializer.Serialize(result));
+              await SetCacheAsync($"ListComisionesPeriodo{idPeriodo}", System.Text.Json.JsonSerializer.Serialize(result));
           }
         
           

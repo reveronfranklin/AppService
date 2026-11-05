@@ -1,4 +1,5 @@
-﻿using AppService.Core.Interfaces;
+using Microsoft.Extensions.Configuration;
+using AppService.Core.Interfaces;
 using AppService.Infrastructure.Data;
 using AppService.Infrastructure.DataClientes;
 using AppService.Infrastructure.DataContratosStock;
@@ -23,13 +24,14 @@ using AppService.Infrastructure.DataPowerBI;
 using AppService.Infrastructure.Repositories.Comisiones;
 using AppService.Infrastructure.Repositories.Cotizaciones;
 using AppService.Infrastructure.Repositories.Ventas;
-using StackExchange.Redis;
+
 
 namespace AppService.Infrastructure.Repositories
 {
     public class UnitOfWork : IUnitOfWork
     {
         private readonly RRDContext _context;
+        private readonly IConfiguration _quoteModel120Configuration;
         private readonly MooreveContext _mooreveContext;
         private readonly MCContext _mcContext;
         private readonly IMaestrosContext _maestrosContext;
@@ -45,14 +47,14 @@ namespace AppService.Infrastructure.Repositories
         private readonly EstadisticasContext _estadisticasContext;
         private readonly POWERBIContext _powerBIContext;
 
-        private readonly IConnectionMultiplexer _iconnectionMultiplexer;
+        private readonly IAppCache _cache;
 
 
         //new
 
         private readonly IPowerBiOrdenesRepository _powerBiOrdenesRepository;
 
-       private readonly IAppGeneralQuotesActionSheetRepository _appGeneralQuotesActionSheetRepository;
+        private readonly IAppGeneralQuotesActionSheetRepository _appGeneralQuotesActionSheetRepository;
         
         private readonly IAppCalculadoraRepository _appCalculadoraRepository;
         private readonly IAppQuotesPaginateRepository _appQuotesPaginateRepository;
@@ -282,9 +284,15 @@ namespace AppService.Infrastructure.Repositories
         
         
 
-        public UnitOfWork(RRDContext context, MooreveContext mooreveContext, MCContext mcContext, IMaestrosContext maestrosContext, SapContext sapContext, ClientesContext clientesContext, FacturacionContext facturacionContext, ContratosStockContext contratosStockContext, DWContext dWContext, NominaContext nominaContext, SpiContext spiContext, PlantaContext plantaContext, MaterialesContext materialesContext,EstadisticasContext estadisticasContext,IConnectionMultiplexer connectionMultiplexer,POWERBIContext powerBIContext)
+        public UnitOfWork(RRDContext context, MooreveContext mooreveContext, MCContext mcContext, IMaestrosContext maestrosContext, SapContext sapContext, ClientesContext clientesContext, FacturacionContext facturacionContext, ContratosStockContext contratosStockContext, DWContext dWContext, NominaContext nominaContext, SpiContext spiContext, PlantaContext plantaContext, MaterialesContext materialesContext,EstadisticasContext estadisticasContext,IAppCache cache,POWERBIContext powerBIContext)
+            : this(context, mooreveContext, mcContext, maestrosContext, sapContext, clientesContext, facturacionContext, contratosStockContext, dWContext, nominaContext, spiContext, plantaContext, materialesContext, estadisticasContext, cache, powerBIContext, null)
+        {
+        }
+
+        public UnitOfWork(RRDContext context, MooreveContext mooreveContext, MCContext mcContext, IMaestrosContext maestrosContext, SapContext sapContext, ClientesContext clientesContext, FacturacionContext facturacionContext, ContratosStockContext contratosStockContext, DWContext dWContext, NominaContext nominaContext, SpiContext spiContext, PlantaContext plantaContext, MaterialesContext materialesContext,EstadisticasContext estadisticasContext,IAppCache cache,POWERBIContext powerBIContext, IConfiguration quoteModel120Configuration)
         {
             _context = context;
+            _quoteModel120Configuration = quoteModel120Configuration;
             _mooreveContext = mooreveContext;
             _mcContext = mcContext;
             _maestrosContext = maestrosContext;
@@ -298,7 +306,7 @@ namespace AppService.Infrastructure.Repositories
             _plantaContext = plantaContext;
             _materialesContext = materialesContext;
             _estadisticasContext = estadisticasContext;
-            _iconnectionMultiplexer =connectionMultiplexer;
+            _cache =cache;
             _powerBIContext=powerBIContext;
         }
 
@@ -380,7 +388,7 @@ namespace AppService.Infrastructure.Repositories
 
         public IChildMenuRepository ChildMenuRepository => _childMenuRepository ?? new ChildMenuRepository(_context);
 
-        public IAppGeneralQuotesRepository AppGeneralQuotesRepository => _appGeneralQuotesRepository ?? new AppGeneralQuotesRepository(_context, _mooreveContext);
+        public IAppGeneralQuotesRepository AppGeneralQuotesRepository => _appGeneralQuotesRepository ?? new AppGeneralQuotesRepository(_context, _mooreveContext, _quoteModel120Configuration);
 
         public IMtrDireccionesRepository MtrDireccionesRepository => _mtrDireccionesRepository ?? new MtrDireccionesRepository(_context);
 
@@ -401,7 +409,7 @@ namespace AppService.Infrastructure.Repositories
         public IAppProductsRepository AppProductsRepository => _appProductsRepository ?? new AppProductsRepository(_context);
 
 
-        public IAppDetailQuotesRepository AppDetailQuotesRepository => _appDetailQuotesRepository ?? new AppDetailQuotesRepository(_context);
+        public IAppDetailQuotesRepository AppDetailQuotesRepository => _appDetailQuotesRepository ?? new AppDetailQuotesRepository(_context, _quoteModel120Configuration);
 
         public IAppVariablesRepository AppVariablesRepository => _appVariablesRepository ?? new AppVariablesRepository(_context);
 
@@ -509,7 +517,7 @@ namespace AppService.Infrastructure.Repositories
         public IAppAdjuntosCotizacionRepository AppAdjuntosCotizacionRepository => _appAdjuntosCotizacionRepository ?? new AppAdjuntosCotizacionRepository(_mooreveContext);
 
         public IWsmy686Repository Wsmy686Repository => _wsmy686Repository ?? new Wsmy686Repository(_mooreveContext);
-        public IVHistoricoComisionesRepository VHistoricoComisionesRepository => _vHistoricoComisionesRepository ?? new VHistoricoComisionesRepository(_mooreveContext,_iconnectionMultiplexer);
+        public IVHistoricoComisionesRepository VHistoricoComisionesRepository => _vHistoricoComisionesRepository ?? new VHistoricoComisionesRepository(_mooreveContext,_cache);
         public IPcPagosManualesRepository PcPagosManualesRepository => _pcPagosManualesRepository ?? new PcPagosManualesRepository(_mooreveContext);
 
         
@@ -578,7 +586,9 @@ namespace AppService.Infrastructure.Repositories
       
         public ITasaConsolidadoRepository TasaConsolidadoRepository => _tasaConsolidadoRepository ?? new TasaConsolidadoRepository(_mooreveContext);
 
-      
+        
+
+
         public void Dispose()
         {
             if (_context == null)
@@ -633,10 +643,7 @@ namespace AppService.Infrastructure.Repositories
             {
                 _estadisticasContext.Dispose();
             }
-            if (_iconnectionMultiplexer == null)
-            {
-                _iconnectionMultiplexer.Dispose();
-            }
+            // Cache singleton lifetime belongs to the DI container.
 
             if (_powerBIContext == null)
             {
